@@ -1,0 +1,28 @@
+<!-- views/partials/staff-header.ejs -->
+<% if (user && user.permissions) { %>
+  <div class="staff-header">
+    <div class="staff-role">
+      <p>Staff Access - Role: <%= user.role %></p>
+    </div>
+    <div class="staff-header-content">
+      <% if (user.role === 'superadmin') { %>
+        <!-- Superadmin sees all links unconditionally -->
+        <a href="/admin/superadmin-dashboard" id="superAdminDashboardLink">Super Admin Dashboard</a>
+        <a href="/admin/create-staff" id="createStaffLink">Create Employee</a>
+        <a href="/admin/manage-access" id="manageAccessLink">Manage Access</a>
+      <% } else { %>
+        <!-- Non-superadmin roles see links based on permissions -->
+        <% if (user.permissions.includes('can_create_user')) { %>
+          <a href="/admin/create-staff" id="createStaffLink">Create Employee</a>
+        <% } %>
+
+        <% if (user.permissions.includes('can_manage_access_page')) { %>
+          <a href="/admin/manage-access" id="manageAccessLink">Manage Access</a>
+        <% } %>
+      <% } %>
+
+      <!-- Staff Dashboard is visible to all roles -->
+      <a href="/admin/staff-dashboard" id="dashboardLink">Staff Dashboard</a>
+    </div>
+  </div>
+<% } %>

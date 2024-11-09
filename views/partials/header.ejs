@@ -1,0 +1,54 @@
+<!-- views/partials/header.ejs -->
+
+<!-- Include Staff Header only for staff roles -->
+<% if (['superadmin', 'staff1', 'staff2', 'manager1', 'manager2'].includes(user?.role)) { %>
+  <div class="staff-header-wrapper">
+    <%- include('../partials/staff-header', { user: user }) %>
+  </div>
+<% } %>
+
+<!-- Main header content -->
+<header>
+  <a title="Logo" href="/" class="logo">Novelty Drop Co.</a>
+  <div class="profile" id="profile" data-csrf="<%= csrfToken %>">
+    <% if (!user) { %>
+      <div class="sign-in-button" title="Sign in">Hello, Sign in</div>
+    <% } else { %>
+      <!-- Static welcome message -->
+      <p class="welcome-message">Welcome, <%= user.first_name %>!</p>
+      <!-- Clickable profile picture only -->
+      <img src="/images/profile-icon.png" class="profile-pic" alt="Profile" id="profile-picture" />
+    <% } %>
+
+    <!-- Dropdown content for login/register/logout as needed -->
+    <div id="dropdown" class="dropdown-content">
+      <% if (!user) { %>
+        <div id="login-form" class="form-content">
+          <h2>Login</h2>
+          <input type="text" placeholder="Email" id="email" required>
+          <input type="password" placeholder="Password" id="password" required>
+          <button id="login-button">Login</button>
+          <p><a href="#" class="create-account" id="show-register">Create account</a></p>
+        </div>
+
+        <div id="register-form" class="form-content hidden">
+          <h2>Create Account</h2>
+          <input type="text" placeholder="First Name" id="first_name" required>
+          <input type="text" placeholder="Last Name" id="last_name" required>
+          <input type="email" placeholder="Email" id="register_email" required>
+          <input type="password" placeholder="Password" id="register_password" required>
+          <input type="password" placeholder="Confirm Password" id="confirm_password" required>
+          <button id="register-button">Register</button>
+          <p><div class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></div></p>
+        </div>
+      <% } else { %>
+        <div id="user-menu" class="form-content">
+          <form action="/logout" method="POST">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <button type="submit">Logout</button>
+          </form>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</header>
