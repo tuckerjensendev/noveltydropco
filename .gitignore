@@ -10,3 +10,10 @@ node_modules/
 # OS/Editor specific files
 .DS_Store
 .vscode/
+
+# Database file
+noveltydrops.db
+
+#gitignore file itself
+.gitignore
+
