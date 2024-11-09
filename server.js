@@ -143,6 +143,11 @@ app.use(authRoutes);
 const adminRoutes = require('./routes/admin');
 app.use('/admin', adminRoutes);
 
+// Catch-all route for undefined paths
+app.use((req, res) => {
+  res.status(404).render('404');
+});
+
 // Start HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, () => {
   console.log(`HTTPS server running on https://localhost:${PORT}`);
