@@ -12,8 +12,5 @@ node_modules/
 .vscode/
 
 # Database file
-noveltydrops.db
-
-#gitignore file itself
-.gitignore
+noveltydropco.db
 

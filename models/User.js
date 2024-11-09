@@ -1,6 +1,6 @@
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcrypt');
-const db = new sqlite3.Database('./noveltydrops.db');
+const db = new sqlite3.Database('./noveltydropco.db');
 
 db.serialize(() => {
   db.run(`
@@ -23,7 +23,7 @@ db.serialize(() => {
       db.run(
         `INSERT INTO users (first_name, last_name, personal_email, work_email, personal_phone, role, password, superadmin) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-        ['Super', 'Admin', 'superadmin@noveltydrops.com', 'admin@noveltydrops.com', '123-456-7890', 'superadmin', hashedPassword, 1],
+        ['Super', 'Admin', 'superadmin@noveltydropco.com', 'admin@noveltydropco.com', '123-456-7890', 'superadmin', hashedPassword, 1],
         (err) => {
           if (err) console.error("Error creating superadmin:", err.message);
         }
