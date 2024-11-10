@@ -5,12 +5,21 @@
       <p>Staff Access - Role: <%= user.role %></p>
     </div>
     <div class="staff-header-content">
+      <!-- Dashboard is visible to all roles and appears first -->
+      <a href="/admin/staff-dashboard" id="dashboardLink">Dashboard</a>
+      
+      <!-- Content Workshop comes after Dashboard -->
+      <% if (user.permissions.includes('can_edit_content')) { %>
+        <a href="/admin/content-workshop" id="contentWorkshopLink">Content Workshop</a>
+      <% } %>
+
       <% if (user.role === 'superadmin') { %>
-        <!-- Superadmin sees all links unconditionally -->
-        <a href="/admin/superadmin-dashboard" id="superAdminDashboardLink">Super Admin Dashboard</a>
+        <!-- Additional links for Superadmin -->
         <a href="/admin/create-staff" id="createStaffLink">Create Employee</a>
         <a href="/admin/manage-access" id="manageAccessLink">Manage Access</a>
-        <a href="/admin/content-workshop" id="contentWorkshopLink">Content Workshop</a>
+        
+        <!-- Super Admin Dashboard at the end -->
+        <a href="/admin/superadmin-dashboard" id="superAdminDashboardLink">Super Admin Dashboard</a>
       <% } else { %>
         <!-- Non-superadmin roles see links based on permissions -->
         <% if (user.permissions.includes('can_create_user')) { %>
@@ -20,14 +29,7 @@
         <% if (user.permissions.includes('can_manage_access_page')) { %>
           <a href="/admin/manage-access" id="manageAccessLink">Manage Access</a>
         <% } %>
-
-        <% if (user.permissions.includes('can_edit_content')) { %>
-          <a href="/admin/content-workshop" id="contentWorkshopLink">Content Workshop</a>
-        <% } %>
       <% } %>
-
-      <!-- Staff Dashboard is visible to all roles -->
-      <a href="/admin/staff-dashboard" id="dashboardLink">Staff Dashboard</a>
     </div>
   </div>
 <% } %>

@@ -7,14 +7,15 @@ let isRegisterFormOpen = false;
 document.addEventListener('DOMContentLoaded', () => {
   const currentPath = window.location.pathname;
 
-  // Map routes to their corresponding link IDs
-  const linkMap = {
-    '/admin/superadmin-dashboard': 'superAdminDashboardLink',
-    '/admin/staff-dashboard': 'dashboardLink',
-    '/admin/create-staff': 'createStaffLink',
-    '/admin/manage-access': 'manageAccessLink',
-    '/admin/content-workshop': 'contentWorkshopLink'
+// Map routes to their corresponding link IDs
+const linkMap = {
+  '/admin/superadmin-dashboard': 'superAdminDashboardLink',
+  '/admin/staff-dashboard': 'dashboardLink',  // Mapping updated to reflect "Dashboard"
+  '/admin/create-staff': 'createStaffLink',
+  '/admin/manage-access': 'manageAccessLink',
+  '/admin/content-workshop': 'contentWorkshopLink'
 };
+
 
   // Set active class on the corresponding link
   const activeLinkId = linkMap[currentPath];
