@@ -28,44 +28,45 @@ body {
     top: 0;
     z-index: 1000; /* Ensure it stays on top */
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    position: relative;
 }
 
 /* Left-aligned role text */
 .staff-role {
-    flex: 1;
-    text-align: left;
+    position: absolute;
+    left: 10px;
 }
 
-/* Centered content placeholder */
+/* Center-align the header content independently */
 .staff-header-content {
-    flex: 1;
-    text-align: center;
+    margin: 0 auto; /* Center the links in the header */
+    display: flex;
+    gap: 20px; /* Space between links */
 }
 
 /* Staff Header Links Styling */
 .staff-header-content a {
     color: #fff; /* White text */
     text-decoration: none; /* Remove underline */
-    margin: 0 10px; /* Spacing between links */
     padding: 8px 12px; /* Add some padding */
     border: 1px solid transparent; /* Transparent border for preventing shifting */
-    display: inline-block; /* Ensures consistent space for border */
-    position: relative; /* For pseudo-element positioning */
+    display: inline-block; /* Consistent space for border */
+    position: relative; /* For separator positioning */
 }
 
 /* Separator line between links */
 .staff-header-content a:not(:last-child)::after {
     content: "";
     position: absolute;
-    right: -13px; /* Adjusts to center the line between links */
+    right: -12px; /* Adjust the position slightly to center the separator */
     top: 5px;
     bottom: 5px;
     width: 1px; /* Line thickness */
     background-color: #fff; /* White line color */
-    opacity: 0.6; /* Slight transparency for subtlety */
+    opacity: 0.6; /* Slight transparency */
 }
+
 
 /* Hover effect for links in staff header */
 .staff-header-content a:hover {
