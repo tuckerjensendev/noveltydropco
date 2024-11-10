@@ -15,6 +15,24 @@ function hideSpinner() {
 document.addEventListener("DOMContentLoaded", () => {
     showSpinner();
     window.addEventListener("load", hideSpinner);
+
+    // Debug: Confirm event listener attachment for show-register
+    const showRegisterLink = document.getElementById('show-register');
+    if (showRegisterLink) {
+        console.log("show-register element found, adding event listener.");
+        showRegisterLink.addEventListener('click', (event) => {
+            event.preventDefault();
+            showRegisterForm();
+        });
+    } else {
+        console.warn("show-register element not found!");
+    }
+
+    const showLoginLink = document.getElementById('show-login');
+    showLoginLink?.addEventListener('click', (event) => {
+        event.preventDefault();
+        showLoginForm();
+    });
 });
 
 // Function to display flash messages
@@ -127,88 +145,47 @@ document.getElementById('dropdown')?.addEventListener('click', (event) => {
 // Function to show the registration form and keep it open when clicked outside
 function showRegisterForm() {
     const dropdown = document.getElementById('dropdown');
-    const hamburgerMenuIcon = document.querySelector('.hamburger-menu-icon');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const overlay = document.getElementById('overlay');
     const signInButton = document.querySelector('.sign-in-button');
     
-    isRegisterFormOpen = true; // Track register form status
-    if (dropdown) {
-        dropdown.classList.add('show');
-        document.getElementById('login-form').classList.add('hidden');
-        document.getElementById('register-form').classList.remove('hidden');
-        dropdown.classList.add('register-mode');
-        document.getElementById('overlay').classList.remove('hidden');
-        signInButton?.classList.add('disabled'); // Disable "Hello, Sign in"
-
-        document.querySelector('.profile').classList.add('active-border');
-        if (hamburgerMenuIcon) {
-            hamburgerMenuIcon.classList.add('active');
-        }
+    // Debugging statements to verify element presence
+    if (!dropdown || !loginForm || !registerForm || !overlay) {
+        console.error("One or more elements missing in showRegisterForm:");
+        console.log("dropdown:", dropdown, "loginForm:", loginForm, "registerForm:", registerForm, "overlay:", overlay);
+        return;
     }
+    
+    isRegisterFormOpen = true; // Track register form status
+    dropdown.classList.add('show');
+    loginForm.classList.add('hidden');
+    registerForm.classList.remove('hidden');
+    dropdown.classList.add('register-mode');
+    overlay.classList.remove('hidden');
+    signInButton?.classList.add('disabled');
+    document.querySelector('.profile').classList.add('active-border');
 }
 
 // Function to show the login form
 function showLoginForm() {
     const dropdown = document.getElementById('dropdown');
-    const hamburgerMenuIcon = document.querySelector('.hamburger-menu-icon');
+    const loginForm = document.getElementById('login-form');
+    const registerForm = document.getElementById('register-form');
+    const overlay = document.getElementById('overlay');
     const signInButton = document.querySelector('.sign-in-button');
     
     isRegisterFormOpen = false; // Reset register form status
-    if (dropdown) {
-        document.getElementById('register-form').classList.add('hidden');
-        document.getElementById('login-form').classList.remove('hidden');
+    if (dropdown && loginForm && registerForm && overlay) {
+        registerForm.classList.add('hidden');
+        loginForm.classList.remove('hidden');
         dropdown.classList.remove('register-mode');
-        document.getElementById('overlay').classList.add('hidden');
-        signInButton?.classList.remove('disabled'); // Enable "Hello, Sign in" again
-
+        overlay.classList.add('hidden');
+        signInButton?.classList.remove('disabled');
         setTimeout(() => {
             dropdown.classList.add('show');
             document.querySelector('.profile').classList.add('active-border');
-            if (hamburgerMenuIcon) {
-                hamburgerMenuIcon.classList.add('active');
-            }
         }, 10);
-    }
-}
-
-// Async function for user login
-async function login(event) {
-    event.preventDefault();
-    showSpinner(); // Show spinner before starting the request
-
-    const email = document.getElementById('email').value;
-    const password = document.getElementById('password').value;
-    const csrfToken = document.getElementById('profile').getAttribute('data-csrf');
-
-    try {
-        const response = await fetch('/login', {
-            method: 'POST',
-            headers: { 
-                'Content-Type': 'application/json',
-                'X-CSRF-Token': csrfToken
-            },
-            body: JSON.stringify({ email, password })
-        });
-
-        if (response.ok) {
-            const user = await response.json();
-            if (user.role === 'client') {
-                window.location.href = '/';
-            } else if (user.superadmin) {
-                window.location.href = '/admin/superadmin-dashboard';
-            } else {
-                window.location.href = '/admin/staff-dashboard';
-            }
-        } else {
-            // Extract error message from response or use a default message
-            const error = await response.json();
-            const errorMessage = error.error || 'Login failed. Please check your email and password.';
-            showFlashMessage(errorMessage, "error");
-        }
-    } catch (error) {
-        console.error('Error during login:', error);
-        showFlashMessage('An error occurred. Please try again later.', "error");
-    } finally {
-        hideSpinner(); // Hide spinner after the request completes
     }
 }
 
@@ -334,54 +311,6 @@ document.getElementById('show-login')?.addEventListener('click', (event) => {
     event.preventDefault();
     showLoginForm();
 });
-
-
-// Async function for staff registration
-async function createStaff(event) {
-  event.preventDefault(); // Prevent default form submission
-  showSpinner(); // Show spinner at the start
-
-  // Collect all form field values
-  const firstName = document.getElementById('first_name').value;
-  const lastName = document.getElementById('last_name').value;
-  const personalEmail = document.getElementById('personal_email').value;
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
-  const role = document.getElementById('role').value;
-  const csrfToken = document.querySelector('input[name="_csrf"]').value;
-
-  try {
-      const response = await fetch('/admin/create-staff', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify({
-              first_name: firstName,
-              last_name: lastName,
-              personal_email: personalEmail,
-              email: email,
-              password: password,
-              role: role
-          })
-      });
-
-      if (response.ok && response.headers.get("content-type")?.includes("application/json")) {
-          const result = await response.json();
-          showFlashMessage(result.message, "success");
-          document.getElementById('createStaffForm').reset();
-      } else {
-          const error = await response.json();
-          showFlashMessage(error.error || "Unexpected server response.", "error");
-      }
-  } catch (error) {
-      console.error('Error during staff creation:', error);
-      showFlashMessage('An error occurred. Please try again later.', "error");
-  } finally {
-      hideSpinner(); // Ensure the spinner is hidden in all cases
-  }
-}
 
 
 // enables / disables save button in manage-access.ejs based off checkbox activity
