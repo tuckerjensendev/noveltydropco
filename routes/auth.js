@@ -89,7 +89,8 @@ router.post('/login', csrfProtection, (req, res, next) => {
       return res.status(500).json({ error: 'Internal Server Error' });
     }
     if (!user) {
-      return res.status(401).json({ error: 'Login failed' });
+      // Use the detailed error message from `info` or a default
+      return res.status(401).json({ error: info.message || 'Login failed' });
     }
 
     req.logIn(user, (err) => {
@@ -110,12 +111,12 @@ router.post('/login', csrfProtection, (req, res, next) => {
 passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, (email, password, done) => {
   db.get('SELECT * FROM users WHERE (personal_email = ? OR work_email = ?)', [email, email], (err, user) => {
     if (err) return done(err);
-    if (!user) return done(null, false, { message: 'User not found' });
+    if (!user) return done(null, false, { message: 'User not found' }); // Specific message for non-existent user
 
     bcrypt.compare(password, user.password, (err, isMatch) => {
       if (err) return done(err);
       if (isMatch) return done(null, user);
-      return done(null, false, { message: 'Incorrect password' });
+      return done(null, false, { message: 'Incorrect password' }); // Specific message for incorrect password
     });
   });
 }));
@@ -141,6 +142,5 @@ passport.deserializeUser((id, done) => {
     done(null, user);
   });
 });
-
 
 module.exports = router;
