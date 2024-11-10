@@ -29,11 +29,20 @@ const httpsOptions = {
 };
 
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+
+// Conditional static folder setup based on environment
+app.use(express.static(isProduction ? 'dist' : 'public'));
+
+// Serve additional /public/scripts/main.js and /public/styles.css in development mode only
+if (!isProduction) {
+  app.use('/scripts', express.static('public/scripts'));
+  app.use('/styles', express.static('public'));
+}
 
 // Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public'));
 app.use(cookieParser());
 app.set('view engine', 'ejs');
 
@@ -58,11 +67,10 @@ app.use(session({
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production', // Only secure in production
+    secure: isProduction, // Only secure in production
     sameSite: 'strict'
   }
 }));
-
 
 // Initialize Passport
 app.use(passport.initialize());
@@ -86,6 +94,7 @@ app.use((req, res, next) => {
 app.use((req, res, next) => {
   res.locals.user = req.user;
   res.locals.csrfToken = req.csrfToken();
+  res.locals.isProduction = isProduction; // Make production flag available to views
   next();
 });
 
@@ -95,7 +104,7 @@ app.get('/', async (req, res) => {
   const cachedData = await getCache(cacheKey);
 
   if (cachedData) {
-    return res.render('home', { products: cachedData }); // Use cached data if available
+    return res.render('home', { products: cachedData });
   }
 
   // Otherwise, fetch fresh data, cache it, and return
@@ -105,7 +114,7 @@ app.get('/', async (req, res) => {
     { name: 'Product 3', description: 'Description for Product 3' }
   ];
 
-  await setCache(cacheKey, products); // Cache products for future requests
+  await setCache(cacheKey, products);
   res.render('home', { products });
 });
 
@@ -152,4 +161,3 @@ app.use((req, res) => {
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
   console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
 });
-

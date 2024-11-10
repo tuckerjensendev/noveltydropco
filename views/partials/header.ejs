@@ -1,5 +1,15 @@
 <!-- views/partials/header.ejs -->
 
+<% if (isProduction) { %>
+  <!-- Production: Load Webpack Bundles -->
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/bundle.js"></script>
+<% } else { %>
+  <!-- Development: Load Unbundled Files -->
+  <link rel="stylesheet" href="/styles/styles.css">
+  <script src="/scripts/main.js"></script>
+<% } %>
+
 <!-- Include Staff Header only for staff roles -->
 <% if (['superadmin', 'staff1', 'staff2', 'manager1', 'manager2'].includes(user?.role)) { %>
   <div class="staff-header-wrapper">
@@ -14,20 +24,15 @@
     <% if (!user) { %>
       <div class="sign-in-button" title="Sign in">Hello, Sign in</div>
     <% } else { %>
-      <!-- Static welcome message -->
       <p class="welcome-message">Welcome, <%= user.first_name %>!</p>
-      <!-- Clickable profile picture only -->
       <img src="/images/profile-icon.png" class="profile-pic" alt="Profile" id="profile-picture" />
     <% } %>
-
-    <!-- Dropdown content for login/register/logout as needed -->
     <div id="dropdown" class="dropdown-content">
       <% if (!user) { %>
-        <!-- Login Form -->
         <div id="login-form" class="form-content">
           <h2>Login</h2>
           <form action="/login" method="POST" id="loginForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <!-- CSRF Token -->
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="text" placeholder="Email" id="email" name="email" required>
             <input type="password" placeholder="Password" id="password" name="password" required>
             <button type="submit" id="login-button">Login</button>
@@ -35,11 +40,10 @@
           <p><a href="#" class="create-account" id="show-register">Create account</a></p>
         </div>
 
-        <!-- Registration Form -->
         <div id="register-form" class="form-content hidden">
           <h2>Create Account</h2>
           <form action="/customer-register" method="POST" id="registerForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <!-- CSRF Token -->
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <input type="text" placeholder="First Name" id="first_name" name="first_name" required>
             <input type="text" placeholder="Last Name" id="last_name" name="last_name" required>
             <input type="email" placeholder="Email" id="register_email" name="email" required>
@@ -50,10 +54,9 @@
           <p><div class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></div></p>
         </div>
       <% } else { %>
-        <!-- User Menu (Logout) -->
         <div id="user-menu" class="form-content">
           <form action="/logout" method="POST">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>"> <!-- CSRF Token -->
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
             <button type="submit">Logout</button>
           </form>
         </div>
@@ -62,13 +65,7 @@
   </div>
 </header>
 
-<!-- Flash Message Container (ensures it is available on all pages) -->
 <div id="flashMessage" class="flash-message hidden"></div>
-
-<!-- Scripts -->
-<script src="/public/scripts/main.js"></script> <!-- Then load main.js -->
-
-<!-- Loading Spinner -->
 <div class="loading-spinner" id="loadingSpinner">
   <div class="spinner"></div>
 </div>

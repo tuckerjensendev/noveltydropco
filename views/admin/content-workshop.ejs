@@ -4,25 +4,40 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Content Workshop</title>
-    <link rel="stylesheet" href="/styles.css">
 </head>
 <body>
+    <!-- Header (if applicable) -->
     <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
-    <main>
-        <h1>Content Workshop</h1>
-        <form id="contentForm" action="/admin/update-content" method="POST">
-            <!-- CSRF Protection -->
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+    <!-- Main Container to Hold Sidebar and Content Area -->
+    <div class="content-workshop-container">
+        <!-- Side Panel with Page Names -->
+        <aside class="side-panel">
+            <h2>Pages</h2>
+            <ul>
+                <li><a href="#home" class="active">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#services">Services</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </aside>
 
-            <!-- Example content field -->
-            <label for="homePageContent">Homepage Content:</label>
-            <textarea name="homePageContent" id="homePageContent" rows="8" required></textarea>
+        <!-- Main Content Area for Editing -->
+        <section class="main-content">
+            <h1>Content Workshop</h1>
+            <form id="contentForm" action="/admin/update-content" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-            <!-- Submit button -->
-            <button type="submit">Update Content</button>
-        </form>
-    </main>
+                <!-- Placeholder content to enable scroll testing -->
+                <% for (let i = 0; i < 10; i++) { %>
+                    <label for="content<%= i %>">Content Section <%= i + 1 %>:</label>
+                    <textarea name="content<%= i %>" id="content<%= i %>" rows="8" required></textarea>
+                <% } %>
+
+                <button type="submit">Update Content</button>
+            </form>
+        </section>
+    </div>
 
     <script src="/scripts/main.js"></script>
 </body>
