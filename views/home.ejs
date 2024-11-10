@@ -10,12 +10,6 @@
   <!-- Include the Header Partial -->
   <%- include('partials/header', { user: user }) %>
 
-  <% if (typeof flashMessage !== 'undefined') { %>
-    <div class="flash-message <%= flashType %>">
-      <%= flashMessage %>
-    </div>
-  <% } %>
-
   <div class="hero">
     <h1>Welcome to Novelty Drop Co.!</h1>
     <p>Your destination for unique finds</p>

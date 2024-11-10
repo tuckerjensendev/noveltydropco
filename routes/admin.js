@@ -8,6 +8,20 @@ const { body, validationResult } = require('express-validator');
 const csurf = require('csurf');
 const csrfProtection = csurf({ cookie: true });
 
+// Assuming role levels are ordered from lowest to highest authority.
+const roleHierarchy = {
+  'staff1': 1,
+  'staff2': 2,
+  'manager1': 3,
+  'manager2': 4,
+  'superadmin': 5
+};
+
+// Helper function to get the hierarchy level of a role
+function getRoleLevel(role) {
+  return roleHierarchy[role] || 0; // Return 0 if role is not found (fallback for undefined roles)
+}
+
 // Helper function for loading permissions (used in manage-access route)
 async function loadPermissions(req, res) {
   try {
@@ -187,6 +201,7 @@ router.get('/manage-access', ensurePermission('can_manage_access_page'), csrfPro
 // POST route to handle permissions update on /manage-access page
 router.post('/manage-access', csrfProtection, async (req, res) => {
   const permissionsData = req.body.permissions || {};
+  const userRoleLevel = getRoleLevel(req.user.role); // Get the role level of the current user
   console.log("Permissions data received:", permissionsData);
 
   try {
@@ -217,10 +232,10 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
     const deletionQueue = [];
     const additionQueue = [];
 
-    // ** Step 2: Detect deletions ** - Only remove permissions explicitly unchecked in permissionsData
-    // AND exclude the logged-in user's role from deletion processing.
+    // ** Step 2: Detect deletions **
     Object.entries(currentPermissionsMap).forEach(([role, permissionIds]) => {
-      if (role === req.user.role) return; // Skip deletion for the logged-in user role
+      const roleLevel = getRoleLevel(role);
+      if (roleLevel >= userRoleLevel) return; // Skip deletions for roles at or above the user's level
 
       permissionIds.forEach(permissionId => {
         const permissionKey = `${role}_${permissionId}`;
@@ -232,10 +247,13 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
       });
     });
 
-    // ** Step 3: Detect additions ** - Only add permissions that are explicitly checked in permissionsData
+    // ** Step 3: Detect additions **
     Object.entries(permissionsData).forEach(([roleWithId, isChecked]) => {
       if (isChecked === 'on') {
         const [role, permissionId] = roleWithId.split('_');
+        const roleLevel = getRoleLevel(role);
+        if (roleLevel >= userRoleLevel) return; // Skip additions for roles at or above the user's level
+
         if (!currentPermissionsMap[role] || !currentPermissionsMap[role].has(permissionId)) {
           // Queue for addition if checked and not in current permissions
           additionQueue.push({ role, permissionId });
@@ -294,4 +312,6 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
   }
 });
 
+
 module.exports = router;
+

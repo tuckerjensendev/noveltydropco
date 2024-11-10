@@ -7,10 +7,12 @@
 <body>
   <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
-  <div id="flashMessage" class="flash-message hidden"></div>
+  <% if (typeof flashMessage !== 'undefined') { %>
+    <div class="flash-message <%= flashType %>">
+      <%= flashMessage %>
+    </div>
+  <% } %>
   
-  
-
   <main>
     <h1>Create New Staff Member</h1>
     <form id="createStaffForm" action="/admin/create-staff" method="POST">

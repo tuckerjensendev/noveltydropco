@@ -66,8 +66,8 @@
 </header>
 
 <% if (typeof flashMessage !== 'undefined') { %>
-  <div class="flash-message <%= flashType %>">
-    <%= flashMessage %>
+  <div id="flashMessage" class="flash-message <%= flashType %>">
+      <%= flashMessage %>
   </div>
 <% } %>
 

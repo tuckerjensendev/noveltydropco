@@ -35,18 +35,18 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-// Function to display flash messages
-function showFlashMessage(message, type = "success", duration = 10000) {
+document.addEventListener("DOMContentLoaded", () => {
     const flashMessage = document.getElementById("flashMessage");
-    flashMessage.textContent = message;
-    flashMessage.className = `flash-message ${type}`; // Apply type-specific styling
-    flashMessage.classList.remove("hidden");
+    if (flashMessage) {
+        // Hide the flash message after 10 seconds
+        setTimeout(() => {
+            flashMessage.style.display = "none"; // Instantly hides the message
+            flashMessage.remove(); // Removes from the DOM for performance
+        }, 10000); // Wait 10 seconds before hiding
+    }
+});
 
-    // Hide the flash message after the specified duration
-    setTimeout(() => {
-        flashMessage.classList.add("hidden");
-    }, duration);
-}
+
 
 // Initialize active link highlighting based on current URL
 document.addEventListener('DOMContentLoaded', () => {
