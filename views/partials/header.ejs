@@ -65,7 +65,12 @@
   </div>
 </header>
 
-<div id="flashMessage" class="flash-message hidden"></div>
+<% if (typeof flashMessage !== 'undefined') { %>
+  <div class="flash-message <%= flashType %>">
+    <%= flashMessage %>
+  </div>
+<% } %>
+
 <div class="loading-spinner" id="loadingSpinner">
   <div class="spinner"></div>
 </div>

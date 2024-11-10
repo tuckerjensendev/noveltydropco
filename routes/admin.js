@@ -102,7 +102,7 @@ router.post('/update-content', ensurePermission('can_edit_content'), csrfProtect
   }
 });
 
-// POST route to handle staff creation
+// POST route to handle staff creation with EJS rendering on errors
 router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection, [
   body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
   body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
@@ -112,22 +112,38 @@ router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection
   body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected.')
 ], async (req, res) => {
   const errors = validationResult(req);
-  const { first_name, last_name, personal_email, email, password, role } = req.body;
 
   if (!errors.isEmpty()) {
     console.log("Validation errors during staff creation:", errors.array());
-    return res.status(400).json({ error: errors.array()[0].msg });
+    // Render the create-staff page with flash message on validation errors
+    return res.status(400).render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: errors.array()[0].msg, // Error message passed to the template
+      flashType: 'error'
+    });
   }
 
+  const { first_name, last_name, personal_email, email, password, role } = req.body;
   try {
     db.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
       if (err) {
         console.error("Database error during email check:", err.message);
-        return res.status(500).json({ error: 'Database error during email check' });
+        return res.status(500).render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Database error during email check',
+          flashType: 'error'
+        });
       }
       if (row) {
-        logUnauthorizedAccess(`[${new Date().toLocaleString()}] Email already registered: ${email}`);
-        return res.status(400).json({ error: 'Email already registered' });
+        console.warn("Email already registered:", email);
+        return res.status(400).render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Email already registered',
+          flashType: 'error'
+        });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -137,17 +153,31 @@ router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection
         (err) => {
           if (err) {
             console.error("Error creating staff in database:", err.message);
-            return res.status(500).json({ error: 'Error creating staff in database' });
+            return res.status(500).render('admin/create-staff', {
+              user: req.user,
+              csrfToken: req.csrfToken(),
+              flashMessage: 'Error creating staff in database',
+              flashType: 'error'
+            });
           }
-          res.status(200).json({ message: 'Staff account created successfully' });
+          // Redirect to staff list or reload page on success
+          res.redirect('/admin/staff-dashboard');
         }
       );
     });
+
   } catch (error) {
     console.error("Unexpected error during staff creation:", error.message);
-    res.status(500).json({ error: 'Unexpected server error' });
+    res.status(500).render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: 'Unexpected server error',
+      flashType: 'error'
+    });
   }
 });
+
+
 
 // Manage Access Page (requires 'can_manage_access_page' permission)
 router.get('/manage-access', ensurePermission('can_manage_access_page'), csrfProtection, (req, res) => {

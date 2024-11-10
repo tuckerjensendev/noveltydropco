@@ -7,9 +7,13 @@
 <body>
   <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
+  <div id="flashMessage" class="flash-message hidden"></div>
+  
+  
+
   <main>
     <h1>Create New Staff Member</h1>
-    <form id="createStaffForm" method="POST">
+    <form id="createStaffForm" action="/admin/create-staff" method="POST">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       
       <label for="first_name">First Name:</label>

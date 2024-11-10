@@ -36,7 +36,7 @@ router.get('/login', csrfProtection, (req, res) => {
   res.render('home', { products, csrfToken: req.csrfToken() });
 });
 
-// Client Registration - Open to any user
+// Client Registration Route
 router.post('/customer-register', csrfProtection, [
   body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
   body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
@@ -81,31 +81,53 @@ router.post('/customer-register', csrfProtection, [
   }
 });
 
-// Login Route with CSRF
+
+// Login Route with EJS rendering on errors
 router.post('/login', csrfProtection, (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
+    const products = [
+      { name: 'Product 1', description: 'Description for Product 1' },
+      { name: 'Product 2', description: 'Description for Product 2' },
+      { name: 'Product 3', description: 'Description for Product 3' }
+    ];
+
     if (err) {
       console.error("Passport authentication error:", err);
-      return res.status(500).json({ error: 'Internal Server Error' });
+      return res.status(500).render('home', {
+        flashMessage: 'Internal Server Error',
+        flashType: 'error',
+        products,
+        csrfToken: req.csrfToken()
+      });
     }
     if (!user) {
-      // Use the detailed error message from `info` or a default
-      return res.status(401).json({ error: info.message || 'Login failed' });
+      return res.status(401).render('home', {
+        flashMessage: info.message || 'Login failed. Please check your email and password.',
+        flashType: 'error',
+        products,
+        csrfToken: req.csrfToken()
+      });
     }
 
     req.logIn(user, (err) => {
       if (err) {
         console.error("Error during login:", err);
-        return res.status(500).json({ error: 'Internal Server Error' });
+        return res.status(500).render('home', {
+          flashMessage: 'Internal Server Error',
+          flashType: 'error',
+          products,
+          csrfToken: req.csrfToken()
+        });
       }
-
-      // Set role_id for session consistency
-      req.session.role_id = user.role_id;
-
-      res.json({ role: user.role, superadmin: user.superadmin });
-    });
+      // Redirect based on user role
+      const redirectUrl = user.role === 'client' ? '/' :
+                          user.role === 'superadmin' ? '/admin/superadmin-dashboard' :
+                          '/admin/staff-dashboard';
+      return res.redirect(redirectUrl);
+    });    
   })(req, res, next);
 });
+
 
 // Local Strategy for Authentication
 passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, (email, password, done) => {
@@ -141,6 +163,78 @@ passport.deserializeUser((id, done) => {
     user.id = id; // Explicitly ensure `user.id` is always set if the user is found
     done(null, user);
   });
+});
+
+// Staff Registration Route with EJS rendering on errors
+router.post('/admin/create-staff', csrfProtection, [
+  body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
+  body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
+  body('personal_email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Invalid personal email format.'),
+  body('email').isEmail().normalizeEmail().withMessage('Invalid work email format.'),
+  body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must contain at least 8 characters, including one uppercase letter and one number.'),
+  body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected.')
+], async (req, res) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    console.log("Validation errors during staff creation:", errors.array());
+    return res.status(400).render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: errors.array()[0].msg,
+      flashType: 'error'
+    });
+  }
+
+  const { first_name, last_name, personal_email, email, password, role } = req.body;
+  try {
+    db.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
+      if (err) {
+        console.error("Database error during email check:", err.message);
+        return res.status(500).render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Database error during email check',
+          flashType: 'error'
+        });
+      }
+      if (row) {
+        console.warn("Email already registered:", email);
+        return res.status(400).render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Email already registered',
+          flashType: 'error'
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      db.run(
+        `INSERT INTO users (first_name, last_name, personal_email, work_email, password, role, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+        [first_name, last_name, personal_email || null, email, hashedPassword, role],
+        (err) => {
+          if (err) {
+            console.error("Error creating staff in database:", err.message);
+            return res.status(500).render('admin/create-staff', {
+              user: req.user,
+              csrfToken: req.csrfToken(),
+              flashMessage: 'Error creating staff in database',
+              flashType: 'error'
+            });
+          }
+          res.redirect('/admin/staff-dashboard');
+        }
+      );
+    });
+  } catch (error) {
+    console.error("Unexpected error during staff creation:", error.message);
+    res.status(500).render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: 'Unexpected server error',
+      flashType: 'error'
+    });
+  }
 });
 
 module.exports = router;

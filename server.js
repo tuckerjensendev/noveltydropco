@@ -6,12 +6,12 @@ const express = require('express');
 const app = express();
 const passport = require('passport');
 const session = require('express-session');
-const db = require('./models/User');
 const helmet = require('helmet');
 const csurf = require('csurf');
 const cookieParser = require('cookie-parser');
 const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddleware');
-const { setCache, getCache } = require('./cache'); // Import caching functions
+const { setCache, getCache } = require('./cache');
+const flash = require('connect-flash');
 
 // Middleware to block all prefetch requests globally
 app.use((req, res, next) => {
@@ -90,11 +90,15 @@ app.use((req, res, next) => {
   next();
 });
 
-// Make `user` and `csrfToken` available globally in views
+// Set user, csrfToken, and showStaffHeader in views
 app.use((req, res, next) => {
   res.locals.user = req.user;
   res.locals.csrfToken = req.csrfToken();
-  res.locals.isProduction = isProduction; // Make production flag available to views
+  res.locals.isProduction = isProduction;
+  
+  // Check role and set showStaffHeader if user is staff
+  res.locals.showStaffHeader = req.user && req.user.role === 'staff';
+  
   next();
 });
 
@@ -125,24 +129,6 @@ app.get('/admin/superadmin-dashboard', enforceRoleAccess, (req, res) => {
 
 app.get('/admin/staff-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/staff-dashboard');
-});
-
-// Logout route to terminate the session and redirect to home page
-app.post('/logout', (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error('Error during logout:', err);
-      return res.status(500).json({ error: 'Error logging out. Please try again later.' });
-    }
-    req.session.destroy((err) => {
-      if (err) {
-        console.error('Session destruction error:', err);
-        return res.status(500).json({ error: 'Error ending session.' });
-      }
-      res.clearCookie('connect.sid');
-      res.redirect('/');
-    });
-  });
 });
 
 // Import and use routes
