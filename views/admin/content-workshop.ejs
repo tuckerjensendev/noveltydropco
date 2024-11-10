@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Workshop</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
+
+    <main>
+        <h1>Content Workshop</h1>
+        <form id="contentForm" action="/admin/update-content" method="POST">
+            <!-- CSRF Protection -->
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+
+            <!-- Example content field -->
+            <label for="homePageContent">Homepage Content:</label>
+            <textarea name="homePageContent" id="homePageContent" rows="8" required></textarea>
+
+            <!-- Submit button -->
+            <button type="submit">Update Content</button>
+        </form>
+    </main>
+
+    <script src="/scripts/main.js"></script>
+</body>
+</html>

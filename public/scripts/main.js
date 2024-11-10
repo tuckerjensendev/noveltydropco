@@ -12,8 +12,9 @@ document.addEventListener('DOMContentLoaded', () => {
     '/admin/superadmin-dashboard': 'superAdminDashboardLink',
     '/admin/staff-dashboard': 'dashboardLink',
     '/admin/create-staff': 'createStaffLink',
-    '/admin/manage-access': 'manageAccessLink'
-  };
+    '/admin/manage-access': 'manageAccessLink',
+    '/admin/content-workshop': 'contentWorkshopLink'
+};
 
   // Set active class on the corresponding link
   const activeLinkId = linkMap[currentPath];

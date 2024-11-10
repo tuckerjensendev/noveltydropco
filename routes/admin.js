@@ -61,12 +61,45 @@ router.get('/staff-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/staff-dashboard', { user: req.user });
 });
 
-// Create Staff User Page (requires 'can_create_user' permission)
+// Staff User Page (requires 'can_create_user' permission)
 router.get('/create-staff', ensurePermission('can_create_user'), csrfProtection, (req, res) => {
   res.render('admin/create-staff', {
     user: req.user,
     csrfToken: req.csrfToken()
   });
+});
+
+// Content Workshop Route (requires 'can_edit_content' permission)
+router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtection, (req, res) => {
+  res.render('admin/content-workshop', {
+      user: req.user,
+      csrfToken: req.csrfToken()
+  });
+});
+
+// POST route to handle content updates in Content Workshop**
+router.post('/update-content', ensurePermission('can_edit_content'), csrfProtection, async (req, res) => {
+  const { homePageContent } = req.body;
+
+  try {
+    // Assume content table has 'id' and 'homepage' columns
+    await new Promise((resolve, reject) => {
+      db.run(
+        `UPDATE content_table SET homepage = ? WHERE id = 1`, 
+        [homePageContent],
+        (err) => {
+          if (err) return reject(err);
+          resolve();
+        }
+      );
+    });
+
+    console.log("Content updated successfully");
+    res.redirect('/admin/content-workshop');
+  } catch (error) {
+    console.error("Error updating content:", error);
+    res.status(500).send("Error updating content");
+  }
 });
 
 // POST route to handle staff creation
