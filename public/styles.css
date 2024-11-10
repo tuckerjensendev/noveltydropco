@@ -67,7 +67,6 @@ body {
     opacity: 0.6; /* Slight transparency */
 }
 
-
 /* Hover effect for links in staff header */
 .staff-header-content a:hover {
     border-color: #fff; /* White border on hover */
@@ -79,7 +78,6 @@ body {
     background-color: rgba(255, 255, 255, 0.1); /* Slight background to indicate active state */
     color: #fff; /* Keep text white */
 }
-
 
 header {
     background-color: #333;
@@ -218,10 +216,11 @@ header {
     color: #333;
 }
 
+/* Add margin between form inputs and button */
 .form-content input {
     width: 100%;
     padding: 10px;
-    margin: 0;
+    margin: 5px 0; /* Add vertical space between inputs and button */
     border: 1px solid #ddd;
     border-radius: 4px;
 }
@@ -229,12 +228,19 @@ header {
 .form-content button {
     width: 50%;
     padding: 10px;
+    margin-top: 10px; /* Space between the last input and the button */
     background-color: #333;
     color: #fff;
     border: none;
     border-radius: 4px;
     cursor: pointer;
     text-align: center;
+}
+
+/* Center-align the Register button specifically in the register form */
+#register-form button {
+    margin: 25px auto 0; /* Centers the button horizontally */
+    display: block; /* Ensures it takes up the available space for centering */
 }
 
 .form-content button:hover {

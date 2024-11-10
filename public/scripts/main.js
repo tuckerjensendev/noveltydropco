@@ -7,15 +7,14 @@ let isRegisterFormOpen = false;
 document.addEventListener('DOMContentLoaded', () => {
   const currentPath = window.location.pathname;
 
-// Map routes to their corresponding link IDs
-const linkMap = {
-  '/admin/superadmin-dashboard': 'superAdminDashboardLink',
-  '/admin/staff-dashboard': 'dashboardLink',  // Mapping updated to reflect "Dashboard"
-  '/admin/create-staff': 'createStaffLink',
-  '/admin/manage-access': 'manageAccessLink',
-  '/admin/content-workshop': 'contentWorkshopLink'
-};
-
+  // Map routes to their corresponding link IDs
+  const linkMap = {
+    '/admin/superadmin-dashboard': 'superAdminDashboardLink',
+    '/admin/staff-dashboard': 'dashboardLink',  // Mapping updated to reflect "Dashboard"
+    '/admin/create-staff': 'createStaffLink',
+    '/admin/manage-access': 'manageAccessLink',
+    '/admin/content-workshop': 'contentWorkshopLink'
+  };
 
   // Set active class on the corresponding link
   const activeLinkId = linkMap[currentPath];
@@ -27,7 +26,6 @@ const linkMap = {
   Object.values(linkMap).forEach(id => {
     const linkElement = document.getElementById(id);
     linkElement?.addEventListener('click', () => {
-      // Remove active class from all links before adding it to the clicked one
       document.querySelectorAll('.staff-header-content a').forEach(link => link.classList.remove('active'));
       linkElement.classList.add('active');
     });
@@ -139,7 +137,9 @@ function showLoginForm() {
 }
 
 // Async function for user login
-async function login() {
+async function login(event) {
+  event.preventDefault();
+
   const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const csrfToken = document.getElementById('profile').getAttribute('data-csrf');
@@ -171,6 +171,26 @@ async function login() {
     console.error('Error during login:', error);
     alert('An error occurred. Please try again later.');
   }
+}
+
+// Trigger login on both Enter key press and button click
+const loginForm = document.getElementById('login-form');
+const loginButton = document.getElementById('login-button');
+
+// Ensure form submits on Enter key
+if (loginForm) {
+  loginForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    login(event);  // Trigger login on form submit (Enter key)
+  });
+}
+
+// Ensure login button works as expected
+if (loginButton) {
+  loginButton.addEventListener('click', (event) => {
+    event.preventDefault();
+    login(event);  // Trigger login on button click
+  });
 }
 
 // Async function for user registration
@@ -223,7 +243,6 @@ async function createStaff(event) {
   const role = document.getElementById('role').value;
   const csrfToken = document.querySelector('input[name="_csrf"]').value;
 
-  // Send request to create staff
   try {
     const response = await fetch('/admin/create-staff', {
       method: 'POST',
@@ -234,7 +253,7 @@ async function createStaff(event) {
       body: JSON.stringify({
         first_name: firstName,
         last_name: lastName,
-        personal_email: personalEmail, // Include personal_email
+        personal_email: personalEmail,
         email: email,
         password: password,
         role: role
@@ -299,12 +318,10 @@ document.addEventListener('DOMContentLoaded', () => {
     logState();
   }
 
-  // Attach the event listener to each checkbox
   checkboxes.forEach(checkbox => {
     checkbox.addEventListener('change', checkForChanges);
   });
 
-  // Observe mutations on checkboxes for any unexpected DOM changes
   const observer = new MutationObserver(mutations => {
     mutations.forEach(mutation => {
       if (mutation.type === 'attributes' && mutation.attributeName === 'checked') {
@@ -318,6 +335,5 @@ document.addEventListener('DOMContentLoaded', () => {
     observer.observe(checkbox, { attributes: true });
   });
 
-  // Initial check to ensure button is correctly disabled
   checkForChanges();
 });
