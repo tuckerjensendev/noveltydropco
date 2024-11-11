@@ -36,15 +36,84 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("DOMContentLoaded", () => {
-    const flashMessage = document.getElementById("flashMessage");
+    // Select any element with the class 'flash-message'
+    const flashMessage = document.querySelector(".flash-message");
+
     if (flashMessage) {
-        // Hide the flash message after 10 seconds
+        console.log("Flash message found:", flashMessage.textContent); // Debugging log
+
+        // Set a default duration, and override with `flashDuration` if available
+        let duration = 10000; // Default to 10 seconds
+        if (flashMessage.dataset.duration) {
+            duration = parseInt(flashMessage.dataset.duration, 10);
+        }
+
+        console.log(`Hiding flash message in ${duration / 1000} seconds`);
+
+        // Set timeout to hide the flash message after the specified duration
         setTimeout(() => {
-            flashMessage.style.display = "none"; // Instantly hides the message
-            flashMessage.remove(); // Removes from the DOM for performance
-        }, 10000); // Wait 10 seconds before hiding
+            flashMessage.style.display = "none";
+            console.log("Flash message hidden after timeout."); // Debugging log
+        }, duration);
+    } else {
+        console.log("No flash message found."); // Debugging log
     }
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+    // Select form elements and links
+    const loginForm = document.getElementById("login-form");
+    const registerForm = document.getElementById("register-form");
+    const showRegisterLink = document.getElementById("show-register");
+    const showLoginLink = document.getElementById("show-login");
+
+    // Restore form visibility based on session storage
+    if (sessionStorage.getItem("showLoginForm") === "true") {
+        loginForm.classList.remove("hidden");
+        registerForm.classList.add("hidden");
+        sessionStorage.removeItem("showLoginForm");
+    } else if (sessionStorage.getItem("showRegisterForm") === "true") {
+        registerForm.classList.remove("hidden");
+        loginForm.classList.add("hidden");
+        sessionStorage.removeItem("showRegisterForm");
+    }
+
+    // Save visibility state and toggle forms
+    showRegisterLink?.addEventListener("click", (event) => {
+        event.preventDefault();
+        sessionStorage.setItem("showRegisterForm", "true");
+        registerForm.classList.remove("hidden");
+        loginForm.classList.add("hidden");
+    });
+
+    showLoginLink?.addEventListener("click", (event) => {
+        event.preventDefault();
+        sessionStorage.setItem("showLoginForm", "true");
+        loginForm.classList.remove("hidden");
+        registerForm.classList.add("hidden");
+    });
+
+    // Retain input data in session storage
+    document.getElementById("loginForm")?.addEventListener("submit", () => {
+        sessionStorage.setItem("loginEmail", document.getElementById("email").value);
+    });
+
+    document.getElementById("registerForm")?.addEventListener("submit", () => {
+        sessionStorage.setItem("registerFirstName", document.getElementById("first_name").value);
+        sessionStorage.setItem("registerLastName", document.getElementById("last_name").value);
+        sessionStorage.setItem("registerEmail", document.getElementById("register_email").value);
+    });
+
+    // Populate form fields with stored data
+    document.getElementById("email").value = sessionStorage.getItem("loginEmail") || "";
+    document.getElementById("first_name").value = sessionStorage.getItem("registerFirstName") || "";
+    document.getElementById("last_name").value = sessionStorage.getItem("registerLastName") || "";
+    document.getElementById("register_email").value = sessionStorage.getItem("registerEmail") || "";
+
+    // Clear session storage for form fields upon successful submission (optional)
+    // This can be managed based on server response after the form posts.
+});
+
 
 
 
@@ -189,7 +258,6 @@ function showLoginForm() {
     }
 }
 
-
 // Trigger login on both Enter key press and button click
 const loginForm = document.getElementById('login-form');
 const loginButton = document.getElementById('login-button');
@@ -208,87 +276,6 @@ if (loginButton) {
         event.preventDefault();
         login(event);  // Trigger login on button click
     });
-}
-
-// Async function for user registration
-async function register() {
-  showSpinner(); // Show spinner at the start
-  const firstName = document.getElementById('first_name').value;
-  const lastName = document.getElementById('last_name').value;
-  const email = document.getElementById('register_email').value;
-  const password = document.getElementById('register_password').value;
-  const confirmPassword = document.getElementById('confirm_password').value;
-  const csrfToken = document.getElementById('profile').getAttribute('data-csrf');
-
-  // Validation checks
-  if (!firstName || firstName.length < 2) {
-      showFlashMessage("First name must contain at least 2 letters.", "error");
-      hideSpinner();
-      return;
-  }
-  if (!lastName || lastName.length < 2) {
-      showFlashMessage("Last name must contain at least 2 letters.", "error");
-      hideSpinner();
-      return;
-  }
-  const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  if (!email || !emailPattern.test(email)) {
-      showFlashMessage("Please enter a valid email address.", "error");
-      hideSpinner();
-      return;
-  }
-  if (password.length < 8 || !/[A-Z]/.test(password) || !/\d/.test(password)) {
-      showFlashMessage("Password must be at least 8 characters long and contain one uppercase letter and one number.", "error");
-      hideSpinner();
-      return;
-  }
-  if (password !== confirmPassword) {
-      showFlashMessage("Passwords do not match. Please try again.", "error");
-      hideSpinner();
-      return;
-  }
-
-  try {
-      const response = await fetch('/customer-register', {
-          method: 'POST',
-          headers: {
-              'Content-Type': 'application/json',
-              'X-CSRF-Token': csrfToken
-          },
-          body: JSON.stringify({ first_name: firstName, last_name: lastName, personal_email: email, password })
-      });
-
-      const result = await response.json();
-      if (response.ok) {
-          showFlashMessage(result.message, "success");
-
-          // Log in the user after registration
-          const loginResponse = await fetch('/login', {
-              method: 'POST',
-              headers: {
-                  'Content-Type': 'application/json',
-                  'X-CSRF-Token': csrfToken
-              },
-              body: JSON.stringify({ email, password })
-          });
-
-          if (loginResponse.ok) {
-              showFlashMessage("Account created and logged in successfully!", "success");
-              setTimeout(() => {
-                  window.location.href = '/';
-              }, 3000);
-          } else {
-              showFlashMessage("Account created, but login failed. Please log in manually.", "error");
-          }
-      } else {
-          showFlashMessage(result.error || "Unexpected error during registration.", "error");
-      }
-  } catch (error) {
-      console.error('Error during registration:', error);
-      showFlashMessage('An error occurred. Please try again later.', "error");
-  } finally {
-      hideSpinner(); // Ensure the spinner is hidden in all cases
-  }
 }
 
 // Only add one listener for form submission
