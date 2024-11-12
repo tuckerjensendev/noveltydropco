@@ -126,12 +126,22 @@ body, html {
     border-color: #fff; /* White border on hover */
 }
 
-/* Active link styling */
-.staff-header-content a.active {
-    border-color: #fff; /* White border to indicate active link */
-    background-color: rgba(255, 255, 255, 0.1); /* Slight background to indicate active state */
-    color: #fff; /* Keep text white */
+/* Ensure .active-border is visible and stays applied */
+.sign-in-button.active-border, 
+.profile.active-border {
+    border: 2px solid #fff; /* Adjust this color as needed */
+    background-color: rgba(255, 255, 255, 0.1); /* Optional background for emphasis */
+    color: #fff; /* Ensure contrast for text */
 }
+
+.staff-header-content a.active-border {
+    border-color: #fff; /* Border color for active links in the header */
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+
+
 
 header {
     background-color: #333;
@@ -242,15 +252,29 @@ header {
     z-index: 10;
 }
 
+/* Center the registration form when in register-mode */
 .dropdown-content.register-mode {
     width: 400px;
-    max-width: 90%;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     background-color: #f9f9f9;
     z-index: 10;
+    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Standard dropdown positioning */
+.dropdown-content {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    display: none;
+}
+
+/* Show dropdown when .show class is added via JavaScript */
+.dropdown-content.show {
+    display: block;
 }
 
 /* Login/Register Form Styling */
@@ -522,6 +546,16 @@ header {
 
 .main-content form button:hover {
     background-color: #555;
+}
+
+/* 9. Manage-Access.ejs specific styling */
+#saveChangesButton {
+    background-color: #333;
+    color: #fff;
+}
+#saveChangesButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
 }
 
 

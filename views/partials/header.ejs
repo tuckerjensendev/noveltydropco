@@ -32,27 +32,27 @@
         <div id="login-form" class="form-content">
           <h2>Login</h2>
           <form action="/login" method="POST" id="loginForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="text" placeholder="Email" id="email" name="email" required>
-            <input type="password" placeholder="Password" id="password" name="password" required>
-            <button type="submit" id="login-button">Login</button>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="text" placeholder="Email" id="email" name="email" required>
+              <input type="password" placeholder="Password" id="password" name="password" required>
+              <button type="submit" id="login-button">Login</button>
           </form>
           <p><a href="#" class="create-account" id="show-register">Create account</a></p>
-        </div>
-
-        <div id="register-form" class="form-content hidden">
+      </div>
+      
+      <div id="register-form" class="form-content hidden">
           <h2>Create Account</h2>
           <form action="/customer-register" method="POST" id="registerForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <input type="text" placeholder="First Name" id="first_name" name="first_name" required>
-            <input type="text" placeholder="Last Name" id="last_name" name="last_name" required>
-            <input type="email" placeholder="Email" id="register_email" name="email" required>
-            <input type="password" placeholder="Password" id="register_password" name="password" required>
-            <input type="password" placeholder="Confirm Password" id="confirm_password" name="confirm_password" required>
-            <button type="submit" id="register-button">Register</button>
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <input type="text" placeholder="First Name" id="first_name" name="first_name" required>
+              <input type="text" placeholder="Last Name" id="last_name" name="last_name" required>
+              <input type="email" placeholder="Email" id="register_email" name="email" required>
+              <input type="password" placeholder="Password" id="register_password" name="password" required>
+              <input type="password" placeholder="Confirm Password" id="confirm_password" name="confirm_password" required>
+              <button type="submit" id="register-button">Register</button>
           </form>
           <p><div class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></div></p>
-        </div>
+      </div>      
       <% } else { %>
         <div id="user-menu" class="form-content">
           <form action="/logout" method="POST">
