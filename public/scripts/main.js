@@ -11,17 +11,33 @@ function hideSpinner() {
     document.getElementById("loadingSpinner").style.display = "none";
 }
 
-// Show spinner on page load and hide when fully loaded
+// Flash message timeout with targeted click-to-hide functionality
+function setupFlashMessageTimeout() {
+    const flashMessage = document.getElementById('flashMessage');
+    if (flashMessage) {
+        // Set timeout to hide flash message after 10 seconds
+        const timeoutId = setTimeout(() => {
+            flashMessage.style.display = 'none';
+        }, 20000); // 20 seconds
+
+        // Hide flash message only when clicked directly
+        flashMessage.addEventListener('click', (event) => {
+            event.stopPropagation(); // Prevents click from affecting other elements
+            flashMessage.style.display = 'none';
+            clearTimeout(timeoutId); // Prevents the timeout from running if already hidden
+        });
+    }
+}
+
+// Call the function after the page loads
 document.addEventListener("DOMContentLoaded", () => {
     showSpinner();
     window.addEventListener("load", hideSpinner);
-
     setupDropdownControls();
     restoreFormState();
     setupInputPersistence();
-    initializeLinkHighlighting();
     setupFormSubmissionSpinner();
-    setupSaveButtonForAccess();
+    setupFlashMessageTimeout(); // Initialize flash message timeout and click-to-hide
 });
 
 // Dropdown control and form toggle functions
@@ -70,10 +86,14 @@ function restoreFormState() {
     }
 
     // Restore input values if they exist in sessionStorage
-    document.getElementById("email").value = sessionStorage.getItem("loginEmail") || "";
-    document.getElementById("first_name").value = sessionStorage.getItem("registerFirstName") || "";
-    document.getElementById("last_name").value = sessionStorage.getItem("registerLastName") || "";
-    document.getElementById("register_email").value = sessionStorage.getItem("registerEmail") || "";
+    const emailField = document.getElementById("email");
+    const firstNameField = document.getElementById("first_name");
+    const lastNameField = document.getElementById("last_name");
+    const registerEmailField = document.getElementById("register_email");
+    if (emailField) emailField.value = sessionStorage.getItem("loginEmail") || "";
+    if (firstNameField) firstNameField.value = sessionStorage.getItem("registerFirstName") || "";
+    if (lastNameField) lastNameField.value = sessionStorage.getItem("registerLastName") || "";
+    if (registerEmailField) registerEmailField.value = sessionStorage.getItem("registerEmail") || "";
 }
 
 // Functions to toggle forms with session persistence
@@ -82,6 +102,11 @@ function showRegisterForm() {
     const loginForm = document.getElementById('login-form');
     const registerForm = document.getElementById('register-form');
     const signInButton = document.querySelector('.sign-in-button');
+
+    if (!dropdown || !loginForm || !registerForm) {
+        console.error("One or more elements missing for showRegisterForm.");
+        return;
+    }
 
     isDropdownOpen = true;
     isRegisterFormOpen = true;
@@ -101,6 +126,11 @@ function showLoginForm() {
     const registerForm = document.getElementById("register-form");
     const signInButton = document.querySelector('.sign-in-button');
 
+    if (!dropdown || !loginForm || !registerForm) {
+        console.error("One or more elements missing for showLoginForm.");
+        return;
+    }
+
     isDropdownOpen = true;
     isRegisterFormOpen = false;
     dropdown.classList.add("show");
@@ -116,27 +146,46 @@ function showLoginForm() {
 
 function toggleDropdown(event) {
     event.stopPropagation();
-    isDropdownOpen ? closeDropdown() : showLoginForm();
+    const dropdown = document.getElementById('dropdown');
+
+    if (!dropdown) {
+        console.error("Dropdown element is missing.");
+        return;
+    }
+
+    if (isDropdownOpen) {
+        closeDropdown();
+    } else {
+        dropdown.classList.add("show");
+        isDropdownOpen = true;
+        console.log("Dropdown opened for profile picture click");
+    }
 }
+
 
 // Close dropdown function
 function closeDropdown() {
     const dropdown = document.getElementById('dropdown');
     const signInButton = document.querySelector('.sign-in-button');
 
+    if (!dropdown) {
+        console.error("Dropdown element is missing.");
+        return;
+    }
+
     isDropdownOpen = false;
     dropdown.classList.remove("show", "register-mode");
     signInButton?.classList.remove("active-border");
 
     console.log("Active border removed from Sign-In button (Dropdown Closed)");
+
+    // Ensure all form states are reset
     sessionStorage.removeItem("showLoginForm");
     sessionStorage.removeItem("showRegisterForm");
-}
-
-// Attach showLoginForm in case of error
-function handleError() {
-    sessionStorage.setItem("showLoginForm", "true");
-    showLoginForm();
+    sessionStorage.removeItem("loginEmail");
+    sessionStorage.removeItem("registerFirstName");
+    sessionStorage.removeItem("registerLastName");
+    sessionStorage.removeItem("registerEmail");
 }
 
 // Save input values as user types to ensure persistence across sessions
@@ -156,8 +205,10 @@ function setupInputPersistence() {
 }
 
 // Initialize active link highlighting based on current URL
-function initializeLinkHighlighting() {
+document.addEventListener('DOMContentLoaded', () => {
     const currentPath = window.location.pathname;
+
+    // Map routes to their corresponding link IDs
     const linkMap = {
         '/admin/superadmin-dashboard': 'superAdminDashboardLink',
         '/admin/staff-dashboard': 'dashboardLink',
@@ -165,12 +216,29 @@ function initializeLinkHighlighting() {
         '/admin/manage-access': 'manageAccessLink',
         '/admin/content-workshop': 'contentWorkshopLink'
     };
+
+    // Set the active class based on the current path on page load
     const activeLinkId = linkMap[currentPath];
     if (activeLinkId) {
-        document.getElementById(activeLinkId)?.classList.add('active');
-        console.log(`Active border added to ${activeLinkId}`);
+        document.getElementById(activeLinkId)?.classList.add('active-border'); // Use active-border if that’s the intended style
+
     }
-}
+
+    // Ensure click listeners dynamically add 'active' to clicked links
+    Object.values(linkMap).forEach(id => {
+        const linkElement = document.getElementById(id);
+        if (linkElement) {
+            linkElement.addEventListener('click', (event) => {
+                // Remove 'active' class from all links in the staff-header-content
+                document.querySelectorAll('.staff-header-content a').forEach(link => {
+                    link.classList.remove('active');
+                });
+                event.currentTarget.classList.add('active');
+            });
+        }
+    });
+});
+
 
 // Attach spinner to all form submissions
 function setupFormSubmissionSpinner() {
@@ -180,21 +248,26 @@ function setupFormSubmissionSpinner() {
 }
 
 // Enables / disables save button in manage-access.ejs based on checkbox activity
-function setupSaveButtonForAccess() {
+document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     const saveButton = document.getElementById('saveChangesButton');
 
-    if (!saveButton) return;
-
+    // Check for changes in checkboxes and update save button state
     function checkForChanges() {
+        if (!saveButton) return; // Exit if saveButton is not in the DOM
+
         const hasChanges = Array.from(checkboxes).some(checkbox =>
             checkbox.checked.toString() !== checkbox.getAttribute('data-original')
         );
         saveButton.disabled = !hasChanges;
     }
 
-    checkboxes.forEach(checkbox => checkbox.addEventListener('change', checkForChanges));
+    // Attach change event listeners to all checkboxes
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', checkForChanges);
+    });
 
+    // Mutation observer to detect attribute changes on checkboxes
     const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'checked') {
@@ -203,6 +276,11 @@ function setupSaveButtonForAccess() {
         });
     });
 
-    checkboxes.forEach(checkbox => observer.observe(checkbox, { attributes: true }));
+    // Observe each checkbox for attribute changes
+    checkboxes.forEach(checkbox => {
+        observer.observe(checkbox, { attributes: true });
+    });
+
+    // Initial check for changes on page load
     checkForChanges();
-}
+});
