@@ -230,14 +230,14 @@ header {
     color: #444;
 }
 
-/* 5. Profile Dropdown (Login/Register) */
+/* 5. Login Dropdown Menu (Login/Register) */
 .dropdown-content {
     display: none;
     position: absolute;
     top: 60px;
     right: 0;
     background-color: #ffffff;
-    width: 320px; /* Slightly wider for a modern look */
+    width: 320px;
     padding: 25px;
     border-radius: 12px;
     box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
@@ -245,8 +245,9 @@ header {
     z-index: 10;
 }
 
+/* Moves Login form into Register form position */
 .dropdown-content.register-mode {
-    width: 450px; /* Increased width */
+    width: 500px;
     padding: 40px;
     position: fixed;
     top: 50%;
@@ -258,23 +259,12 @@ header {
     border-radius: 15px;
 }
 
-/* Show dropdown */
+/* Shows dropdown after click event */
 .dropdown-content.show {
     display: block;
 }
 
-/* Login/Register Form Styling */
-.form-content {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 1em;
-}
-
-.form-content.hidden {
-    display: none;
-}
-
+/* Login/Register Form Header Styling */
 .form-content h2 {
     font-size: 1.6em;
     color: #333;
@@ -282,19 +272,33 @@ header {
     font-weight: 700;
 }
 
-/* Form Input Styling */
+/* Input vertical spacing */
+.form-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    padding: 0 10px; /* Add padding for spacing on the left and right */
+}
+
+/* Consistent styling for all inputs for both login and registration forms */
+#login-form input,
+#register-form input,
 .form-content input {
-    width: 100%; /* Full width to ensure alignment */
+    width: 100%; /* Full width to match container */
     padding: 12px;
-    margin: 8px 0;
+    margin: 8px 0; /* Spacing between inputs */
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1em;
     background-color: #f5f5f5;
     box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1);
     transition: background-color 0.3s;
+    text-align: left;
 }
 
+#login-form input:focus,
+#register-form input:focus,
 .form-content input:focus {
     background-color: #ffffff;
     border-color: #007bff;
@@ -303,7 +307,7 @@ header {
 
 /* Form Button Styling */
 .form-content button {
-    width: 70%;
+    width: 50%; /* Half the width of the form */
     padding: 12px;
     font-size: 1em;
     margin-top: 15px;
@@ -316,17 +320,14 @@ header {
     font-weight: bold;
 }
 
-.form-content button:hover {
-    background-color: #0056b3;
-}
-
-/* Register Button Styling */
+/* Center the register button specifically */
 #register-form button {
     margin: 20px auto 0;
     display: block;
+    width: 50%; /* Half size and centered */
 }
 
-#register-form button:hover {
+#login-form button:hover, #register-form button:hover {
     background-color: #0056b3;
 }
 
@@ -347,17 +348,11 @@ header {
     background-color: #555;
 }
 
-/* Create Account and Back to Login Link Styling */
+/* Create Account button/link styling */
 .left-link {
     width: 100%;
     display: flex;
     justify-content: flex-start;
-}
-
-.center-link {
-    width: 100%;
-    display: flex;
-    justify-content: center;
 }
 
 .form-content p {
@@ -365,9 +360,9 @@ header {
     color: #333;
 }
 
-.form-content p a.create-account {
+.form-content p a.create-account,
+.form-content p a.back-to-login {
     display: inline-block;
-    width: auto;
     padding: 5px 10px;
     border-radius: 10px;
     background-color: #f4f4f4;
@@ -376,19 +371,10 @@ header {
     text-decoration: none;
 }
 
-.form-content p a.create-account:hover {
-    color: #0056b3;
-    background-color: #e0e0e0;
-}
-
-.form-content p a.back-to-login {
-    text-align: center;
-    font-size: 0.9em;
-    color: #007bff;
-}
-
+.form-content p a.create-account:hover,
 .form-content p a.back-to-login:hover {
     color: #0056b3;
+    background-color: #e0e0e0;
 }
 
 /* Placeholder Color */
@@ -400,7 +386,7 @@ header {
 /* Password Requirements Container */
 #password-requirements-container {
     width: 100%;
-    height: 100px; /* Fixed height to maintain layout space */
+    height: 100px;
     padding-top: 10px;
     text-align: center;
     background-color: #f9f9f9;
@@ -411,15 +397,15 @@ header {
     font-size: 1.02rem;
     font-weight: 700;
     box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
-    visibility: hidden; /* Hide content but keep layout */
-    opacity: 0; /* Make it fully transparent initially */
-    transition: visibility 0s, opacity 0.3s ease; /* Smooth fade-in effect */
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s ease;
 }
 
 /* Show password requirements container */
 #password-requirements-container.show {
-    visibility: visible; /* Make visible */
-    opacity: 1; /* Make fully opaque */
+    visibility: visible;
+    opacity: 1;
 }
 
 /* Password Requirements Styling */
@@ -436,19 +422,6 @@ header {
 
 .hidden {
     display: none;
-}
-
-
-/* Overlay */
-.overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    z-index: 9;
 }
 
 /* Products Section */

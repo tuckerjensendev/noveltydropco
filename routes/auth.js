@@ -30,7 +30,7 @@ router.post('/customer-register', csrfProtection, [
   body('last_name').isAlpha().withMessage('Last name must contain only letters').trim().escape(),
   body('personal_email').isEmail().withMessage('Invalid email format').normalizeEmail(),
   body('password')
-    .isLength({ min: 6 }).withMessage('Password must contain at least 8 characters')
+    .isLength({ min: 6 }).withMessage('Password must contain at least 6 characters')
     .matches(/\d/).withMessage('Password must contain at least one number')
     .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
 ], async (req, res) => {
