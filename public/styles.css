@@ -140,9 +140,6 @@ body, html {
     color: #fff;
 }
 
-
-
-
 header {
     background-color: #333;
     color: #fff;
@@ -401,6 +398,15 @@ header {
     color: #666;
     opacity: 1;
 }
+
+.password-requirements .requirement {
+    color: red;
+}
+
+.password-requirements .requirement.valid {
+    color: green;
+}
+
 
 /* Show dropdown when .show class is added via JavaScript */
 .dropdown-content.show {

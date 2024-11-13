@@ -37,7 +37,7 @@ document.addEventListener("DOMContentLoaded", () => {
     restoreFormState();
     setupInputPersistence();
     setupFormSubmissionSpinner();
-    setupFlashMessageTimeout(); // Initialize flash message timeout and click-to-hide
+    setupFlashMessageTimeout();
 });
 
 // Dropdown control and form toggle functions
@@ -239,13 +239,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-
 // Attach spinner to all form submissions
 function setupFormSubmissionSpinner() {
     document.querySelectorAll("form").forEach(form => {
         form.addEventListener("submit", showSpinner);
     });
 }
+
+
 
 // Enables / disables save button in manage-access.ejs based on checkbox activity
 document.addEventListener('DOMContentLoaded', () => {

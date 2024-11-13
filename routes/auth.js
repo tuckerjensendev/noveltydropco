@@ -18,7 +18,7 @@ function requireSuperAdmin(req, res, next) {
   }
 }
 
-// Client Registration Route with EJS rendering on errors
+// Client Registration Route
 router.post('/customer-register', csrfProtection, [
   body('confirm_password').custom((value, { req }) => {
     if (value !== req.body.password) {
@@ -42,20 +42,12 @@ router.post('/customer-register', csrfProtection, [
   ];
 
   if (!errors.isEmpty()) {
-    const firstErrors = {};
-    errors.array().forEach(error => {
-      if (!firstErrors[error.param]) {
-        firstErrors[error.param] = error.msg;
-      }
-    });
-
+    // Render errors without needing form persistence or showRegisterForm handling, handled by main.js
     return res.status(400).render('home', {
-      flashMessage: Object.values(firstErrors).join(', '),
+      flashMessage: errors.array().map(error => error.msg).join(', '),
       flashType: 'error',
       products,
-      csrfToken: req.csrfToken(),
-      showRegisterForm: true, // Keeps the register form open
-      registerData: req.body // Retains registration input data
+      csrfToken: req.csrfToken()
     });
   }
 
@@ -63,14 +55,11 @@ router.post('/customer-register', csrfProtection, [
   try {
     db.get('SELECT * FROM users WHERE personal_email = ?', [personal_email], async (err, row) => {
       if (err) {
-        console.error("Database error during email check:", err.message);
         return res.status(500).render('home', {
           flashMessage: 'Database error during email check',
           flashType: 'error',
           products,
-          csrfToken: req.csrfToken(),
-          showRegisterForm: true, // Keep the registration form open on error
-          registerData: req.body // Retain user input data
+          csrfToken: req.csrfToken()
         });
       }
       if (row) {
@@ -78,9 +67,7 @@ router.post('/customer-register', csrfProtection, [
           flashMessage: 'Email already registered',
           flashType: 'error',
           products,
-          csrfToken: req.csrfToken(),
-          showRegisterForm: true, // Keep the registration form open on error
-          registerData: req.body // Retain user input data
+          csrfToken: req.csrfToken()
         });
       }
 
@@ -90,13 +77,11 @@ router.post('/customer-register', csrfProtection, [
         [first_name, last_name, personal_email, hashedPassword, 'client'],
         (err) => {
           if (err) {
-            console.error("Error creating customer in database:", err.message);
             return res.status(500).render('home', {
               flashMessage: 'Error creating account in database',
               flashType: 'error',
               products,
-              csrfToken: req.csrfToken(),
-              showRegisterForm: true // Keep the registration form open on error
+              csrfToken: req.csrfToken()
             });
           }
           res.status(200).render('home', {
@@ -109,18 +94,16 @@ router.post('/customer-register', csrfProtection, [
       );
     });
   } catch (error) {
-    console.error("Unexpected error during registration:", error.message);
     res.status(500).render('home', {
       flashMessage: 'Unexpected server error',
       flashType: 'error',
       products,
-      csrfToken: req.csrfToken(),
-      showRegisterForm: true // Keep the registration form open on error
+      csrfToken: req.csrfToken()
     });
   }
 });
 
-// Login Route with EJS rendering on errors
+// Login Route
 router.post('/login', csrfProtection, (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
     const products = [
@@ -130,14 +113,11 @@ router.post('/login', csrfProtection, (req, res, next) => {
     ];
 
     if (err) {
-      console.error("Passport authentication error:", err);
       return res.status(500).render('home', {
         flashMessage: 'Internal Server Error',
         flashType: 'error',
         products,
-        csrfToken: req.csrfToken(),
-        showLoginForm: true, // Keeps login form open
-        loginData: req.body // Retain user input data
+        csrfToken: req.csrfToken()
       });
     }
     if (!user) {
@@ -145,22 +125,17 @@ router.post('/login', csrfProtection, (req, res, next) => {
         flashMessage: info.message || 'Login failed. Please check your email and password.',
         flashType: 'error',
         products,
-        csrfToken: req.csrfToken(),
-        showLoginForm: true, // Keeps login form open
-        loginData: req.body // Retain user input data
+        csrfToken: req.csrfToken()
       });
     }
 
     req.logIn(user, (err) => {
       if (err) {
-        console.error("Error during login:", err);
         return res.status(500).render('home', {
           flashMessage: 'Internal Server Error',
           flashType: 'error',
           products,
-          csrfToken: req.csrfToken(),
-          showLoginForm: true, // Keeps login form open
-          loginData: req.body // Retain user input data
+          csrfToken: req.csrfToken()
         });
       }
       const redirectUrl = user.role === 'client' ? '/' :
@@ -175,12 +150,12 @@ router.post('/login', csrfProtection, (req, res, next) => {
 passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'password' }, (email, password, done) => {
   db.get('SELECT * FROM users WHERE (personal_email = ? OR work_email = ?)', [email, email], (err, user) => {
     if (err) return done(err);
-    if (!user) return done(null, false, { message: 'User not found' }); // Specific message for non-existent user
+    if (!user) return done(null, false, { message: 'User not found' });
 
     bcrypt.compare(password, user.password, (err, isMatch) => {
       if (err) return done(err);
       if (isMatch) return done(null, user);
-      return done(null, false, { message: 'Incorrect password' }); // Specific message for incorrect password
+      return done(null, false, { message: 'Incorrect password' });
     });
   });
 }));
@@ -198,16 +173,13 @@ passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser((id, done) => {
   db.get('SELECT * FROM users WHERE id = ?', [id], (err, user) => {
     if (err) return done(err);
-    
-    // If the user does not exist (e.g., was deleted), clear the session
-    if (!user) return done(null, false); // `false` clears the session automatically
-    
-    user.id = id; // Explicitly ensure `user.id` is always set if the user is found
+    if (!user) return done(null, false); // Clear session if user not found
+    user.id = id;
     done(null, user);
   });
 });
 
-// Staff Registration Route with EJS rendering on errors
+// Staff Registration Route
 router.post('/admin/create-staff', csrfProtection, [
   body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
   body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
@@ -264,8 +236,7 @@ router.post('/admin/create-staff', csrfProtection, [
             user: req.user,
             csrfToken: req.csrfToken(),
             flashMessage: 'Staff created successfully',
-            flashType: 'success',
-            flashDuration: 10000
+            flashType: 'success'
           });
         }
       );
