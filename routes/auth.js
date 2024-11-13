@@ -164,9 +164,19 @@ passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'passwor
 router.post('/logout', csrfProtection, (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).send("Logout error");
-    res.redirect('/');
+
+    // Destroy the session to ensure complete logout
+    req.session.destroy((sessionErr) => {
+      if (sessionErr) {
+        console.error("Session destruction error:", sessionErr);
+        return res.status(500).send("Session destruction error");
+      }
+      // Redirect to the homepage after clearing session data
+      res.redirect('/');
+    });
   });
 });
+
 
 passport.serializeUser((user, done) => done(null, user.id));
 

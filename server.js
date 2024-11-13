@@ -44,7 +44,14 @@ if (!isProduction) {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+app.use((req, res, next) => { // Cache control to prevent caching of pages for better session handling
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
+  next();
+});
+
 app.set('view engine', 'ejs');
+
+
 
 // Helmet for setting security headers, including CSP
 app.use(
