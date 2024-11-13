@@ -50,7 +50,7 @@ body, html {
 /* Flash Message Styling */
 .flash-message {
     position: fixed;
-    top: 75px;
+    top: 140px;
     left: 50%;
     transform: translateX(-50%);
     padding: 20px 20px;
@@ -71,16 +71,15 @@ body, html {
     background-color: #2196F3;
 }
 
-
 /* 3. Header and Navigation */
 .staff-header {
-    background-color: #00008B; /* Darker color */
-    color: #f1f1f1; /* Light text for contrast */
+    background-color: #00008B;
+    color: #f1f1f1;
     padding: 1px 5px;
     font-size: 0.9em;
     position: sticky;
     top: 0;
-    z-index: 1000; /* Ensure it stays on top */
+    z-index: 1000;
     display: flex;
     align-items: center;
     position: relative;
@@ -94,48 +93,48 @@ body, html {
 
 /* Center-align the header content independently */
 .staff-header-content {
-    margin: 0 auto; /* Center the links in the header */
+    margin: 0 auto;
     display: flex;
-    gap: 20px; /* Space between links */
+    gap: 20px;
 }
 
 /* Staff Header Links Styling */
 .staff-header-content a {
-    color: #fff; /* White text */
-    text-decoration: none; /* Remove underline */
-    padding: 8px 12px; /* Add some padding */
-    border: 1px solid transparent; /* Transparent border for preventing shifting */
-    display: inline-block; /* Consistent space for border */
-    position: relative; /* For separator positioning */
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    display: inline-block;
+    position: relative;
 }
 
 /* Separator line between links */
 .staff-header-content a:not(:last-child)::after {
     content: "";
     position: absolute;
-    right: -12px; /* Adjust the position slightly to center the separator */
+    right: -12px;
     top: 5px;
     bottom: 5px;
-    width: 1px; /* Line thickness */
-    background-color: #fff; /* White line color */
-    opacity: 0.6; /* Slight transparency */
+    width: 1px;
+    background-color: #fff;
+    opacity: 0.6;
 }
 
 /* Hover effect for links in staff header */
 .staff-header-content a:hover {
-    border-color: #fff; /* White border on hover */
+    border-color: #fff;
 }
 
-/* Ensure .active-border is visible and stays applied */
+/* .active-border */
 .sign-in-button.active-border, 
 .profile.active-border {
-    border: 2px solid #fff; /* Adjust this color as needed */
-    background-color: rgba(255, 255, 255, 0.1); /* Optional background for emphasis */
-    color: #fff; /* Ensure contrast for text */
+    border: 2px solid #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
 }
 
 .staff-header-content a.active-border {
-    border-color: #fff; /* Border color for active links in the header */
+    border-color: #fff;
     background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
 }
@@ -160,22 +159,22 @@ header {
     align-items: center;
 }
 
-/* Profile container to prevent nav bar resizing */
+/* Profile container */
 .profile {
     display: flex;
     align-items: center;
     position: relative;
-    height: 50px; /* Matches profile-pic and sign-in button */
+    height: 50px;
 }
 
-/* Profile and Welcome Message */
+/* Welcome Message */
 .welcome-message {
     font-size: 1em;
     color: #fff;
-    margin-right: 10px; /* Add space between welcome message and profile picture */
+    margin-right: 10px;
 }
 
-/* Sign-In Button for Logged-Out State */
+/* Sign-In Button */
 .sign-in-button {
     padding: 8px 15px;
     color: #fff;
@@ -184,14 +183,12 @@ header {
     text-align: center;
     border: 2px solid transparent;
     background: transparent;
-    white-space: nowrap;
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100%; /* Matches .profile height */
+    height: 100%;
 }
 
-/* Hover and Active Effect - Visible Border */
 .sign-in-button:hover,
 .profile.active-border .sign-in-button {
     border-color: #fff;
@@ -199,7 +196,7 @@ header {
     background: transparent;
 }
 
-/* Profile Pic - Visible When User is Logged In */
+/* Profile Pic */
 .profile-pic {
     width: 50px;
     height: 50px;
@@ -209,7 +206,6 @@ header {
     cursor: pointer;
 }
 
-/* Hover and Active Border for Profile Pic */
 .profile-pic:hover,
 .profile.active-border .profile-pic {
     border-color: #999;
@@ -240,36 +236,29 @@ header {
     position: absolute;
     top: 60px;
     right: 0;
-    background-color: white;
-    width: 300px;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    background-color: #ffffff;
+    width: 320px; /* Slightly wider for a modern look */
+    padding: 25px;
+    border-radius: 12px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
     transform-origin: top right;
     z-index: 10;
 }
 
-/* Center the registration form when in register-mode */
 .dropdown-content.register-mode {
-    width: 400px;
+    width: 450px; /* Increased width */
+    padding: 40px;
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background-color: #f9f9f9;
+    background-color: #fafafa;
     z-index: 10;
-    box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+    box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
 }
 
-/* Standard dropdown positioning */
-.dropdown-content {
-    position: absolute;
-    top: 60px;
-    right: 0;
-    display: none;
-}
-
-/* Show dropdown when .show class is added via JavaScript */
+/* Show dropdown */
 .dropdown-content.show {
     display: block;
 }
@@ -279,7 +268,7 @@ header {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.8em;
+    gap: 1em;
 }
 
 .form-content.hidden {
@@ -287,49 +276,68 @@ header {
 }
 
 .form-content h2 {
-    font-size: 1.5em;
+    font-size: 1.6em;
     color: #333;
+    margin-bottom: 20px;
+    font-weight: 700;
 }
 
-/* Add margin between form inputs and button */
+/* Form Input Styling */
 .form-content input {
-    width: 100%;
-    padding: 10px;
-    margin: 5px 0; /* Add vertical space between inputs and button */
-    border: 1px solid #ddd;
-    border-radius: 4px;
+    width: 100%; /* Full width to ensure alignment */
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    background-color: #f5f5f5;
+    box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
 }
 
+.form-content input:focus {
+    background-color: #ffffff;
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Form Button Styling */
 .form-content button {
-    width: 50%;
-    padding: 10px;
-    margin-top: 10px; /* Space between the last input and the button */
-    background-color: #333;
+    width: 70%;
+    padding: 12px;
+    font-size: 1em;
+    margin-top: 15px;
+    background-color: #007bff;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 8px;
     cursor: pointer;
-    text-align: center;
-}
-
-/* Center-align the Register button specifically in the register form */
-#register-form button {
-    margin: 25px auto 0; /* Centers the button horizontally */
-    display: block; /* Ensures it takes up the available space for centering */
+    transition: background-color 0.3s;
+    font-weight: bold;
 }
 
 .form-content button:hover {
-    background-color: #555;
+    background-color: #0056b3;
 }
 
-/* Logout Button Styling */
+/* Register Button Styling */
+#register-form button {
+    margin: 20px auto 0;
+    display: block;
+}
+
+#register-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Logout Button */
 #user-menu button {
     width: 100%;
-    padding: 10px;
+    padding: 12px;
     background-color: #333;
     color: #fff;
     border: none;
-    border-radius: 4px;
+    border-radius: 6px;
     cursor: pointer;
     font-size: 1em;
     text-align: center;
@@ -339,81 +347,99 @@ header {
     background-color: #555;
 }
 
-.form-content p {
-    font-size: 0.9em;
-    color: #333;
-}
-
-/* Align "Create account" link to the left of input fields with styling */
-.form-content p a.create-account {
-    display: block;
-    width: auto;
-    padding: 5px 10px;
-    margin-left: 0;
-    margin-top: 10px;
-    border-radius: 15px;
-    border: 2px solid transparent;
-    background-color: #f4f4f4;
-    color: #333;
-    font-size: 0.9em;
-    text-decoration: none;
-    cursor: pointer;
-}
-
-/* Add alignment to match the inputs' left side */
-.form-content p {
+/* Create Account and Back to Login Link Styling */
+.left-link {
     width: 100%;
     display: flex;
     justify-content: flex-start;
-    padding-left: 0;
 }
 
-/* Hover effect with no transition */
-.form-content p a.create-account:hover {
-    background-color: #e0e0e0;
-    border-color: #999;
-}
-
-/* Center-align "Back to login" link with adjusted width */
 .center-link {
     width: 100%;
     display: flex;
     justify-content: center;
 }
 
+.form-content p {
+    font-size: 0.95em;
+    color: #333;
+}
+
+.form-content p a.create-account {
+    display: inline-block;
+    width: auto;
+    padding: 5px 10px;
+    border-radius: 10px;
+    background-color: #f4f4f4;
+    color: #007bff;
+    font-size: 0.9em;
+    text-decoration: none;
+}
+
+.form-content p a.create-account:hover {
+    color: #0056b3;
+    background-color: #e0e0e0;
+}
+
 .form-content p a.back-to-login {
     text-align: center;
-    margin-top: 10px;
-    display: inline;
+    font-size: 0.9em;
+    color: #007bff;
 }
 
-.form-content a {
-    color: #333;
-    text-decoration: underline;
-    cursor: pointer;
+.form-content p a.back-to-login:hover {
+    color: #0056b3;
 }
 
-/* Placeholder color for input fields */
+/* Placeholder Color */
 .form-content input::placeholder {
-    color: #666;
+    color: #888;
     opacity: 1;
 }
 
-.password-requirements .requirement {
-    color: red;
+/* Password Requirements Container */
+#password-requirements-container {
+    width: 100%;
+    height: 100px; /* Fixed height to maintain layout space */
+    padding-top: 10px;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
+    visibility: hidden; /* Hide content but keep layout */
+    opacity: 0; /* Make it fully transparent initially */
+    transition: visibility 0s, opacity 0.3s ease; /* Smooth fade-in effect */
 }
 
-.password-requirements .requirement.valid {
-    color: green;
+/* Show password requirements container */
+#password-requirements-container.show {
+    visibility: visible; /* Make visible */
+    opacity: 1; /* Make fully opaque */
+}
+
+/* Password Requirements Styling */
+#password-requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85em;
+}
+
+.requirement.met {
+    color: #5cb85c;
+}
+
+.hidden {
+    display: none;
 }
 
 
-/* Show dropdown when .show class is added via JavaScript */
-.dropdown-content.show {
-    display: block;
-}
-
-/* 6. Overlay */
+/* Overlay */
 .overlay {
     display: none;
     position: fixed;
@@ -421,11 +447,11 @@ header {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.6);
     z-index: 9;
 }
 
-/* 7. Products Section */
+/* Products Section */
 .products {
     margin: 2em auto;
     max-width: 1200px;
@@ -454,11 +480,11 @@ header {
     text-align: center;
 }
 
-/* 8. Content Workshop Layout */
+/* Content Workshop */
 .content-workshop-container {
     display: flex;
-    height: 100vh; /* Full viewport height */
-    overflow: hidden; /* Prevent container from scrolling */
+    height: 100vh;
+    overflow: hidden;
 }
 
 .side-panel {
@@ -467,7 +493,7 @@ header {
     color: #fff;
     padding: 20px;
     box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-    overflow-y: auto; /* Enable scrolling for long side panels, if needed */
+    overflow-y: auto;
 }
 
 .side-panel h2 {
@@ -492,7 +518,6 @@ header {
     padding: 8px;
     display: block;
     border-radius: 5px;
-    transition: background 0.3s ease;
 }
 
 .side-panel ul li a:hover,
@@ -500,14 +525,12 @@ header {
     background-color: #555;
 }
 
-/* Main Content Area */
 .main-content {
     flex: 1;
     padding: 20px;
     background-color: #f4f4f4;
-    overflow-y: auto; /* Enable vertical scrolling within main content */
-    max-height: 100vh; /* Limit height to viewport for independent scrolling */
-    box-sizing: border-box;
+    overflow-y: auto;
+    max-height: 100vh;
 }
 
 .main-content h1 {
@@ -515,10 +538,9 @@ header {
     margin-bottom: 1em;
 }
 
-/* Form Styling */
 .main-content form {
     max-width: 600px;
-    padding-bottom: 150px; /* Extra space below the button for visibility */
+    padding-bottom: 150px;
 }
 
 .main-content form label {
@@ -534,7 +556,7 @@ header {
     border: 1px solid #ddd;
     border-radius: 5px;
     resize: vertical;
-    margin-bottom: 20px; /* Add space between textareas */
+    margin-bottom: 20px;
 }
 
 .main-content form button {
@@ -546,15 +568,13 @@ header {
     border: none;
     border-radius: 5px;
     cursor: pointer;
-    transition: background 0.3s ease;
-    display: block;
 }
 
 .main-content form button:hover {
     background-color: #555;
 }
 
-/* 9. Manage-Access.ejs specific styling */
+/* Manage-Access.ejs Styling */
 #saveChangesButton {
     background-color: #333;
     color: #fff;
@@ -564,8 +584,7 @@ header {
     cursor: not-allowed;
 }
 
-
-/* 9. Responsive Adjustments */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
     .hero h1 {
         font-size: 1.8em;

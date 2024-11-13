@@ -1,7 +1,7 @@
 const db = require('../models/User');
 const logUnauthorizedAccess = require('./logUnauthorizedAccess');
 
-// Middleware to ensure the user has the necessary permission
+// Middleware to ensure the user has the necessary permissions + tracking of unauthorized access
 function ensurePermission(permissionName) {
   return (req, res, next) => {
     const userRole = req.isAuthenticated() 

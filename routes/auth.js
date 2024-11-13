@@ -22,17 +22,17 @@ function requireSuperAdmin(req, res, next) {
 router.post('/customer-register', csrfProtection, [
   body('confirm_password').custom((value, { req }) => {
     if (value !== req.body.password) {
-      throw new Error('Passwords do not match.');
+      throw new Error('Passwords do not match');
     }
     return true;
   }),
-  body('first_name').isAlpha().withMessage('First name must contain only letters.').trim().escape(),
-  body('last_name').isAlpha().withMessage('Last name must contain only letters.').trim().escape(),
-  body('personal_email').isEmail().withMessage('Invalid email format.').normalizeEmail(),
+  body('first_name').isAlpha().withMessage('First name must contain only letters').trim().escape(),
+  body('last_name').isAlpha().withMessage('Last name must contain only letters').trim().escape(),
+  body('personal_email').isEmail().withMessage('Invalid email format').normalizeEmail(),
   body('password')
-    .isLength({ min: 8 }).withMessage('Password must contain at least 8 characters.')
-    .matches(/\d/).withMessage('Password must contain at least one number.')
-    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter.')
+    .isLength({ min: 6 }).withMessage('Password must contain at least 8 characters')
+    .matches(/\d/).withMessage('Password must contain at least one number')
+    .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
 ], async (req, res) => {
   const errors = validationResult(req);
   const products = [
@@ -179,17 +179,94 @@ passport.deserializeUser((id, done) => {
   });
 });
 
+// // Staff Registration Route
+// router.post('/admin/create-staff', csrfProtection, [
+//   body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters'),
+//   body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters'),
+//   body('personal_email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Invalid personal email format'),
+//   body('email').isEmail().normalizeEmail().withMessage('Invalid work email format'),
+//   body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must be at least 8 characters, including one uppercase letter and one number'),
+//   body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected')
+// ], async (req, res) => {
+//   const errors = validationResult(req);
+
+//   // Directly render errors on the same page without redirect
+//   if (!errors.isEmpty()) {
+//     return res.status(400).render('admin/create-staff', {
+//       user: req.user,
+//       csrfToken: req.csrfToken(),
+//       flashMessage: errors.array()[0].msg,
+//       flashType: 'error'
+//     });
+//   }
+
+//   const { first_name, last_name, personal_email, email, password, role } = req.body;
+//   try {
+//     db.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
+//       if (err) {
+//         return res.status(500).render('admin/create-staff', {
+//           user: req.user,
+//           csrfToken: req.csrfToken(),
+//           flashMessage: 'Database error during email check',
+//           flashType: 'error'
+//         });
+//       }
+//       if (row) {
+//         return res.status(400).render('admin/create-staff', {
+//           user: req.user,
+//           csrfToken: req.csrfToken(),
+//           flashMessage: 'Email already registered',
+//           flashType: 'error'
+//         });
+//       }
+
+//       // Hash password and insert new user
+//       const hashedPassword = await bcrypt.hash(password, 10);
+//       db.run(
+//         `INSERT INTO users (first_name, last_name, personal_email, work_email, password, role, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+//         [first_name, last_name, personal_email || null, email, hashedPassword, role],
+//         (err) => {
+//           if (err) {
+//             return res.status(500).render('admin/create-staff', {
+//               user: req.user,
+//               csrfToken: req.csrfToken(),
+//               flashMessage: 'Error creating staff in database',
+//               flashType: 'error'
+//             });
+//           }
+//           // Render success message on the same page without redirection
+//           return res.status(200).render('admin/create-staff', {
+//             user: req.user,
+//             csrfToken: req.csrfToken(),
+//             flashMessage: 'Staff created successfully',
+//             flashType: 'success'
+//           });
+//         }
+//       );
+//     });
+//   } catch (error) {
+//     console.error("Unexpected error during staff creation:", error.message);
+//     return res.status(500).render('admin/create-staff', {
+//       user: req.user,
+//       csrfToken: req.csrfToken(),
+//       flashMessage: 'Unexpected server error',
+//       flashType: 'error'
+//     });
+//   }
+// });
+
 // Staff Registration Route
 router.post('/admin/create-staff', csrfProtection, [
-  body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
-  body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
-  body('personal_email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Invalid personal email format.'),
-  body('email').isEmail().normalizeEmail().withMessage('Invalid work email format.'),
-  body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must be at least 8 characters, including one uppercase letter and one number.'),
-  body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected.')
+  body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters'),
+  body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters'),
+  body('personal_email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Invalid personal email format'),
+  body('email').isEmail().normalizeEmail().withMessage('Invalid work email format'),
+  body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must be at least 8 characters, including one uppercase letter and one number'),
+  body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected')
 ], async (req, res) => {
   const errors = validationResult(req);
 
+  // Directly render errors on the same page without redirect
   if (!errors.isEmpty()) {
     return res.status(400).render('admin/create-staff', {
       user: req.user,
@@ -219,6 +296,7 @@ router.post('/admin/create-staff', csrfProtection, [
         });
       }
 
+      // Hash password and insert new user
       const hashedPassword = await bcrypt.hash(password, 10);
       db.run(
         `INSERT INTO users (first_name, last_name, personal_email, work_email, password, role, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
@@ -232,6 +310,7 @@ router.post('/admin/create-staff', csrfProtection, [
               flashType: 'error'
             });
           }
+          // Render success message on the same page without redirection
           return res.status(200).render('admin/create-staff', {
             user: req.user,
             csrfToken: req.csrfToken(),
@@ -242,7 +321,8 @@ router.post('/admin/create-staff', csrfProtection, [
       );
     });
   } catch (error) {
-    res.status(500).render('admin/create-staff', {
+    console.error("Unexpected error during staff creation:", error.message);
+    return res.status(500).render('admin/create-staff', {
       user: req.user,
       csrfToken: req.csrfToken(),
       flashMessage: 'Unexpected server error',
@@ -250,5 +330,7 @@ router.post('/admin/create-staff', csrfProtection, [
     });
   }
 });
+
+
 
 module.exports = router;

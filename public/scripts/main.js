@@ -38,7 +38,78 @@ document.addEventListener("DOMContentLoaded", () => {
     setupInputPersistence();
     setupFormSubmissionSpinner();
     setupFlashMessageTimeout();
+
+    // Password validation logic
+    const passwordField = document.getElementById("register_password");
+    const confirmPasswordField = document.getElementById("confirm_password");
+    const requirementsList = document.getElementById("password-requirements");
+    const requirementsContainer = document.getElementById("password-requirements-container");
+
+    // Show requirements container when user starts typing in the password field
+    passwordField?.addEventListener("input", () => {
+        if (passwordField.value || confirmPasswordField.value) {
+            requirementsContainer.classList.add("show"); // Show the container with fixed height
+            requirementsList.classList.remove("hidden"); // Make requirements text visible
+            validatePassword();
+        } else {
+            resetPasswordRequirements(); // Hide requirements if both fields are empty
+        }
+    });
+
+    // Re-check requirements when user types in the confirm password field
+    confirmPasswordField?.addEventListener("input", () => {
+        if (passwordField.value || confirmPasswordField.value) {
+            requirementsContainer.classList.add("show"); // Show the container
+            requirementsList.classList.remove("hidden"); // Make requirements text visible
+            validatePassword();
+        } else {
+            resetPasswordRequirements(); // Hide requirements if both fields are empty
+        }
+    });
+
+    // Function to validate each requirement
+    function validatePassword() {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
+        
+        // Requirement selectors
+        const lengthReq = document.querySelector('[data-requirement="length"]');
+        const uppercaseReq = document.querySelector('[data-requirement="uppercase"]');
+        const numberReq = document.querySelector('[data-requirement="number"]');
+        const matchReq = document.querySelector('[data-requirement="match"]');
+
+        // Validate each requirement
+        const lengthMet = password.length >= 6;
+        const uppercaseMet = /[A-Z]/.test(password);
+        const numberMet = /\d/.test(password);
+        const matchMet = password === confirmPassword && password !== "";
+
+        // Toggle classes based on validation
+        toggleRequirementClass(lengthReq, lengthMet);
+        toggleRequirementClass(uppercaseReq, uppercaseMet);
+        toggleRequirementClass(numberReq, numberMet);
+        toggleRequirementClass(matchReq, matchMet);
+    }
+
+    // Utility function to toggle 'met' class for each requirement
+    function toggleRequirementClass(element, isMet) {
+        if (isMet) {
+            element.classList.add("met");
+        } else {
+            element.classList.remove("met");
+        }
+    }
+
+    // Reset requirements to hidden and set all text to red
+    function resetPasswordRequirements() {
+        requirementsContainer.classList.remove("show"); // Hide the container
+        requirementsList.classList.add("hidden"); // Hide requirements text
+        document.querySelectorAll('.requirement').forEach(req => {
+            req.classList.remove("met");
+        });
+    }
 });
+
 
 // Dropdown control and form toggle functions
 function setupDropdownControls() {
