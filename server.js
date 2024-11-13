@@ -143,6 +143,23 @@ app.use((req, res) => {
   res.status(404).render('404');
 });
 
+// Catch-all route for 400 errors
+app.use((err, req, res, next) => {
+  if (err.status === 400) {
+    // Render the page with error details without redirecting
+    return res.status(400).render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: err.message,
+      flashType: 'error'
+    });
+  }
+  
+  // If it's not a 400 error, proceed to the next error handler
+  next(err);
+});
+
+
 // Start HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
   console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);

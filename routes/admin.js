@@ -312,5 +312,77 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
 //     });
 //   }
 // });
+
+// POST route to handle staff creation with EJS rendering on errors
+router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection, [
+  body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
+  body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
+  body('personal_email').optional({ checkFalsy: true }).isEmail().normalizeEmail().withMessage('Invalid personal email format.'),
+  body('email').isEmail().normalizeEmail().withMessage('Invalid work email format.'),
+  body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must be at least 8 characters, including one uppercase letter and one number.'),
+  body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected.')
+], async (req, res, next) => {  // Updated to use 'next'
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    // Pass the error to the custom error handler with a 400 status
+    console.log("Validation errors during staff creation:", errors.array());
+    return next({ status: 400, message: errors.array()[0].msg });
+  }
+
+  const { first_name, last_name, personal_email, email, password, role } = req.body;
+  try {
+    db.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
+      if (err) {
+        console.error("Database error during email check:", err.message);
+        return res.render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Database error during email check',
+          flashType: 'error'
+        });
+      }
+      if (row) {
+        console.warn("Email already registered:", email);
+        return res.render('admin/create-staff', {
+          user: req.user,
+          csrfToken: req.csrfToken(),
+          flashMessage: 'Email already registered',
+          flashType: 'error'
+        });
+      }
+
+      // Hash password and insert new user
+      const hashedPassword = await bcrypt.hash(password, 10);
+      db.run(
+        `INSERT INTO users (first_name, last_name, personal_email, work_email, password, role, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
+        [first_name, last_name, personal_email || null, email, hashedPassword, role],
+        (err) => {
+          if (err) {
+            console.error("Error creating staff in database:", err.message);
+            return res.render('admin/create-staff', {
+              user: req.user,
+              csrfToken: req.csrfToken(),
+              flashMessage: 'Error creating staff in database',
+              flashType: 'error'
+            });
+          }
+          // Redirect to staff list or reload page on success
+          res.redirect('/admin/staff-dashboard');
+        }
+      );
+    });
+
+  } catch (error) {
+    console.error("Unexpected error during staff creation:", error.message);
+    res.render('admin/create-staff', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      flashMessage: 'Unexpected server error',
+      flashType: 'error'
+    });
+  }
+});
+
 module.exports = router;
 
