@@ -35,18 +35,11 @@ router.post('/customer-register', csrfProtection, [
     .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter')
 ], async (req, res) => {
   const errors = validationResult(req);
-  const products = [
-    { name: 'Product 1', description: 'Description for Product 1' },
-    { name: 'Product 2', description: 'Description for Product 2' },
-    { name: 'Product 3', description: 'Description for Product 3' }
-  ];
 
   if (!errors.isEmpty()) {
-    // Render errors without needing form persistence or showRegisterForm handling, handled by main.js
     return res.status(400).render('home', {
       flashMessage: errors.array().map(error => error.msg).join(', '),
       flashType: 'error',
-      products,
       csrfToken: req.csrfToken()
     });
   }
@@ -58,7 +51,6 @@ router.post('/customer-register', csrfProtection, [
         return res.status(500).render('home', {
           flashMessage: 'Database error during email check',
           flashType: 'error',
-          products,
           csrfToken: req.csrfToken()
         });
       }
@@ -66,7 +58,6 @@ router.post('/customer-register', csrfProtection, [
         return res.status(400).render('home', {
           flashMessage: 'Email already registered',
           flashType: 'error',
-          products,
           csrfToken: req.csrfToken()
         });
       }
@@ -80,14 +71,12 @@ router.post('/customer-register', csrfProtection, [
             return res.status(500).render('home', {
               flashMessage: 'Error creating account in database',
               flashType: 'error',
-              products,
               csrfToken: req.csrfToken()
             });
           }
           res.status(200).render('home', {
             flashMessage: 'Registration successful',
             flashType: 'success',
-            products,
             csrfToken: req.csrfToken()
           });
         }
@@ -97,7 +86,6 @@ router.post('/customer-register', csrfProtection, [
     res.status(500).render('home', {
       flashMessage: 'Unexpected server error',
       flashType: 'error',
-      products,
       csrfToken: req.csrfToken()
     });
   }
@@ -106,17 +94,10 @@ router.post('/customer-register', csrfProtection, [
 // Login Route
 router.post('/login', csrfProtection, (req, res, next) => {
   passport.authenticate('local', async (err, user, info) => {
-    const products = [
-      { name: 'Product 1', description: 'Description for Product 1' },
-      { name: 'Product 2', description: 'Description for Product 2' },
-      { name: 'Product 3', description: 'Description for Product 3' }
-    ];
-
     if (err) {
       return res.status(500).render('home', {
         flashMessage: 'Internal Server Error',
         flashType: 'error',
-        products,
         csrfToken: req.csrfToken()
       });
     }
@@ -124,7 +105,6 @@ router.post('/login', csrfProtection, (req, res, next) => {
       return res.status(401).render('home', {
         flashMessage: info.message || 'Login failed. Please check your email and password.',
         flashType: 'error',
-        products,
         csrfToken: req.csrfToken()
       });
     }
@@ -134,7 +114,6 @@ router.post('/login', csrfProtection, (req, res, next) => {
         return res.status(500).render('home', {
           flashMessage: 'Internal Server Error',
           flashType: 'error',
-          products,
           csrfToken: req.csrfToken()
         });
       }
@@ -165,13 +144,11 @@ router.post('/logout', csrfProtection, (req, res) => {
   req.logout((err) => {
     if (err) return res.status(500).send("Logout error");
 
-    // Destroy the session to ensure complete logout
     req.session.destroy((sessionErr) => {
       if (sessionErr) {
         console.error("Session destruction error:", sessionErr);
         return res.status(500).send("Session destruction error");
       }
-      // Redirect to the homepage after clearing session data
       res.redirect('/');
     });
   });
@@ -183,7 +160,7 @@ passport.serializeUser((user, done) => done(null, user.id));
 passport.deserializeUser((id, done) => {
   db.get('SELECT * FROM users WHERE id = ?', [id], (err, user) => {
     if (err) return done(err);
-    if (!user) return done(null, false); // Clear session if user not found
+    if (!user) return done(null, false);
     user.id = id;
     done(null, user);
   });

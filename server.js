@@ -83,8 +83,14 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CSRF protection middleware
-app.use(csurf({ cookie: true }));
+// CSRF protection middleware with exclusion for API routes
+const csrfProtection = csurf({ cookie: true });
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    return next(); // Skip CSRF protection for API routes
+  }
+  csrfProtection(req, res, next);
+});
 
 // Attach permissions to user object
 app.use(attachPermissions);
@@ -100,7 +106,7 @@ app.use((req, res, next) => {
 // Set user, csrfToken, and showStaffHeader in views
 app.use((req, res, next) => {
   res.locals.user = req.user;
-  res.locals.csrfToken = req.csrfToken();
+  res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
   res.locals.isProduction = isProduction;
   
   // Check role and set showStaffHeader if user is staff
@@ -114,20 +120,10 @@ app.get('/', async (req, res) => {
   const cacheKey = 'homepage-products';
   const cachedData = await getCache(cacheKey);
 
-  if (cachedData) {
-    return res.render('home', { products: cachedData });
-  }
-
-  // Otherwise, fetch fresh data, cache it, and return
-  const products = [
-    { name: 'Product 1', description: 'Description for Product 1' },
-    { name: 'Product 2', description: 'Description for Product 2' },
-    { name: 'Product 3', description: 'Description for Product 3' }
-  ];
-
-  await setCache(cacheKey, products);
-  res.render('home', { products });
+  // Render the homepage with products from cache if available; otherwise, pass an empty array
+  res.render('home', { products: cachedData || [] });
 });
+
 
 // Routes for Staff and Superadmin Dashboards, restricted with enforceRoleAccess
 app.get('/admin/superadmin-dashboard', enforceRoleAccess, (req, res) => {
