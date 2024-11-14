@@ -39,13 +39,35 @@ async function loadPermissions(req, res) {
           row.roles = row.roles ? row.roles.split(',') : [];
         });
         
+        // Friendly name mappings
+        const permissionFriendlyNames = {
+          'can_edit_content': 'Edit Content',
+          'can_view_reports': 'View Reports',
+          'can_access_financials': 'Access Financials',
+          'can_create_user': 'Create User',
+          'can_manage_access_page': 'Manage Access Page',
+          'can_edit_hero_section': 'Edit Hero Section',
+          'can_edit_product_grids': 'Edit Product Grids',
+          'can_edit_custom_banners': 'Edit Custom Banners',
+          'can_edit_footer': 'Edit Footer'
+        };
+        
+        // Apply friendly names
+        rows.forEach(row => {
+          row.name = permissionFriendlyNames[row.name] || row.name;
+        });
+
         // Sort permissions in the desired order
         const orderedPermissions = [
-          'can_edit_content',
-          'can_view_reports',
-          'can_access_financials',
-          'can_create_user',
-          'can_manage_access_page'
+          'Edit Hero Section',
+          'Edit Product Grids',
+          'Edit Custom Banners',
+          'Edit Footer',
+          'Edit Content',
+          'View Reports',
+          'Access Financials',
+          'Create User',
+          'Manage Access Page'
         ];
         
         rows.sort((a, b) => {
@@ -64,6 +86,7 @@ async function loadPermissions(req, res) {
     res.status(500).json({ error: "Server error while fetching permissions." });
   }
 }
+
 
 // Superadmin Dashboard Route
 router.get('/superadmin-dashboard', enforceRoleAccess, (req, res) => {

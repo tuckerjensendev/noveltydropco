@@ -11,107 +11,23 @@ function hideSpinner() {
     document.getElementById("loadingSpinner").style.display = "none";
 }
 
-// Flash message timeout with targeted click-to-hide functionality
+// Client facing errors - Flash message timeout with targeted click-to-hide functionality
 function setupFlashMessageTimeout() {
     const flashMessage = document.getElementById('flashMessage');
     if (flashMessage) {
-        // Set timeout to hide flash message after 10 seconds
         const timeoutId = setTimeout(() => {
             flashMessage.style.display = 'none';
-        }, 20000); // 20 seconds
+        }, 20000);
 
-        // Hide flash message only when clicked directly
         flashMessage.addEventListener('click', (event) => {
-            event.stopPropagation(); // Prevents click from affecting other elements
+            event.stopPropagation();
             flashMessage.style.display = 'none';
-            clearTimeout(timeoutId); // Prevents the timeout from running if already hidden
+            clearTimeout(timeoutId);
         });
     }
 }
 
-// Call the function after the page loads
-document.addEventListener("DOMContentLoaded", () => {
-    showSpinner();
-    window.addEventListener("load", hideSpinner);
-    setupDropdownControls();
-    restoreFormState();
-    setupInputPersistence();
-    setupFormSubmissionSpinner();
-    setupFlashMessageTimeout();
-
-    // Password validation logic
-    const passwordField = document.getElementById("register_password");
-    const confirmPasswordField = document.getElementById("confirm_password");
-    const requirementsList = document.getElementById("password-requirements");
-    const requirementsContainer = document.getElementById("password-requirements-container");
-
-    // Show requirements container when user starts typing in the password field
-    passwordField?.addEventListener("input", () => {
-        if (passwordField.value || confirmPasswordField.value) {
-            requirementsContainer.classList.add("show"); // Show the container with fixed height
-            requirementsList.classList.remove("hidden"); // Make requirements text visible
-            validatePassword();
-        } else {
-            resetPasswordRequirements(); // Hide requirements if both fields are empty
-        }
-    });
-
-    // Re-check requirements when user types in the confirm password field
-    confirmPasswordField?.addEventListener("input", () => {
-        if (passwordField.value || confirmPasswordField.value) {
-            requirementsContainer.classList.add("show"); // Show the container
-            requirementsList.classList.remove("hidden"); // Make requirements text visible
-            validatePassword();
-        } else {
-            resetPasswordRequirements(); // Hide requirements if both fields are empty
-        }
-    });
-
-    // Function to validate each requirement
-    function validatePassword() {
-        const password = passwordField.value;
-        const confirmPassword = confirmPasswordField.value;
-        
-        // Requirement selectors
-        const lengthReq = document.querySelector('[data-requirement="length"]');
-        const uppercaseReq = document.querySelector('[data-requirement="uppercase"]');
-        const numberReq = document.querySelector('[data-requirement="number"]');
-        const matchReq = document.querySelector('[data-requirement="match"]');
-
-        // Validate each requirement
-        const lengthMet = password.length >= 6;
-        const uppercaseMet = /[A-Z]/.test(password);
-        const numberMet = /\d/.test(password);
-        const matchMet = password === confirmPassword && password !== "";
-
-        // Toggle classes based on validation
-        toggleRequirementClass(lengthReq, lengthMet);
-        toggleRequirementClass(uppercaseReq, uppercaseMet);
-        toggleRequirementClass(numberReq, numberMet);
-        toggleRequirementClass(matchReq, matchMet);
-    }
-
-    // Utility function to toggle 'met' class for each requirement
-    function toggleRequirementClass(element, isMet) {
-        if (isMet) {
-            element.classList.add("met");
-        } else {
-            element.classList.remove("met");
-        }
-    }
-
-    // Reset requirements to hidden and set all text to red
-    function resetPasswordRequirements() {
-        requirementsContainer.classList.remove("show"); // Hide the container
-        requirementsList.classList.add("hidden"); // Hide requirements text
-        document.querySelectorAll('.requirement').forEach(req => {
-            req.classList.remove("met");
-        });
-    }
-});
-
-
-// Dropdown control and form toggle functions
+// For login / client registraton - dropdown control and form toggle functions
 function setupDropdownControls() {
     const showRegisterLink = document.getElementById('show-register');
     const showLoginLink = document.getElementById('show-login');
@@ -143,7 +59,7 @@ function setupDropdownControls() {
     });
 }
 
-// Restore form visibility and values based on sessionStorage
+// For Login / Client Registration - restore form visibility and values based on sessionStorage
 function restoreFormState() {
     const showLoginFormState = sessionStorage.getItem("showLoginForm") === "true";
     const showRegisterFormState = sessionStorage.getItem("showRegisterForm") === "true";
@@ -156,7 +72,6 @@ function restoreFormState() {
         closeDropdown();
     }
 
-    // Restore input values if they exist in sessionStorage
     const emailField = document.getElementById("email");
     const firstNameField = document.getElementById("first_name");
     const lastNameField = document.getElementById("last_name");
@@ -167,7 +82,44 @@ function restoreFormState() {
     if (registerEmailField) registerEmailField.value = sessionStorage.getItem("registerEmail") || "";
 }
 
-// Functions to toggle forms with session persistence
+// Client Registration - assword validation functions
+function validatePassword() {
+    const password = document.getElementById("register_password").value;
+    const confirmPassword = document.getElementById("confirm_password").value;
+
+    const lengthReq = document.querySelector('[data-requirement="length"]');
+    const uppercaseReq = document.querySelector('[data-requirement="uppercase"]');
+    const numberReq = document.querySelector('[data-requirement="number"]');
+    const matchReq = document.querySelector('[data-requirement="match"]');
+
+    const lengthMet = password.length >= 6;
+    const uppercaseMet = /[A-Z]/.test(password);
+    const numberMet = /\d/.test(password);
+    const matchMet = password === confirmPassword && password !== "";
+
+    toggleRequirementClass(lengthReq, lengthMet);
+    toggleRequirementClass(uppercaseReq, uppercaseMet);
+    toggleRequirementClass(numberReq, numberMet);
+    toggleRequirementClass(matchReq, matchMet);
+}
+
+function toggleRequirementClass(element, isMet) {
+    if (isMet) {
+        element.classList.add("met");
+    } else {
+        element.classList.remove("met");
+    }
+}
+
+function resetPasswordRequirements() {
+    const requirementsContainer = document.getElementById("password-requirements-container");
+    const requirementsList = document.getElementById("password-requirements");
+    requirementsContainer.classList.remove("show");
+    requirementsList.classList.add("hidden");
+    document.querySelectorAll('.requirement').forEach(req => req.classList.remove("met"));
+}
+
+// Specifically for login/client regsitration forms - functions to toggle forms with session persistence
 function showRegisterForm() {
     const dropdown = document.getElementById('dropdown');
     const loginForm = document.getElementById('login-form');
@@ -186,7 +138,6 @@ function showRegisterForm() {
     registerForm.classList.remove("hidden");
     signInButton?.classList.add("active-border");
 
-    console.log("Active border added to Sign-In button (Register Form Open)");
     sessionStorage.setItem("showRegisterForm", "true");
     sessionStorage.removeItem("showLoginForm");
 }
@@ -210,7 +161,6 @@ function showLoginForm() {
     loginForm.classList.remove("hidden");
     signInButton?.classList.add("active-border");
 
-    console.log("Active border added to Sign-In button (Login Form Open)");
     sessionStorage.setItem("showLoginForm", "true");
     sessionStorage.removeItem("showRegisterForm");
 }
@@ -219,22 +169,15 @@ function toggleDropdown(event) {
     event.stopPropagation();
     const dropdown = document.getElementById('dropdown');
 
-    if (!dropdown) {
-        console.error("Dropdown element is missing.");
-        return;
-    }
-
     if (isDropdownOpen) {
         closeDropdown();
     } else {
         dropdown.classList.add("show");
         isDropdownOpen = true;
-        console.log("Dropdown opened for profile picture click");
     }
 }
 
-
-// Close dropdown function
+// Login/Logout menu - close dropdown function
 function closeDropdown() {
     const dropdown = document.getElementById('dropdown');
     const signInButton = document.querySelector('.sign-in-button');
@@ -248,9 +191,6 @@ function closeDropdown() {
     dropdown.classList.remove("show", "register-mode");
     signInButton?.classList.remove("active-border");
 
-    console.log("Active border removed from Sign-In button (Dropdown Closed)");
-
-    // Ensure all form states are reset
     sessionStorage.removeItem("showLoginForm");
     sessionStorage.removeItem("showRegisterForm");
     sessionStorage.removeItem("loginEmail");
@@ -259,7 +199,7 @@ function closeDropdown() {
     sessionStorage.removeItem("registerEmail");
 }
 
-// Save input values as user types to ensure persistence across sessions
+// For client login & registeration - save input values as user types to ensure persistence across sessions
 function setupInputPersistence() {
     document.getElementById("email")?.addEventListener("input", (event) => {
         sessionStorage.setItem("loginEmail", event.target.value);
@@ -275,11 +215,10 @@ function setupInputPersistence() {
     });
 }
 
-// Initialize active link highlighting based on current URL
-document.addEventListener('DOMContentLoaded', () => {
+// On staff-header.ejs file - active link highlighting based on current URL
+function setupActiveLinkHighlighting() {
     const currentPath = window.location.pathname;
 
-    // Map routes to their corresponding link IDs
     const linkMap = {
         '/admin/superadmin-dashboard': 'superAdminDashboardLink',
         '/admin/staff-dashboard': 'dashboardLink',
@@ -288,19 +227,15 @@ document.addEventListener('DOMContentLoaded', () => {
         '/admin/content-workshop': 'contentWorkshopLink'
     };
 
-    // Set the active class based on the current path on page load
     const activeLinkId = linkMap[currentPath];
     if (activeLinkId) {
-        document.getElementById(activeLinkId)?.classList.add('active-border'); // Use active-border if that’s the intended style
-
+        document.getElementById(activeLinkId)?.classList.add('active-border');
     }
 
-    // Ensure click listeners dynamically add 'active' to clicked links
     Object.values(linkMap).forEach(id => {
         const linkElement = document.getElementById(id);
         if (linkElement) {
             linkElement.addEventListener('click', (event) => {
-                // Remove 'active' class from all links in the staff-header-content
                 document.querySelectorAll('.staff-header-content a').forEach(link => {
                     link.classList.remove('active');
                 });
@@ -308,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
     });
-});
+}
 
 // Attach spinner to all form submissions
 function setupFormSubmissionSpinner() {
@@ -317,29 +252,23 @@ function setupFormSubmissionSpinner() {
     });
 }
 
-
-
-// Enables / disables save button in manage-access.ejs based on checkbox activity
-document.addEventListener('DOMContentLoaded', () => {
+// Manage-access.ejs: Enables/disables save button based on checkbox activity
+function setupSaveButtonToggle() {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
     const saveButton = document.getElementById('saveChangesButton');
 
-    // Check for changes in checkboxes and update save button state
     function checkForChanges() {
-        if (!saveButton) return; // Exit if saveButton is not in the DOM
-
+        if (!saveButton) return;
         const hasChanges = Array.from(checkboxes).some(checkbox =>
             checkbox.checked.toString() !== checkbox.getAttribute('data-original')
         );
         saveButton.disabled = !hasChanges;
     }
 
-    // Attach change event listeners to all checkboxes
     checkboxes.forEach(checkbox => {
         checkbox.addEventListener('change', checkForChanges);
     });
 
-    // Mutation observer to detect attribute changes on checkboxes
     const observer = new MutationObserver(mutations => {
         mutations.forEach(mutation => {
             if (mutation.type === 'attributes' && mutation.attributeName === 'checked') {
@@ -348,11 +277,57 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Observe each checkbox for attribute changes
-    checkboxes.forEach(checkbox => {
-        observer.observe(checkbox, { attributes: true });
+    checkboxes.forEach(checkbox => observer.observe(checkbox, { attributes: true }));
+    checkForChanges();
+}
+
+// Consolidated DOMContentLoaded
+document.addEventListener('DOMContentLoaded', () => {
+    showSpinner();
+    window.addEventListener("load", hideSpinner);
+
+    setupDropdownControls();
+    restoreFormState();
+    setupInputPersistence();
+    setupFormSubmissionSpinner();
+    setupFlashMessageTimeout();
+    setupSaveButtonToggle();
+    setupActiveLinkHighlighting();
+
+    const passwordField = document.getElementById("register_password");
+    const confirmPasswordField = document.getElementById("confirm_password");
+    const requirementsContainer = document.getElementById("password-requirements-container");
+    const requirementsList = document.getElementById("password-requirements");
+
+    // Show requirements container on focus
+    passwordField?.addEventListener("focus", showPasswordRequirements);
+    confirmPasswordField?.addEventListener("focus", showPasswordRequirements);
+
+    // Validate password as user types
+    passwordField?.addEventListener("input", validatePassword);
+    confirmPasswordField?.addEventListener("input", validatePassword);
+
+    // Hide requirements if both password fields are empty and focus is lost
+    document.addEventListener("click", (event) => {
+        if (
+            !passwordField.value &&
+            !confirmPasswordField.value &&
+            !requirementsContainer.contains(event.target) &&
+            event.target !== passwordField &&
+            event.target !== confirmPasswordField
+        ) {
+            hidePasswordRequirements();
+        }
     });
 
-    // Initial check for changes on page load
-    checkForChanges();
+    function showPasswordRequirements() {
+        requirementsContainer.classList.add("show");
+        requirementsList.classList.remove("hidden");
+    }
+
+    function hidePasswordRequirements() {
+        requirementsContainer.classList.remove("show");
+        requirementsList.classList.add("hidden");
+    }
 });
+

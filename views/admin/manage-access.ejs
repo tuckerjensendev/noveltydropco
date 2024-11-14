@@ -3,66 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Manage Access - Admin</title>
+  <title>Staff - Manage Access</title>
+  <style>
+    /* Inline CSS fix if you're testing directly */
+    .hidden-role {
+      visibility: hidden;
+      width: 100px; /* Adjust to match the width of visible columns */
+    }
+  </style>
 </head>
 <body>
 
   <!-- Include the Header Partial with CSRF token and user data -->
   <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
-  <main>
-    <h1>Manage Access</h1>
-    <form id="manageAccessForm" action="/admin/manage-access" method="POST">
-      <!-- CSRF Protection -->
-      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  <!-- Main Content Wrapper -->
+  <div class="main-content-wrapper">
+    <main>
+      <h1>Staff - Manage Access</h1>
+      <form id="manageAccessForm" action="/admin/manage-access" method="POST">
+        <!-- CSRF Protection -->
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
 
-      <table>
-        <thead>
-          <tr>
-            <th>Permission</th>
-            <% 
-              const roles = ['staff1', 'staff2', 'manager1', 'manager2'];
-              const roleOrder = { 'staff1': 0, 'staff2': 1, 'manager1': 2, 'manager2': 3 };
-              const userRoleIndex = roleOrder[user.role] || 0;
+        <!-- Permissions Container with Table and Left-Aligned Button -->
+        <div class="permissions-container">
+          <!-- Permissions Table -->
+          <div class="permissions-table">
+            <div class="permissions-header">
+              <span>Permission</span>
+              <% 
+                const roles = ['staff1', 'staff2', 'manager1', 'manager2'];
+                const roleOrder = { 'staff1': 0, 'staff2': 1, 'manager1': 2, 'manager2': 3 };
+                const userRoleIndex = roleOrder[user.role] || 0;
 
-              // Permission name mapping
-              const permissionNames = {
-                can_create_user: 'Create User',
-                can_edit_content: 'Edit Content',
-                can_view_reports: 'View Reports',
-                can_access_financials: 'View Financials',
-                can_manage_access_page: 'Manage Access'
-              };
-            %>
-            <% roles.forEach(role => { %>
-              <% if (roleOrder[role] < userRoleIndex || user.role === 'superadmin') { %>
-                <th><%= role.charAt(0).toUpperCase() + role.slice(1).replace(/\d/, ' Level $&') %></th>
-              <% } %>
+                // Permission name mapping
+                const permissionNames = {
+                  can_create_user: 'Create User',
+                  can_edit_content: 'Edit Content',
+                  can_view_reports: 'View Reports',
+                  can_access_financials: 'View Financials',
+                  can_manage_access_page: 'Manage Access'
+                };
+              %>
+              <% roles.forEach(role => { %>
+                <!-- Adjusted 'hidden-role' condition to include placeholder space -->
+                <span class="<%= roleOrder[role] < userRoleIndex || user.role === 'superadmin' ? '' : 'hidden-role' %>">
+                  <%= role.charAt(0).toUpperCase() + role.slice(1).replace(/\d/, ' Level $&') %>
+                </span>
+              <% }); %>
+            </div>
+            
+            <!-- Permissions Rows -->
+            <% permissions.forEach(permission => { %>
+              <div class="permissions-row">
+                <!-- Permission Label -->
+                <span class="permission-label"><strong><%= permissionNames[permission.name] || permission.name %></strong></span>
+                
+                <% roles.forEach(role => { %>
+                  <!-- Updated 'hidden-role' condition with placeholder spacing -->
+                  <div class="checkbox-container <%= roleOrder[role] < userRoleIndex || user.role === 'superadmin' ? '' : 'hidden-role' %>">
+                    <input type="checkbox" 
+                           name="permissions[<%= role %>_<%= permission.id %>]" 
+                           value="on"
+                           <%= permission.roles.includes(role) ? 'checked' : '' %> 
+                           data-original="<%= permission.roles.includes(role) ? 'true' : 'false' %>">
+                  </div>
+                <% }); %>
+              </div>
             <% }); %>
-          </tr>
-        </thead>
-        <tbody>
-          <% permissions.forEach(permission => { %>
-          <tr>
-            <!-- Use friendly names if available, else fallback to the coded name -->
-            <td><%= permissionNames[permission.name] || permission.name %></td>
-            <% roles.forEach(role => { %>
-              <% if (roleOrder[role] < userRoleIndex || user.role === 'superadmin') { %>
-                <td>
-                  <input type="checkbox" 
-                         name="permissions[<%= role %>_<%= permission.id %>]" 
-                         value="on"
-                         <%= permission.roles.includes(role) ? 'checked' : '' %> 
-                         data-original="<%= permission.roles.includes(role) ? 'true' : 'false' %>">
-                </td>
-              <% } %>
-            <% }); %>            
-          </tr>
-          <% }); %>
-        </tbody>
-      </table>
-      <button type="submit" id="saveChangesButton" disabled>Save Changes</button>
-    </form>
-  </main>
+          </div>
+        
+          <!-- Save Changes Button aligned with the left edge of the first column -->
+          <button type="submit" id="saveChangesButton" disabled>Save Changes</button>
+        </div>
+      </form>
+    </main>
+  </div> <!-- End of Main Content Wrapper -->
+
 </body>
 </html>

@@ -2,13 +2,13 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Create Staff - Admin</title>
+  <title>Staff - Create Employee</title>
 </head>
 <body>
   <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
   
   <main>
-    <h1>Create New Staff Member</h1>
+    <h1>Staff - Create Employee</h1>
     <form id="createStaffForm" action="/admin/create-staff" method="POST">
       <input type="hidden" name="_csrf" value="<%= csrfToken %>">
       

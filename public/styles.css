@@ -5,10 +5,10 @@
     padding: 0;
 }
 
-/* Hidden class */
+/* Hidden class
 .hidden {
     display: none !important;
-}
+} */
 
 /* 2. Global Styles */
 body, html {
@@ -16,6 +16,10 @@ body, html {
     overflow: hidden; /* Prevent page scrolling */
     background-color: #f4f4f4;
     font-family: Arial, sans-serif;
+}
+
+.main-content-wrapper {
+    padding: 20px;
 }
 
 /* Loading Spinner Overlay */
@@ -238,7 +242,7 @@ header {
     right: 0;
     background-color: #ffffff;
     width: 320px;
-    padding: 25px;
+    padding: 25px 15px;
     border-radius: 12px;
     box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
     transform-origin: top right;
@@ -287,7 +291,7 @@ header {
 .form-content input {
     width: 100%; /* Full width to match container */
     padding: 12px;
-    margin: 8px 0; /* Spacing between inputs */
+    margin: 10px 0; /* Spacing between inputs */
     border: 1px solid #ccc;
     border-radius: 8px;
     font-size: 1em;
@@ -310,7 +314,7 @@ header {
     width: 50%; /* Half the width of the form */
     padding: 12px;
     font-size: 1em;
-    margin-top: 15px;
+    margin: 15px 0;
     background-color: #007bff;
     color: #fff;
     border: none;
@@ -393,7 +397,6 @@ header {
     border: 1px solid #ddd;
     border-radius: 8px;
     padding: 10px 15px;
-    margin-top: 10px;
     font-size: 1.02rem;
     font-weight: 700;
     box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
@@ -548,14 +551,103 @@ header {
 }
 
 /* Manage-Access.ejs Styling */
-#saveChangesButton {
-    background-color: #333;
-    color: #fff;
+/* Permissions Table Container */
+.hidden-role {
+    visibility: hidden;
+    width: 100px; /* Set a fixed width that matches other columns */
 }
+
+.permissions-container {
+    max-width: 90%;
+    margin: 0 auto; /* Centers the container horizontally */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Permissions Table Styling */
+.permissions-table {
+    display: grid;
+    grid-template-columns: 1fr repeat(4, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+/* Header Styling */
+.permissions-header {
+    display: contents;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2px solid #ccc;
+}
+
+.permissions-header span {
+    background-color: #007BFF;
+    color: #fff;
+    padding: 6px 0; /* Keeps padding minimal for consistent height */
+    border-radius: 4px;
+    font-size: clamp(0.9em, 1.5vw, 1.1em); /* Responsive font size */
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centers the text vertically and horizontally */
+    min-height: 40px; /* Minimum height to prevent shrinking */
+    height: auto; /* Allows height to adjust based on content */
+}
+
+/* Row Styling */
+.permissions-row {
+    display: contents;
+    align-items: center;
+}
+
+/* Permission Label Styling with Responsive Font */
+.permission-label {
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: clamp(0.85em, 1.2vw, 1em); /* Responsive font size */
+}
+
+/* Checkbox Container with Vertical Centering */
+.checkbox-container {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centers the checkbox vertically */
+}
+
+/* Checkbox Styling with Responsive Size */
+.checkbox-container input[type="checkbox"] {
+    width: clamp(20px, 2vw, 24px);
+    height: clamp(20px, 2vw, 24px);
+    cursor: pointer;
+    accent-color: #007BFF;
+    border-radius: 4px;
+}
+
+/* Save Changes Button with Responsive Font and Padding */
+#saveChangesButton {
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    padding: clamp(8px, 1vw, 12px) clamp(16px, 1.5vw, 20px);
+    font-size: clamp(0.9em, 1.2vw, 1em); /* Responsive font size */
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+    margin-top: 20px;
+    align-self: flex-start;
+    width: auto;
+}
+
+#saveChangesButton:hover {
+    background-color: #0056b3;
+}
+
 #saveChangesButton:disabled {
     background-color: #ccc;
     cursor: not-allowed;
 }
+
 
 /* Responsive Adjustments */
 @media (max-width: 768px) {
