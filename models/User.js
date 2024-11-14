@@ -1,8 +1,9 @@
-const sqlite3 = require('sqlite3').verbose();
+const db = require('../db'); // Reuse the centralized connection
 const bcrypt = require('bcrypt');
-const db = new sqlite3.Database('./noveltydropco.db');
 
+// User-specific setup
 db.serialize(() => {
+  // Create the users table if it doesn't exist
   db.run(`
     CREATE TABLE IF NOT EXISTS users (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,6 +18,7 @@ db.serialize(() => {
     )
   `);
 
+  // Check if a superadmin exists; if not, create one
   db.get('SELECT * FROM users WHERE superadmin = 1', async (err, row) => {
     if (!row) {
       const hashedPassword = await bcrypt.hash('superpassword', 10);
@@ -32,4 +34,4 @@ db.serialize(() => {
   });
 });
 
-module.exports = db;
+module.exports = db; // Export the db if further user operations are needed

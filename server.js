@@ -1,4 +1,5 @@
 // server.js
+
 require('dotenv').config();
 const fs = require('fs');
 const https = require('https');
@@ -12,6 +13,7 @@ const cookieParser = require('cookie-parser');
 const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddleware');
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
+const contentRoutes = require('./routes/contentRoutes');
 
 // Middleware to block all prefetch requests globally
 app.use((req, res, next) => {
@@ -50,8 +52,6 @@ app.use((req, res, next) => { // Cache control to prevent caching of pages for b
 });
 
 app.set('view engine', 'ejs');
-
-
 
 // Helmet for setting security headers, including CSP
 app.use(
@@ -145,6 +145,9 @@ app.use(authRoutes);
 const adminRoutes = require('./routes/admin');
 app.use('/admin', adminRoutes);
 
+// Register the content routes
+app.use(contentRoutes);
+
 // Catch-all route for undefined paths
 app.use((req, res) => {
   res.status(404).render('404');
@@ -165,7 +168,6 @@ app.use((err, req, res, next) => {
   // If it's not a 400 error, proceed to the next error handler
   next(err);
 });
-
 
 // Start HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
