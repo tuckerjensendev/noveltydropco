@@ -457,21 +457,19 @@ header {
     flex: 1;
     padding: 20px;
     background-color: #f4f4f4;
-    overflow-y: auto; /* Enables vertical scrolling */
-    box-sizing: border-box; /* Includes padding in the height calculation */
-    min-height: 100vh; /* Ensures it takes up at least the full viewport height */
-    margin-bottom: 50px; /* Additional margin to create separation at the very bottom */
+    overflow-y: scroll; /* Ensures vertical scrolling is always enabled */
+    height: calc(100vh); /* Ensures it takes up the full viewport height */
+    box-sizing: border-box; /* Includes padding in height calculation */
 }
 
 /* Main preview container */
 #contentPreview {
     display: grid;
-    grid-template-columns: repeat(12, 1fr); /* 12 equally-sized columns */
-    grid-auto-rows: 100px; /* Smaller default row height */
-    gap: 10px; /* Increased gap for better separation between items */
-    width: 100%; /* Full width of the container */
-    padding-bottom: 80px; /* Adds more breathing room at the bottom */
-    margin-bottom: 80px; /* Creates extra visual space at the bottom */
+    grid-template-columns: repeat(12, minmax(100px, 1fr)); /* 12 columns with minimum width */
+    grid-auto-rows: 100px; /* Default row height */
+    gap: 5px; /* Reduced gap for tighter spacing */
+    max-width: 100%;
+    padding-bottom: 150px; /* Adds significant space at the bottom for better UX */
     overflow-x: hidden; /* Hides horizontal overflow */
 }
 
@@ -492,8 +490,7 @@ header {
     grid-column: span 3; /* Allocates 3 columns per square for tighter spacing */
     grid-row: span 2; /* Ensures it spans the correct height */
     width: 75%; /* Keeps a balanced square within reduced column space */
-    height: auto; /* Ensures it adjusts dynamically */
-    aspect-ratio: 1; /* Keeps the square shape automatically */
+    height: 100%; /* Maintains square aspect ratio */
     justify-self: center; /* Centers horizontally within its 3-column space */
     align-self: center; /* Centers vertically within its grid area */
 }
@@ -521,6 +518,49 @@ header {
     grid-column: span 12;
     grid-row: span 2;
 }
+
+/* Spacer versions of blocks */
+.grid-item.wide-grid-rectangle-spacer {
+    grid-column: 4 / span 6;
+    grid-row: span 2;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; /* Make it invisible */
+    border: 1px dashed #ccc; /* Optional: Dashed border for visibility during development */
+}
+
+.grid-item.mini-rectangle-spacer {
+    grid-column: span 3;
+    grid-row: span 2;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.standard-box-spacer {
+    grid-column: span 3;
+    grid-row: span 4;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.banner-spacer {
+    grid-column: span 12;
+    grid-row: span 2;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.mini-square-spacer {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+    justify-self: center;
+    align-self: center;
+}
+
 
 
 /* Create-Staff Form Styling */
