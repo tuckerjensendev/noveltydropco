@@ -1,0 +1,96 @@
+/* Main preview container */
+#contentPreview {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(100px, 1fr)); /* 12 columns with minimum width */
+    grid-auto-rows: 100px; /* Default row height */
+    gap: 5px; /* Reduced gap for tighter spacing */
+    max-width: 100%;
+    padding-bottom: 150px; /* Adds significant space at the bottom for better UX */
+    overflow-x: hidden; /* Hides horizontal overflow */
+}
+
+/* General grid item styling */
+.grid-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid var(--border-color, #ccc);
+    background-color: #fff;
+}
+
+/* MINI SQUARE - Proper size and tighter spacing */
+.grid-item.mini-square {
+    grid-column: span 3; /* Allocates 3 columns per square for tighter spacing */
+    grid-row: span 2; /* Ensures it spans the correct height */
+    width: 75%; /* Keeps a balanced square within reduced column space */
+    height: 100%; /* Maintains square aspect ratio */
+    justify-self: center; /* Centers horizontally within its 3-column space */
+    align-self: center; /* Centers vertically within its grid area */
+}
+
+/* WIDE GRID RECTANGLE - Centered across its 6-column span */
+.grid-item.wide-grid-rectangle {
+    grid-column: 4 / span 6; /* Start from column 4, span 6 columns */
+    grid-row: span 2;
+    width: 100%;
+    height: 100%;
+}
+
+/* Other elements remain unchanged */
+.grid-item.mini-rectangle {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+
+.grid-item.standard-box {
+    grid-column: span 3;
+    grid-row: span 4;
+}
+
+.grid-item.banner {
+    grid-column: span 12;
+    grid-row: span 2;
+}
+
+/* Spacer versions of blocks */
+.grid-item.wide-grid-rectangle-spacer {
+    grid-column: 4 / span 6;
+    grid-row: span 2;
+    width: 100%;
+    height: 100%;
+    background-color: transparent; /* Make it invisible */
+    border: 1px dashed #ccc; /* Optional: Dashed border for visibility during development */
+}
+
+.grid-item.mini-rectangle-spacer {
+    grid-column: span 3;
+    grid-row: span 2;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.standard-box-spacer {
+    grid-column: span 3;
+    grid-row: span 4;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.banner-spacer {
+    grid-column: span 12;
+    grid-row: span 2;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+}
+
+.grid-item.mini-square-spacer {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    background-color: transparent;
+    border: 1px dashed #ccc;
+    justify-self: center;
+    align-self: center;
+}
