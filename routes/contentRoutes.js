@@ -15,7 +15,7 @@ function dbAll(query, params = []) {
 // Helper function to use Promises with db.run
 function dbRun(query, params = []) {
     return new Promise((resolve, reject) => {
-        db.run(query, params, function(err) {
+        db.run(query, params, function (err) {
             if (err) reject(err);
             else resolve(this); // `this` refers to the statement context, useful for inserted ID, etc.
         });
@@ -26,7 +26,10 @@ function dbRun(query, params = []) {
 router.get('/api/content/:page_id', async (req, res) => {
     const { page_id } = req.params;
     try {
-        const blocks = await dbAll('SELECT * FROM content_blocks WHERE page_id = ?', [page_id]);
+        const blocks = await dbAll(
+            'SELECT * FROM content_blocks WHERE page_id = ? ORDER BY row, col',
+            [page_id]
+        );
         res.json(blocks);
     } catch (error) {
         console.error(error);
@@ -34,21 +37,81 @@ router.get('/api/content/:page_id', async (req, res) => {
     }
 });
 
-// Save or update content block
-router.post('/api/content', async (req, res) => {
-    const { block_id, page_id, type, content, position } = req.body;
+// Save layout positions and update content
+router.post('/api/save-layout', async (req, res) => {
+    const layout = req.body; // Expect JSON from the client
     try {
-        if (block_id) {
-            // Update existing block
-            await dbRun('UPDATE content_blocks SET content = ?, position = ?, last_updated = CURRENT_TIMESTAMP WHERE block_id = ?', [content, position, block_id]);
-        } else {
-            // Insert new block
-            await dbRun('INSERT INTO content_blocks (page_id, type, content, position) VALUES (?, ?, ?, ?)', [page_id, type, content, position]);
+        for (const block of layout) {
+            const {
+                block_id,
+                content,
+                style,
+                page_id,
+                type,
+                row,
+                col,
+                width,
+                height,
+                font_size,
+                font_color,
+                bg_color,
+                text_align,
+                images,
+            } = block;
+
+            if (block_id) {
+                // Update existing block
+                await dbRun(
+                    `UPDATE content_blocks 
+                     SET content = ?, style = ?, type = ?, row = ?, col = ?, width = ?, height = ?, 
+                         font_size = ?, font_color = ?, bg_color = ?, text_align = ?, images = ?, 
+                         last_updated = CURRENT_TIMESTAMP 
+                     WHERE block_id = ?`,
+                    [
+                        content,
+                        style,
+                        type,
+                        row,
+                        col,
+                        width,
+                        height,
+                        font_size,
+                        font_color,
+                        bg_color,
+                        text_align,
+                        JSON.stringify(images || []),
+                        block_id,
+                    ]
+                );
+            } else {
+                // Insert new block
+                await dbRun(
+                    `INSERT INTO content_blocks 
+                     (content, style, page_id, type, row, col, width, height, font_size, font_color, 
+                      bg_color, text_align, images) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    [
+                        content,
+                        style,
+                        page_id,
+                        type,
+                        row,
+                        col,
+                        width,
+                        height,
+                        font_size,
+                        font_color,
+                        bg_color,
+                        text_align,
+                        JSON.stringify(images || []),
+                    ]
+                );
+            }
         }
-        res.json({ message: 'Content saved successfully' });
+        res.json({ message: 'Layout saved successfully!' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: 'Failed to save content' });
+        console.error('Error saving layout:', error);
+        res.status(500).json({ error: 'Failed to save layout' });
     }
 });
 

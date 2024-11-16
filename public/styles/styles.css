@@ -215,25 +215,6 @@ header {
     border-color: #999;
 }
 
-/* 4. Hero Section */
-.hero {
-    background-color: #ffe4c4;
-    padding: 3em 1em;
-    text-align: center;
-    color: #333;
-}
-
-.hero h1 {
-    font-size: 2.5em;
-    margin: 0;
-}
-
-.hero p {
-    font-size: 1.2em;
-    margin: 0;
-    color: #444;
-}
-
 /* 5. Login Dropdown Menu (Login/Register) */
 .dropdown-content {
     display: none;
@@ -427,35 +408,6 @@ header {
     display: none;
 }
 
-/* Products Section */
-.products {
-    margin: 2em auto;
-    max-width: 1200px;
-    padding: 0 1em;
-}
-
-.products h2 {
-    text-align: center;
-    margin-bottom: 1em;
-}
-
-.product-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1em;
-    justify-content: center;
-}
-
-.product-item {
-    background-color: #fff;
-    border: 1px solid #ddd;
-    padding: 1em;
-    border-radius: 8px;
-    flex: 1 1 300px;
-    max-width: 300px;
-    text-align: center;
-}
-
 /* Content Workshop */
 .content-workshop-container {
     display: flex;
@@ -505,49 +457,69 @@ header {
     flex: 1;
     padding: 20px;
     background-color: #f4f4f4;
-    overflow-y: auto;
-    max-height: 100vh;
+    overflow-y: auto; /* Enables vertical scrolling */
+    box-sizing: border-box; /* Includes padding in the height calculation */
+    min-height: 100vh; /* Ensures it takes up at least the full viewport height */
+    margin-bottom: 50px; /* Additional margin to create separation at the very bottom */
 }
 
-.main-content h1 {
-    font-size: 1.8em;
-    margin-bottom: 1em;
+/* Main preview container */
+#contentPreview {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr); /* 12 equally-sized columns */
+    grid-auto-rows: 100px; /* Smaller default row height */
+    gap: 10px; /* Increased gap for better separation between items */
+    width: 100%; /* Full width of the container */
+    padding-bottom: 80px; /* Adds more breathing room at the bottom */
+    margin-bottom: 80px; /* Creates extra visual space at the bottom */
+    overflow-x: hidden; /* Hides horizontal overflow */
 }
 
-.main-content form {
-    max-width: 600px;
-    padding-bottom: 150px;
+
+
+/* General grid item styling */
+.grid-item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid var(--border-color, #ccc);
+    background-color: #fff;
 }
 
-.main-content form label {
-    display: block;
-    margin-bottom: 0.5em;
-    font-weight: bold;
+/* MINI SQUARE - Proper size and tighter spacing */
+.grid-item.mini-square {
+    grid-column: span 3; /* Allocates 3 columns per square for tighter spacing */
+    grid-row: span 2; /* Ensures it spans the correct height */
+    width: 75%; /* Keeps a balanced square within reduced column space */
+    height: auto; /* Ensures it adjusts dynamically */
+    aspect-ratio: 1; /* Keeps the square shape automatically */
+    justify-self: center; /* Centers horizontally within its 3-column space */
+    align-self: center; /* Centers vertically within its grid area */
 }
 
-.main-content form textarea {
+/* WIDE GRID RECTANGLE - Centered across its 6-column span */
+.grid-item.wide-grid-rectangle {
+    grid-column: 4 / span 6; /* Start from column 4, span 6 columns */
+    grid-row: span 2;
     width: 100%;
-    padding: 10px;
-    font-size: 1em;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    resize: vertical;
-    margin-bottom: 20px;
+    height: 100%;
 }
 
-.main-content form button {
-    margin-top: 1em;
-    padding: 10px 20px;
-    font-size: 1em;
-    color: #fff;
-    background-color: #333;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
+/* Other elements remain unchanged */
+.grid-item.mini-rectangle {
+    grid-column: span 3;
+    grid-row: span 2;
 }
 
-.main-content form button:hover {
-    background-color: #555;
+.grid-item.standard-box {
+    grid-column: span 3;
+    grid-row: span 4;
+}
+
+.grid-item.banner {
+    grid-column: span 12;
+    grid-row: span 2;
 }
 
 
@@ -725,40 +697,10 @@ header {
     cursor: not-allowed;
 }
 
-
-/* Responsive Adjustments */
-@media (max-width: 768px) {
-    .hero h1 {
-        font-size: 1.8em;
-    }
-
-    .products {
-        margin: 1em auto;
-    }
-
-    .product-list {
-        flex-direction: column;
-        gap: 1em;
-    }
-
-    .product-item {
-        max-width: 100%;
-        margin: 0 auto;
-    }
-}
-
 @media (max-width: 480px) {
     header {
         flex-direction: column;
         align-items: center;
-    }
-
-    .hero {
-        padding: 2em;
-    }
-
-    .hero h1 {
-        font-size: 1.5em;
     }
 
     .profile {

@@ -14,6 +14,7 @@ const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddl
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
 const contentRoutes = require('./routes/contentRoutes');
+const db = require('./db'); // Assuming db.js handles database connections
 
 // Middleware to block all prefetch requests globally
 app.use((req, res, next) => {
@@ -33,27 +34,24 @@ const httpsOptions = {
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Conditional static folder setup based on environment
 app.use(express.static(isProduction ? 'dist' : 'public'));
 
-// Serve additional /public/scripts/main.js and /public/styles.css in development mode only
 if (!isProduction) {
   app.use('/scripts', express.static('public/scripts'));
+  app.use('/scripts', express.static('node_modules/gridstack/dist'));
   app.use('/styles', express.static('public'));
 }
 
-// Middleware setup
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use((req, res, next) => { // Cache control to prevent caching of pages for better session handling
+app.use((req, res, next) => {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, private');
   next();
 });
 
 app.set('view engine', 'ejs');
 
-// Helmet for setting security headers, including CSP
 app.use(
   helmet({
     contentSecurityPolicy: {
@@ -67,35 +65,30 @@ app.use(
   })
 );
 
-// Session configuration with secure cookies for HTTPS
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     httpOnly: true,
-    secure: isProduction, // Only secure in production
+    secure: isProduction,
     sameSite: 'strict'
   }
 }));
 
-// Initialize Passport
 app.use(passport.initialize());
 app.use(passport.session());
 
-// CSRF protection middleware with exclusion for API routes
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
-    return next(); // Skip CSRF protection for API routes
+    return next();
   }
   csrfProtection(req, res, next);
 });
 
-// Attach permissions to user object
 app.use(attachPermissions);
 
-// Redirect HTTP requests to HTTPS
 app.use((req, res, next) => {
   if (req.protocol === 'http') {
     return res.redirect(`https://${req.headers.host}${req.url}`);
@@ -103,25 +96,44 @@ app.use((req, res, next) => {
   next();
 });
 
-// Set user, csrfToken, and showStaffHeader in views
 app.use((req, res, next) => {
   res.locals.user = req.user;
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
   res.locals.isProduction = isProduction;
-  
-  // Check role and set showStaffHeader if user is staff
   res.locals.showStaffHeader = req.user && req.user.role === 'staff';
-  
   next();
 });
 
-// Main Route - Homepage with caching
+// Main Route - Homepage with dynamic content blocks
 app.get('/', async (req, res) => {
   const cacheKey = 'homepage-products';
   const cachedData = await getCache(cacheKey);
 
-  // Render the homepage with products from cache if available; otherwise, pass an empty array
-  res.render('home', { products: cachedData || [] });
+  // Fetch content blocks from the database
+  let blocks = [];
+  try {
+    const contentBlocks = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM content_blocks WHERE page_id = ?', ['home'], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
+    });
+
+    // Map content blocks to CSS classes for styling
+    blocks = contentBlocks.map(block => ({
+      ...block,
+      style: block.style || '',
+      x: block.position_x || block.col,
+      y: block.position_y || block.row,
+      width: block.width || 'auto',
+      height: block.height || 'auto'
+  }));  
+  } catch (error) {
+    console.error('Error fetching content blocks:', error);
+  }
+
+  // Render the homepage with products from cache and dynamic content blocks
+  res.render('home', { products: cachedData || [], blocks });
 });
 
 
@@ -134,14 +146,12 @@ app.get('/admin/staff-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/staff-dashboard');
 });
 
-// Import and use routes
 const authRoutes = require('./routes/auth');
 app.use(authRoutes);
 
 const adminRoutes = require('./routes/admin');
 app.use('/admin', adminRoutes);
 
-// Register the content routes
 app.use(contentRoutes);
 
 // Catch-all route for undefined paths
@@ -161,7 +171,6 @@ app.use((err, req, res, next) => {
     });
   }
   
-  // If it's not a 400 error, proceed to the next error handler
   next(err);
 });
 

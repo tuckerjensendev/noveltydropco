@@ -4,39 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff - Content Workshop</title>
+    <link rel="stylesheet" href="/styles/styles.css">
 </head>
 <body>
-    <!-- Header (if applicable) -->
     <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
-    <!-- Main Container to Hold Sidebar and Content Area -->
     <div class="content-workshop-container">
-        <!-- Side Panel with Page Names -->
+        <!-- Sidebar Panel -->
         <aside class="side-panel">
             <h2>Pages</h2>
             <ul>
-                <li><a href="#home" class="active">Home</a></li>
-                <li><a href="#about">About</a></li>
-                <li><a href="#services">Services</a></li>
-                <li><a href="#contact">Contact</a></li>
+                <li><a href="#" data-page="home" class="active">Home</a></li>
+                <li><a href="#" data-page="about">About</a></li>
+                <li><a href="#" data-page="services">Services</a></li>
+                <li><a href="#" data-page="contact">Contact</a></li>
             </ul>
         </aside>
 
-        <!-- Main Content Area for Editing -->
+        <!-- Main Content Area -->
         <section class="main-content">
             <h1>Staff - Content Workshop</h1>
-            <form id="contentForm" action="/admin/update-content" method="POST">
-                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div id="sharedToolbar" class="block-controls">
+                <label for="blockTypeControl">Block Type:</label>
+                <select id="blockTypeControl">
+                    <option value="mini-square">Mini Grid Box</option>
+                    <option value="mini-rectangle">Mini Grid Rectangle</option>
+                    <option value="standard-box">Standard Grid Box</option>
+                    <option value="wide-grid-rectangle">Wide Grid Rectangle</option>
+                    <option value="banner">Banner</option>
+                </select>
+                <button id="addBlockButton">Add Block</button>
+                <button id="saveButton">Save Layout</button>
+            </div>
 
-                <!-- Placeholder content to enable scroll testing -->
-                <% for (let i = 0; i < 10; i++) { %>
-                    <label for="content<%= i %>">Content Section <%= i + 1 %>:</label>
-                    <textarea name="content<%= i %>" id="content<%= i %>" rows="8" required></textarea>
-                <% } %>
-
-                <button type="submit">Update Content</button>
-            </form>
+            <!-- Preview Pane: Adding a note to make sure blocks are directly appended here via JavaScript -->
+            <div id="contentPreview" class="grid-container">
+                <!-- Ensure that .grid-item elements are appended directly here by JavaScript -->
+            </div>
         </section>
     </div>
+
+    <script src="/scripts/Sortable.min.js"></script>
+    <script src="/scripts/contentWorkshop.js"></script>
 </body>
 </html>

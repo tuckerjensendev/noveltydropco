@@ -109,37 +109,29 @@ router.get('/create-staff', ensurePermission('can_create_user'), csrfProtection,
 
 
 // Content Workshop Route (requires 'can_edit_content' permission)
-router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtection, (req, res) => {
-  res.render('admin/content-workshop', {
-      user: req.user,
-      csrfToken: req.csrfToken()
-  });
-});
-
-// POST route to handle content updates in Content Workshop**
-router.post('/update-content', ensurePermission('can_edit_content'), csrfProtection, async (req, res) => {
-  const { homePageContent } = req.body;
-
+router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtection, async (req, res) => {
   try {
-    // Assume content table has 'id' and 'homepage' columns
-    await new Promise((resolve, reject) => {
-      db.run(
-        `UPDATE content_table SET homepage = ? WHERE id = 1`, 
-        [homePageContent],
-        (err) => {
-          if (err) return reject(err);
-          resolve();
-        }
-      );
+    // Fetch content blocks from the database for the 'home' page
+    const page_id = 'home'; // Adjust if needed for different pages
+    const blocks = await new Promise((resolve, reject) => {
+      db.all('SELECT * FROM content_blocks WHERE page_id = ?', [page_id], (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
     });
 
-    console.log("Content updated successfully");
-    res.redirect('/admin/content-workshop');
+    // Render content-workshop with fetched blocks
+    res.render('admin/content-workshop', {
+      user: req.user,
+      csrfToken: req.csrfToken(),
+      blocks // Pass blocks array to the view
+    });
   } catch (error) {
-    console.error("Error updating content:", error);
-    res.status(500).send("Error updating content");
+    console.error("Error loading content workshop:", error);
+    res.status(500).send("Error loading content workshop.");
   }
 });
+
 
 // Manage Access Page (requires 'can_manage_access_page' permission)
 router.get('/manage-access', ensurePermission('can_manage_access_page'), csrfProtection, (req, res) => {

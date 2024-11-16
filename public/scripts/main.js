@@ -5,10 +5,12 @@ let isRegisterFormOpen = false;
 
 // Spinner show/hide functions
 function showSpinner() {
-    document.getElementById("loadingSpinner").style.display = "flex";
+    const spinner = document.getElementById("loadingSpinner");
+    if (spinner) spinner.style.display = "flex";
 }
 function hideSpinner() {
-    document.getElementById("loadingSpinner").style.display = "none";
+    const spinner = document.getElementById("loadingSpinner");
+    if (spinner) spinner.style.display = "none";
 }
 
 // Client facing errors - Flash message timeout with targeted click-to-hide functionality
@@ -27,7 +29,7 @@ function setupFlashMessageTimeout() {
     }
 }
 
-// For login / client registraton - dropdown control and form toggle functions
+// For login / client registration - dropdown control and form toggle functions
 function setupDropdownControls() {
     const showRegisterLink = document.getElementById('show-register');
     const showLoginLink = document.getElementById('show-login');
@@ -76,50 +78,61 @@ function restoreFormState() {
     const firstNameField = document.getElementById("first_name");
     const lastNameField = document.getElementById("last_name");
     const registerEmailField = document.getElementById("register_email");
+
     if (emailField) emailField.value = sessionStorage.getItem("loginEmail") || "";
     if (firstNameField) firstNameField.value = sessionStorage.getItem("registerFirstName") || "";
     if (lastNameField) lastNameField.value = sessionStorage.getItem("registerLastName") || "";
     if (registerEmailField) registerEmailField.value = sessionStorage.getItem("registerEmail") || "";
 }
 
-// Client Registration - assword validation functions
+// Client Registration - Password validation functions
 function validatePassword() {
-    const password = document.getElementById("register_password").value;
-    const confirmPassword = document.getElementById("confirm_password").value;
+    const passwordField = document.getElementById("register_password");
+    const confirmPasswordField = document.getElementById("confirm_password");
 
-    const lengthReq = document.querySelector('[data-requirement="length"]');
-    const uppercaseReq = document.querySelector('[data-requirement="uppercase"]');
-    const numberReq = document.querySelector('[data-requirement="number"]');
-    const matchReq = document.querySelector('[data-requirement="match"]');
+    if (passwordField && confirmPasswordField) {
+        const password = passwordField.value;
+        const confirmPassword = confirmPasswordField.value;
 
-    const lengthMet = password.length >= 6;
-    const uppercaseMet = /[A-Z]/.test(password);
-    const numberMet = /\d/.test(password);
-    const matchMet = password === confirmPassword && password !== "";
+        const lengthReq = document.querySelector('[data-requirement="length"]');
+        const uppercaseReq = document.querySelector('[data-requirement="uppercase"]');
+        const numberReq = document.querySelector('[data-requirement="number"]');
+        const matchReq = document.querySelector('[data-requirement="match"]');
 
-    toggleRequirementClass(lengthReq, lengthMet);
-    toggleRequirementClass(uppercaseReq, uppercaseMet);
-    toggleRequirementClass(numberReq, numberMet);
-    toggleRequirementClass(matchReq, matchMet);
+        const lengthMet = password.length >= 6;
+        const uppercaseMet = /[A-Z]/.test(password);
+        const numberMet = /\d/.test(password);
+        const matchMet = password === confirmPassword && password !== "";
+
+        toggleRequirementClass(lengthReq, lengthMet);
+        toggleRequirementClass(uppercaseReq, uppercaseMet);
+        toggleRequirementClass(numberReq, numberMet);
+        toggleRequirementClass(matchReq, matchMet);
+    }
 }
 
 function toggleRequirementClass(element, isMet) {
-    if (isMet) {
-        element.classList.add("met");
-    } else {
-        element.classList.remove("met");
+    if (element) {
+        if (isMet) {
+            element.classList.add("met");
+        } else {
+            element.classList.remove("met");
+        }
     }
 }
 
 function resetPasswordRequirements() {
     const requirementsContainer = document.getElementById("password-requirements-container");
     const requirementsList = document.getElementById("password-requirements");
-    requirementsContainer.classList.remove("show");
-    requirementsList.classList.add("hidden");
-    document.querySelectorAll('.requirement').forEach(req => req.classList.remove("met"));
+
+    if (requirementsContainer && requirementsList) {
+        requirementsContainer.classList.remove("show");
+        requirementsList.classList.add("hidden");
+        document.querySelectorAll('.requirement').forEach(req => req.classList.remove("met"));
+    }
 }
 
-// Specifically for login/client regsitration forms - functions to toggle forms with session persistence
+// Specifically for login/client registration forms - functions to toggle forms with session persistence
 function showRegisterForm() {
     const dropdown = document.getElementById('dropdown');
     const loginForm = document.getElementById('login-form');
@@ -172,7 +185,7 @@ function toggleDropdown(event) {
     if (isDropdownOpen) {
         closeDropdown();
     } else {
-        dropdown.classList.add("show");
+        if (dropdown) dropdown.classList.add("show");
         isDropdownOpen = true;
     }
 }
@@ -199,7 +212,7 @@ function closeDropdown() {
     sessionStorage.removeItem("registerEmail");
 }
 
-// For client login & registeration - save input values as user types to ensure persistence across sessions
+// For client login & registration - save input values as user types to ensure persistence across sessions
 function setupInputPersistence() {
     document.getElementById("email")?.addEventListener("input", (event) => {
         sessionStorage.setItem("loginEmail", event.target.value);
@@ -310,9 +323,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Hide requirements if both password fields are empty and focus is lost
     document.addEventListener("click", (event) => {
         if (
-            !passwordField.value &&
-            !confirmPasswordField.value &&
-            !requirementsContainer.contains(event.target) &&
+            (!passwordField || !passwordField.value) &&
+            (!confirmPasswordField || !confirmPasswordField.value) &&
+            requirementsContainer && !requirementsContainer.contains(event.target) &&
             event.target !== passwordField &&
             event.target !== confirmPasswordField
         ) {
@@ -321,13 +334,12 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     function showPasswordRequirements() {
-        requirementsContainer.classList.add("show");
-        requirementsList.classList.remove("hidden");
+        if (requirementsContainer) requirementsContainer.classList.add("show");
+        if (requirementsList) requirementsList.classList.remove("hidden");
     }
 
     function hidePasswordRequirements() {
-        requirementsContainer.classList.remove("show");
-        requirementsList.classList.add("hidden");
+        if (requirementsContainer) requirementsContainer.classList.remove("show");
+        if (requirementsList) requirementsList.classList.add("hidden");
     }
 });
-
