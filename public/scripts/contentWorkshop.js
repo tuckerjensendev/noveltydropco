@@ -1,146 +1,166 @@
 document.addEventListener("DOMContentLoaded", () => {
+    console.log("[DEBUG] contentWorkshop.js loaded and DOMContentLoaded triggered.");
+
     const gridContainer = document.getElementById("contentPreview");
     const blockTypeControl = document.getElementById("blockTypeControl");
     const addBlockButton = document.getElementById("addBlockButton");
     const saveButton = document.getElementById("saveButton");
 
-    // Add the toggle lock button
-    const toggleLockButton = document.createElement("button");
-    toggleLockButton.id = "toggleLockButton";
-    toggleLockButton.textContent = "🔓 Unlock"; // Default to locked
-    document.getElementById("sharedToolbar").appendChild(toggleLockButton);
+    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveButton) {
+        console.error("[DEBUG] One or more critical DOM elements are missing. Script aborted.");
+        return;
+    }
+    console.log("[DEBUG] All critical DOM elements are present.");
 
-    let isLocked = true; // Default state is locked
     let sortableInstance;
+    let localLayout = []; // In-memory layout for unsaved updates
 
+    // Initialize Sortable.js
     const initializeSortable = () => {
+        console.log("[DEBUG] Initializing Sortable.js...");
         if (sortableInstance) {
-            sortableInstance.destroy(); // Destroy existing Sortable instance
+            sortableInstance.destroy(); // Destroy the existing instance
+            console.log("[DEBUG] Previous Sortable.js instance destroyed.");
         }
+
+        // Remove `grid-area` styles for proper sorting
+        Array.from(gridContainer.children).forEach((block) => {
+            block.style.gridArea = ""; // Clear conflicting styles
+        });
+
         sortableInstance = Sortable.create(gridContainer, {
             animation: 150,
             handle: ".grid-item",
-            disabled: isLocked, // Lock state controls drag-and-drop
-            onEnd: () => {
-                console.log("Reordered!");
+            onEnd: (event) => {
+                console.log("[DEBUG] Drag event ended.");
+                console.log(`[DEBUG] Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
+
+                const blocks = Array.from(gridContainer.children);
+                if (event.oldIndex !== event.newIndex) {
+                    const movedBlock = blocks.splice(event.oldIndex, 1)[0];
+                    blocks.splice(event.newIndex, 0, movedBlock);
+
+                    gridContainer.innerHTML = ""; // Clear container
+                    blocks.forEach((block) => gridContainer.appendChild(block)); // Re-render DOM
+
+                    console.log("[DEBUG] Blocks after reordering:", blocks.map((block) => block.dataset.blockId));
+                    updateLocalLayoutFromDOM(); // Update local layout after sorting
+                } else {
+                    console.log("[DEBUG] Block order unchanged.");
+                }
             },
         });
-        console.log("Sortable initialized. Locked:", isLocked);
+        console.log("[DEBUG] Sortable.js initialized successfully.");
     };
 
-    const fetchLayout = () => {
+    // Fetch layout and initialize Sortable.js
+    const fetchLayout = (reinitializeSortable = false) => {
         const pageId = document.querySelector(".side-panel .active").dataset.page;
-        console.log("Fetching layout for page:", pageId);
+        console.log(`[DEBUG] Fetching layout for page ID: ${pageId}`);
 
         fetch(`/api/content/${pageId}`)
-            .then((res) => res.json())
+            .then((res) => {
+                console.log(`[DEBUG] Fetch response status: ${res.status}`);
+                return res.json();
+            })
             .then((blocks) => {
-                console.log("Fetched blocks:", blocks);
-                gridContainer.innerHTML = ""; // Clear existing blocks
-                blocks.forEach((block) => {
+                console.log("[DEBUG] Fetched blocks:", blocks);
+
+                gridContainer.innerHTML = ""; // Clear all current blocks
+                blocks.forEach((block, index) => {
+                    console.log(`[DEBUG] Rendering block ${index + 1}:`, block);
                     const blockElement = document.createElement("div");
                     blockElement.className = `grid-item ${block.type}`;
+                    blockElement.dataset.blockId = block.block_id;
                     blockElement.style.gridRow = `${block.row} / span ${block.height}`;
                     blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-
-                    // Apply inline styles
-                    if (block.style) blockElement.style.cssText += block.style;
-                    if (block.font_color) blockElement.style.color = block.font_color;
-                    if (block.bg_color) blockElement.style.backgroundColor = block.bg_color;
-                    if (block.text_align) blockElement.style.textAlign = block.text_align;
-
-                    if (block.content) {
-                        blockElement.innerHTML = `<div class="block-content" contenteditable="true">${block.content}</div>`;
-                    }
+                    blockElement.innerHTML = `<div class="block-content" contenteditable="true">${block.content || ""}</div>`;
                     gridContainer.appendChild(blockElement);
                 });
 
-                initializeSortable(); // Reinitialize Sortable after rendering
+                console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
+
+                if (reinitializeSortable) {
+                    console.log("[DEBUG] Reinitializing Sortable.js after fetching layout...");
+                    initializeSortable();
+                }
+
+                // Sync initial layout to local memory
+                updateLocalLayoutFromDOM();
             })
-            .catch((err) => console.error("Error fetching layout:", err));
+            .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
     };
 
-    fetchLayout(); // Call it on page load
-
-    addBlockButton.addEventListener("click", () => {
-        const blockType = blockTypeControl.value;
-        const block = document.createElement("div");
-
-        // Apply selected CSS class
-        block.className = `grid-item ${blockType}`;
-
-        // Only add contenteditable if it's not a spacer
-        if (!blockType.includes("spacer")) {
-            block.innerHTML = `<div class="block-content" contenteditable="true">New ${blockType.replace('-', ' ').toUpperCase()}</div>`;
-        }
-
-        gridContainer.appendChild(block);
-        initializeSortable(); // Reinitialize Sortable after adding
-    });
-
-    saveButton.addEventListener("click", () => {
-        const blocksToSave = [];
-        const pageId = document.querySelector(".side-panel .active").dataset.page;
-
-        gridContainer.querySelectorAll(".grid-item").forEach((block) => {
-            const content = block.querySelector(".block-content")?.innerHTML || "";
-
-            const offsetTop = block.offsetTop - gridContainer.offsetTop;
-            const offsetLeft = block.offsetLeft - gridContainer.offsetLeft;
-
-            const gridRowHeight = parseFloat(gridContainer.style.gridAutoRows.replace("px", "")) || 100;
-            const gridColumnWidth = gridContainer.offsetWidth / 12;
-
-            const rowStart = Math.round(offsetTop / gridRowHeight) + 1;
-            const colStart = Math.round(offsetLeft / gridColumnWidth) + 1;
-
+    // Update in-memory layout from the DOM
+    const updateLocalLayoutFromDOM = () => {
+        console.log("[DEBUG] Updating local layout from DOM...");
+        localLayout = Array.from(gridContainer.querySelectorAll(".grid-item")).map((block, index) => {
             const computedStyle = window.getComputedStyle(block);
-            const gridRow = computedStyle.getPropertyValue("grid-row");
-            const gridColumn = computedStyle.getPropertyValue("grid-column");
+            const rowSpan = parseInt(computedStyle.getPropertyValue("grid-row").split("span")[1]?.trim() || 1);
+            const colSpan = parseInt(computedStyle.getPropertyValue("grid-column").split("span")[1]?.trim() || 1);
 
-            const rowSpan = gridRow.includes("span")
-                ? parseInt(gridRow.split("span")[1]?.trim())
-                : parseInt(gridRow.split("/")[1]?.trim()) || 1;
-            const colSpan = gridColumn.includes("span")
-                ? parseInt(gridColumn.split("span")[1]?.trim())
-                : parseInt(gridColumn.split("/")[1]?.trim()) || 1;
-
-            const width = colSpan > 0 ? colSpan : 1;
-            const height = rowSpan > 0 ? rowSpan : 1;
-
-            const inlineStyle = block.style.cssText;
-
-            blocksToSave.push({
-                content,
-                page_id: pageId,
+            return {
+                block_id: block.dataset.blockId || null,
+                content: block.querySelector(".block-content")?.innerHTML || "",
+                row: index + 1, // Use DOM order for row
+                col: 1, // Default column for simplicity
+                width: colSpan,
+                height: rowSpan,
+                style: block.style.cssText || null,
                 type: block.classList[1],
-                row: rowStart,
-                col: colStart,
-                width,
-                height,
-                style: inlineStyle || null,
-            });
+                page_id: document.querySelector(".side-panel .active").dataset.page,
+            };
         });
+        console.log("[DEBUG] Updated local layout:", JSON.stringify(localLayout, null, 2));
+    };
 
-        console.log("Payload to save:", blocksToSave);
+    // Save layout to the database
+    const saveLayout = (layout) => {
+        console.log("[DEBUG] Saving layout with payload:", JSON.stringify(layout, null, 2));
 
         fetch("/api/save-layout", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(blocksToSave),
+            body: JSON.stringify(layout),
         })
-            .then((res) => res.json())
-            .then((data) => {
-                console.log("Layout saved:", data);
-                fetchLayout(); // Re-fetch layout after save
+            .then((res) => {
+                console.log(`[DEBUG] Save response status: ${res.status}`);
+                return res.json();
             })
-            .catch((err) => console.error("Error saving layout:", err));
+            .then((data) => {
+                console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
+                fetchLayout(true); // Re-fetch layout after saving
+            })
+            .catch((err) => console.error("[DEBUG] Error saving layout:", err));
+    };
+
+    // Add a new block to the DOM and update memory
+    const addBlock = () => {
+        console.log("[DEBUG] Add Block button clicked.");
+        const blockType = blockTypeControl.value;
+        const block = document.createElement("div");
+
+        block.className = `grid-item ${blockType}`;
+        block.dataset.blockId = `temp-${Date.now()}`; // Temporary ID for new blocks
+        block.style.gridRow = "1 / span 2";
+        block.style.gridColumn = "1 / span 3";
+        block.innerHTML = `<div class="block-content" contenteditable="true">New ${blockType.replace("-", " ").toUpperCase()}</div>`;
+
+        gridContainer.appendChild(block);
+        console.log("[DEBUG] Added new block:", block);
+
+        initializeSortable();
+        updateLocalLayoutFromDOM(); // Update in-memory layout
+    };
+
+    // Event listeners
+    addBlockButton.addEventListener("click", addBlock);
+
+    saveButton.addEventListener("click", () => {
+        console.log("[DEBUG] Save button clicked.");
+        saveLayout(localLayout);
     });
 
-    toggleLockButton.addEventListener("click", () => {
-        isLocked = !isLocked;
-        toggleLockButton.textContent = isLocked ? "🔓 Unlock" : "🔒 Lock";
-        if (sortableInstance) sortableInstance.option("disabled", isLocked);
-        console.log("Lock state toggled. Locked:", isLocked);
-    });
+    // Initial fetch and setup
+    fetchLayout(true);
 });
