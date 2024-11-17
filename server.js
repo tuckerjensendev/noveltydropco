@@ -1,6 +1,5 @@
-// server.js
-
 require('dotenv').config();
+const crypto = require('crypto');
 const fs = require('fs');
 const https = require('https');
 const express = require('express');
@@ -10,15 +9,28 @@ const session = require('express-session');
 const helmet = require('helmet');
 const csurf = require('csurf');
 const cookieParser = require('cookie-parser');
+const path = require('path');
 const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddleware');
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
 const contentRoutes = require('./routes/contentRoutes');
-const db = require('./db'); // Assuming db.js handles database connections
+const db = require('./db');
+
+// Logs directory and CSP log file
+const logsDir = path.join(__dirname, 'logs');
+const cspLogFile = path.join(logsDir, 'csp-violations.log');
+
+// Ensure logs directory exists
+if (!fs.existsSync(logsDir)) {
+  fs.mkdirSync(logsDir);
+}
 
 // Middleware to block all prefetch requests globally
 app.use((req, res, next) => {
-  const isPrefetchRequest = req.headers['purpose'] === 'prefetch' || req.headers['x-moz'] === 'prefetch' || req.headers['sec-fetch-mode'] === 'prefetch';
+  const isPrefetchRequest =
+    req.headers['purpose'] === 'prefetch' ||
+    req.headers['x-moz'] === 'prefetch' ||
+    req.headers['sec-fetch-mode'] === 'prefetch';
   if (isPrefetchRequest) {
     return res.status(403).send('Prefetch requests are disabled on this server.');
   }
@@ -52,29 +64,61 @@ app.use((req, res, next) => {
 
 app.set('view engine', 'ejs');
 
+// Middleware to generate nonces for CSP
+app.use((req, res, next) => {
+  res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
+  res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
+  next();
+});
+
+// Update Helmet to use nonce-based CSP and report violations
 app.use(
   helmet({
     contentSecurityPolicy: {
       useDefaults: true,
       directives: {
-        "script-src": ["'self'"],
-        "style-src": ["'self'", "'unsafe-inline'"],
-        "connect-src": ["'self'"]
-      },
-    },
+        "default-src": ["'self'"],
+        "script-src": ["'self'", (req, res) => `'nonce-${res.locals.scriptNonce}'`],
+        "style-src": ["'self'", (req, res) => `'nonce-${res.locals.styleNonce}'`],
+        "connect-src": ["'self'"],
+        "report-uri": "/csp-violation" // Adds the violation reporting endpoint
+      }
+    }
   })
 );
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    httpOnly: true,
-    secure: isProduction,
-    sameSite: 'strict'
-  }
-}));
+// Endpoint to handle CSP violations and log them
+app.post('/csp-violation', express.json({ type: ['application/json', 'application/csp-report'] }), (req, res) => {
+  const violationReport = req.body?.["csp-report"]; // Extract CSP report if available
+  
+  const violationDetails = {
+    timestamp: new Date().toISOString(),
+    ...(violationReport || req.body) // Log the full report or body for debugging
+  };
+
+  // Log violation details
+  fs.appendFile('logs/csp-violations.log', JSON.stringify(violationDetails, null, 2) + '\n', (err) => {
+    if (err) console.error('Failed to write CSP violation to log:', err);
+  });
+
+  console.error('CSP Violation Logged:', violationDetails);
+
+  res.status(204).end(); // Respond with No Content
+});
+
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'strict'
+    }
+  })
+);
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -109,7 +153,6 @@ app.get('/', async (req, res) => {
   const cacheKey = 'homepage-products';
   const cachedData = await getCache(cacheKey);
 
-  // Fetch content blocks from the database
   let blocks = [];
   try {
     const contentBlocks = await new Promise((resolve, reject) => {
@@ -119,7 +162,6 @@ app.get('/', async (req, res) => {
       });
     });
 
-    // Map content blocks to CSS classes for styling
     blocks = contentBlocks.map(block => ({
       ...block,
       style: block.style || '',
@@ -127,17 +169,14 @@ app.get('/', async (req, res) => {
       y: block.position_y || block.row,
       width: block.width || 'auto',
       height: block.height || 'auto'
-  }));  
+    }));
   } catch (error) {
     console.error('Error fetching content blocks:', error);
   }
 
-  // Render the homepage with products from cache and dynamic content blocks
   res.render('home', { products: cachedData || [], blocks });
 });
 
-
-// Routes for Staff and Superadmin Dashboards, restricted with enforceRoleAccess
 app.get('/admin/superadmin-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/superadmin-dashboard');
 });
@@ -154,15 +193,12 @@ app.use('/admin', adminRoutes);
 
 app.use(contentRoutes);
 
-// Catch-all route for undefined paths
 app.use((req, res) => {
   res.status(404).render('404');
 });
 
-// Catch-all route for 400 errors
 app.use((err, req, res, next) => {
   if (err.status === 400) {
-    // Render the page with error details without redirecting
     return res.status(400).render('admin/create-staff', {
       user: req.user,
       csrfToken: req.csrfToken(),
@@ -170,11 +206,9 @@ app.use((err, req, res, next) => {
       flashType: 'error'
     });
   }
-  
   next(err);
 });
 
-// Start HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
   console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
 });

@@ -8,8 +8,10 @@ function ensurePermission(permissionName) {
       ? `role: ${req.user.role}, ID: ${req.user.id || "unknown ID"}`
       : "unauthenticated user";
 
+    const utcTimestamp = new Date().toISOString();
+
     if (!req.user?.permissions || !req.user.permissions.includes(permissionName)) {
-      logUnauthorizedAccess(`Unauthorized access attempt to ${req.originalUrl} by ${userRole} from IP: ${req.ip}`);
+      logUnauthorizedAccess(`[${utcTimestamp}] Unauthorized access attempt to ${req.originalUrl} by ${userRole} from IP: ${req.ip}`);
       return res.redirect('/');
     }
 
@@ -26,26 +28,28 @@ function enforceRoleAccess(req, res, next) {
     ? `role: ${req.user.role}, ID: ${req.user.id || "unknown ID"}`
     : "unauthenticated user";
 
+  const utcTimestamp = new Date().toISOString();
+
   // Superadmin bypass
   if (req.user && req.user.role === 'superadmin') {
-    console.log(`Superadmin bypasses all permission checks for ${requestedPath}`);
+    console.log(`[${utcTimestamp}] Superadmin bypasses all permission checks for ${requestedPath}`);
     return next();
   }
 
   // Handle unauthenticated user case
   if (!req.isAuthenticated()) {
-    logUnauthorizedAccess(`Unauthorized access attempt to ${requestedPath} by unauthenticated user from IP: ${ipAddress}`);
+    logUnauthorizedAccess(`[${utcTimestamp}] Unauthorized access attempt to ${requestedPath} by unauthenticated user from IP: ${ipAddress}`);
     return res.redirect('/');
   }
 
   // Role-based restrictions for specific paths
   if (requestedPath === '/admin/superadmin-dashboard' && req.user.role !== 'superadmin') {
-    logUnauthorizedAccess(`Unauthorized access attempt to ${requestedPath} by ${userRole} from IP: ${ipAddress}`);
+    logUnauthorizedAccess(`[${utcTimestamp}] Unauthorized access attempt to ${requestedPath} by ${userRole} from IP: ${ipAddress}`);
     return res.redirect('/');
   }
 
   if (requestedPath === '/admin/staff-dashboard' && req.user.role === 'client') {
-    logUnauthorizedAccess(`Unauthorized access attempt to ${requestedPath} by ${userRole} from IP: ${ipAddress}`);
+    logUnauthorizedAccess(`[${utcTimestamp}] Unauthorized access attempt to ${requestedPath} by ${userRole} from IP: ${ipAddress}`);
     return res.redirect('/');
   }
 

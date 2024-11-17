@@ -10,7 +10,6 @@
     <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
 
     <div class="content-workshop-container">
-        <!-- Sidebar Panel -->
         <aside class="side-panel">
             <h2>Pages</h2>
             <ul>
@@ -21,7 +20,6 @@
             </ul>
         </aside>
 
-        <!-- Main Content Area -->
         <section class="main-content">
             <h1>Staff - Content Workshop</h1>
             <div id="sharedToolbar" class="block-controls">
@@ -30,26 +28,23 @@
                     <option value="block-grid-small">Small Grid Block</option>
                     <option value="block-grid-medium">Medium Grid Block</option>
                     <option value="block-grid-large">Large Grid Block</option>
-                    <option value="block-centerpiece">Centerpiece Block</option> <!-- Updated name -->
+                    <option value="block-centerpiece">Centerpiece Block</option>
                     <option value="block-banner">Banner Block</option>
                     <option value="block-spacer-small">Small Spacer Block</option>
                     <option value="block-spacer-medium">Medium Spacer Block</option>
                     <option value="block-spacer-large">Large Spacer Block</option>
-                    <option value="block-spacer-centerpiece">Centerpiece Spacer Block</option> <!-- Updated name -->
+                    <option value="block-spacer-centerpiece">Centerpiece Spacer Block</option>
                     <option value="block-spacer-banner">Banner Spacer Block</option>
                 </select>                
                 <button id="addBlockButton">Add Block</button>
                 <button id="saveButton">Save Layout</button>
             </div>
 
-            <!-- Preview Pane: Adding a note to make sure blocks are directly appended here via JavaScript -->
-            <div id="contentPreview" class="grid-container">
-                <!-- Ensure that .grid-item elements are appended directly here by JavaScript -->
-            </div>
+            <div id="contentPreview" class="grid-container"></div>
         </section>
     </div>
 
-    <script src="/scripts/Sortable.min.js"></script>
-    <script src="/scripts/contentWorkshop.js"></script>
+    <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script>
+    <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
 </body>
 </html>
