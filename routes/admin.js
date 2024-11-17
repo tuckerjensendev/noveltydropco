@@ -1,7 +1,8 @@
 // routes/admin.js
 const express = require('express');
 const router = express.Router();
-const db = require('../models/User');
+const userDb = require('../models/User'); // For user-specific operations
+const db = require('../db'); // For permissions/content-related queries
 const bcrypt = require('bcrypt');
 const { enforceRoleAccess, ensurePermission } = require('../middleware/authMiddleware');
 const { body, validationResult } = require('express-validator');
@@ -38,7 +39,7 @@ async function loadPermissions(req, res) {
         rows.forEach(row => {
           row.roles = row.roles ? row.roles.split(',') : [];
         });
-        
+
         // Friendly name mappings
         const permissionFriendlyNames = {
           'can_edit_content': 'Edit Content',
@@ -51,7 +52,7 @@ async function loadPermissions(req, res) {
           'can_edit_custom_banners': 'Edit Custom Banners',
           'can_edit_footer': 'Edit Footer'
         };
-        
+
         // Apply friendly names
         rows.forEach(row => {
           row.name = permissionFriendlyNames[row.name] || row.name;
@@ -69,7 +70,7 @@ async function loadPermissions(req, res) {
           'Create User',
           'Manage Access Page'
         ];
-        
+
         rows.sort((a, b) => {
           const indexA = orderedPermissions.indexOf(a.name);
           const indexB = orderedPermissions.indexOf(b.name);
@@ -86,7 +87,6 @@ async function loadPermissions(req, res) {
     res.status(500).json({ error: "Server error while fetching permissions." });
   }
 }
-
 
 // Superadmin Dashboard Route
 router.get('/superadmin-dashboard', enforceRoleAccess, (req, res) => {
@@ -107,11 +107,9 @@ router.get('/create-staff', ensurePermission('can_create_user'), csrfProtection,
   });
 });
 
-
 // Content Workshop Route (requires 'can_edit_content' permission)
 router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtection, async (req, res) => {
   try {
-    // Fetch content blocks from the database for the 'home' page
     const page_id = 'home'; // Adjust if needed for different pages
     const blocks = await new Promise((resolve, reject) => {
       db.all('SELECT * FROM content_blocks WHERE page_id = ?', [page_id], (err, rows) => {
@@ -120,18 +118,16 @@ router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtec
       });
     });
 
-    // Render content-workshop with fetched blocks
     res.render('admin/content-workshop', {
       user: req.user,
       csrfToken: req.csrfToken(),
-      blocks // Pass blocks array to the view
+      blocks
     });
   } catch (error) {
     console.error("Error loading content workshop:", error);
     res.status(500).send("Error loading content workshop.");
   }
 });
-
 
 // Manage Access Page (requires 'can_manage_access_page' permission)
 router.get('/manage-access', ensurePermission('can_manage_access_page'), csrfProtection, (req, res) => {
@@ -147,16 +143,15 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
   try {
     // Step 1: Fetch all existing role-permission mappings
     const existingPermissions = await new Promise((resolve, reject) => {
-      db.all(
-        `SELECT roles.role_name, permissions.id AS permission_id
-         FROM role_permissions
-         INNER JOIN roles ON role_permissions.role_id = roles.id
-         INNER JOIN permissions ON role_permissions.permission_id = permissions.id`,
-        (err, rows) => {
-          if (err) return reject(err);
-          resolve(rows);
-        }
-      );
+      db.all(`
+        SELECT roles.role_name, permissions.id AS permission_id
+        FROM role_permissions
+        INNER JOIN roles ON role_permissions.role_id = roles.id
+        INNER JOIN permissions ON role_permissions.permission_id = permissions.id
+      `, (err, rows) => {
+        if (err) return reject(err);
+        resolve(rows);
+      });
     });
 
     // Map current permissions per role for easy lookup
@@ -178,9 +173,7 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
       if (roleLevel >= userRoleLevel) return; // Skip deletions for roles at or above the user's level
 
       permissionIds.forEach(permissionId => {
-        const permissionKey = `${role}_${permissionId}`;
-        if (!(permissionKey in permissionsData)) {
-          // If permission is missing in the form data, queue it for deletion
+        if (!(role + '_' + permissionId in permissionsData)) {
           deletionQueue.push({ role, permissionId });
           changesDetected = true;
         }
@@ -195,7 +188,6 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
         if (roleLevel >= userRoleLevel) return; // Skip additions for roles at or above the user's level
 
         if (!currentPermissionsMap[role] || !currentPermissionsMap[role].has(permissionId)) {
-          // Queue for addition if checked and not in current permissions
           additionQueue.push({ role, permissionId });
           changesDetected = true;
         }
@@ -221,10 +213,7 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
     for (const { role, permissionId } of additionQueue) {
       const roleId = await new Promise((resolve, reject) => {
         db.get('SELECT id FROM roles WHERE role_name = ?', [role], (err, row) => {
-          if (err || !row) {
-            console.error(`Role not found for role name: ${role}`);
-            return resolve(null);
-          }
+          if (err || !row) return reject(err);
           resolve(row.id);
         });
       });
@@ -244,7 +233,6 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
       }
     }
 
-    // Final redirect after saving changes
     res.redirect('/admin/manage-access');
   } catch (error) {
     console.error("Error updating role permissions:", error);
@@ -252,7 +240,7 @@ router.post('/manage-access', csrfProtection, async (req, res) => {
   }
 });
 
-// POST route to handle staff creation with EJS rendering on errors
+// POST route to handle staff creation (uses userDb)
 router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection, [
   body('first_name').isAlpha().trim().escape().withMessage('First name must contain only letters.'),
   body('last_name').isAlpha().trim().escape().withMessage('Last name must contain only letters.'),
@@ -260,68 +248,57 @@ router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection
   body('email').isEmail().normalizeEmail().withMessage('Invalid work email format.'),
   body('password').isLength({ min: 8 }).matches(/\d/).matches(/[A-Z]/).withMessage('Password must be at least 8 characters, including one uppercase letter and one number.'),
   body('role').isIn(['staff1', 'staff2', 'manager1', 'manager2']).withMessage('Invalid role selected.')
-], async (req, res, next) => {  // Updated to use 'next'
+], async (req, res, next) => {
   const errors = validationResult(req);
 
   if (!errors.isEmpty()) {
-    // Pass the error to the custom error handler with a 400 status
     console.log("Validation errors during staff creation:", errors.array());
     return next({ status: 400, message: errors.array()[0].msg });
   }
 
   const { first_name, last_name, personal_email, email, password, role } = req.body;
+
   try {
-    db.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
+    userDb.get('SELECT * FROM users WHERE work_email = ?', [email], async (err, row) => {
       if (err) {
-        console.error("Database error during email check:", err.message);
         return res.render('admin/create-staff', {
-          user: req.user,
-          csrfToken: req.csrfToken(),
           flashMessage: 'Database error during email check',
-          flashType: 'error'
+          flashType: 'error',
+          csrfToken: req.csrfToken()
         });
       }
       if (row) {
-        console.warn("Email already registered:", email);
         return res.render('admin/create-staff', {
-          user: req.user,
-          csrfToken: req.csrfToken(),
           flashMessage: 'Email already registered',
-          flashType: 'error'
+          flashType: 'error',
+          csrfToken: req.csrfToken()
         });
       }
 
-      // Hash password and insert new user
       const hashedPassword = await bcrypt.hash(password, 10);
-      db.run(
+      userDb.run(
         `INSERT INTO users (first_name, last_name, personal_email, work_email, password, role, created_at) VALUES (?, ?, ?, ?, ?, ?, datetime('now', 'localtime'))`,
         [first_name, last_name, personal_email || null, email, hashedPassword, role],
         (err) => {
           if (err) {
-            console.error("Error creating staff in database:", err.message);
             return res.render('admin/create-staff', {
-              user: req.user,
-              csrfToken: req.csrfToken(),
               flashMessage: 'Error creating staff in database',
-              flashType: 'error'
+              flashType: 'error',
+              csrfToken: req.csrfToken()
             });
           }
-          // Redirect to staff list or reload page on success
           res.redirect('/admin/staff-dashboard');
         }
       );
     });
-
   } catch (error) {
     console.error("Unexpected error during staff creation:", error.message);
     res.render('admin/create-staff', {
-      user: req.user,
-      csrfToken: req.csrfToken(),
       flashMessage: 'Unexpected server error',
-      flashType: 'error'
+      flashType: 'error',
+      csrfToken: req.csrfToken()
     });
   }
 });
 
 module.exports = router;
-

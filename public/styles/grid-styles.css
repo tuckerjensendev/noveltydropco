@@ -20,7 +20,7 @@
 }
 
 /* MINI SQUARE - Proper size and tighter spacing */
-.grid-item.mini-square {
+.grid-item.block-grid-small {
     grid-column: span 3; /* Allocates 3 columns per square for tighter spacing */
     grid-row: span 2; /* Ensures it spans the correct height */
     width: 75%; /* Keeps a balanced square within reduced column space */
@@ -29,33 +29,33 @@
     align-self: center; /* Centers vertically within its grid area */
 }
 
-/* WIDE GRID RECTANGLE - Centered across its 6-column span */
-.grid-item.wide-grid-rectangle {
-    grid-column: 4 / span 6; /* Start from column 4, span 6 columns */
+/* CENTERPIECE BLOCK - Centered across its 8-column span */
+.grid-item.block-centerpiece {
+    grid-column: 3 / span 8; /* Start from column 3, span 8 columns */
     grid-row: span 2;
     width: 100%;
     height: 100%;
 }
 
 /* Other elements remain unchanged */
-.grid-item.mini-rectangle {
+.grid-item.block-grid-medium {
     grid-column: span 3;
     grid-row: span 2;
 }
 
-.grid-item.standard-box {
+.grid-item.block-grid-large {
     grid-column: span 3;
     grid-row: span 4;
 }
 
-.grid-item.banner {
+.grid-item.block-banner {
     grid-column: span 12;
     grid-row: span 2;
 }
 
 /* Spacer versions of blocks */
-.grid-item.wide-grid-rectangle-spacer {
-    grid-column: 4 / span 6;
+.grid-item.block-spacer-centerpiece {
+    grid-column: 3 / span 8;
     grid-row: span 2;
     width: 100%;
     height: 100%;
@@ -63,28 +63,28 @@
     border: 1px dashed #ccc; /* Optional: Dashed border for visibility during development */
 }
 
-.grid-item.mini-rectangle-spacer {
+.grid-item.block-spacer-medium {
     grid-column: span 3;
     grid-row: span 2;
     background-color: transparent;
     border: 1px dashed #ccc;
 }
 
-.grid-item.standard-box-spacer {
+.grid-item.block-spacer-large {
     grid-column: span 3;
     grid-row: span 4;
     background-color: transparent;
     border: 1px dashed #ccc;
 }
 
-.grid-item.banner-spacer {
+.grid-item.block-spacer-banner {
     grid-column: span 12;
     grid-row: span 2;
     background-color: transparent;
     border: 1px dashed #ccc;
 }
 
-.grid-item.mini-square-spacer {
+.grid-item.block-spacer-small {
     grid-column: span 3;
     grid-row: span 2;
     width: 75%;

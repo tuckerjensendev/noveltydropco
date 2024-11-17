@@ -1,4 +1,4 @@
-const db = require('../models/User');
+const db = require('../db');
 const logUnauthorizedAccess = require('./logUnauthorizedAccess');
 
 // Middleware to ensure the user has the necessary permissions + tracking of unauthorized access
