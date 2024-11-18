@@ -16,7 +16,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let sortableInstance;
     let localLayout = []; // In-memory layout for unsaved updates
-    let layoutHistory = []; // Stack for undo functionality
+    let layoutHistory = []; // Stack for undo functionality for non-deletion actions
+    let deleteHistory = []; // Stack for undo functionality for deletions
     let deleteMode = false; // Track delete mode state
 
     // Disable undo button initially
@@ -55,7 +56,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Update undo button state
     const updateUndoButtonState = () => {
-        undoButton.disabled = layoutHistory.length <= 1; // Disable if no undo steps are available
+        // Enable undo button if there's anything in either history stack
+        undoButton.disabled = deleteHistory.length === 0 && layoutHistory.length <= 1;
         console.log(`[DEBUG] Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
     };
 
@@ -65,12 +67,18 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`[DEBUG] Delete mode ${deleteMode ? "enabled" : "disabled"}.`);
         gridContainer.classList.toggle("delete-mode", deleteMode);
 
+        // Disable all buttons except undo when delete mode is active
+        addBlockButton.disabled = deleteMode;
+        saveButton.disabled = deleteMode;
+        blockTypeControl.disabled = deleteMode;
+
         if (deleteMode) {
             gridContainer.addEventListener("click", deleteBlock);
-            saveButton.disabled = true; // Disable save button when in delete mode
         } else {
             gridContainer.removeEventListener("click", deleteBlock);
-            saveButton.disabled = false; // Enable save button when delete mode is off
+            addBlockButton.disabled = false;
+            saveButton.disabled = false;
+            blockTypeControl.disabled = false;
         }
 
         // Highlight blocks in delete mode
@@ -87,9 +95,19 @@ document.addEventListener("DOMContentLoaded", () => {
         const blockElement = event.target.closest(".grid-item");
         if (blockElement) {
             console.log(`[DEBUG] Block clicked for deletion: ${blockElement.dataset.blockId}`);
-            // Remove the block from the DOM immediately
-            blockElement.remove();
+
+            // Save the block state before deletion to delete history for undo purposes
+            deleteHistory.push({
+                blockId: blockElement.dataset.blockId,
+                row: blockElement.style.gridRow,
+                col: blockElement.style.gridColumn,
+                type: blockElement.classList[1],
+                content: blockElement.querySelector(".block-content")?.innerHTML || "",
+            });
+
+            blockElement.remove(); // Remove the block from the DOM
             updateLocalLayoutFromDOM(); // Update the layout after removing the block
+            updateUndoButtonState(); // Update undo button state
         }
     };
 
@@ -164,9 +182,25 @@ document.addEventListener("DOMContentLoaded", () => {
         updateUndoButtonState(); // Update undo button state
     };
 
-    // Undo the last layout change
+    // Undo the last action (deletion or layout change)
     const undoLayoutChange = () => {
-        if (layoutHistory.length > 1) { // Ensure there's something to undo (keep at least the initial state)
+        if (deleteMode && deleteHistory.length > 0) {
+            // Handle undo for deletions
+            const lastDeletedBlock = deleteHistory.pop(); // Get the last deleted block
+            console.log("[DEBUG] Undoing last deletion. Restoring block:", JSON.stringify(lastDeletedBlock, null, 2));
+            const blockElement = document.createElement("div");
+            blockElement.className = `grid-item ${lastDeletedBlock.type}`;
+            blockElement.dataset.blockId = lastDeletedBlock.blockId;
+            blockElement.style.gridRow = lastDeletedBlock.row;
+            blockElement.style.gridColumn = lastDeletedBlock.col;
+            blockElement.innerHTML = `<div class="block-content" contenteditable="true">${lastDeletedBlock.content}</div>`;
+            gridContainer.appendChild(blockElement);
+
+            // Update local layout and sortable
+            updateLocalLayoutFromDOM();
+            initializeSortable();
+        } else if (!deleteMode && layoutHistory.length > 1) {
+            // Handle undo for layout changes
             layoutHistory.pop(); // Remove the latest change
             const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
             console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
@@ -217,14 +251,10 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((data) => {
                 console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
 
-                // Re-render layout based on server response
-                if (data.layout) {
-                    console.log("[DEBUG] Re-rendering updated layout from server response...");
-                    renderLayout(data.layout);
-                    saveLayoutState(); // Save the saved state to history
-                } else {
-                    console.log("[DEBUG] No updated layout received from server.");
-                }
+                // Clear undo history after a successful save
+                layoutHistory = [];
+                deleteHistory = [];
+                updateUndoButtonState(); // Update undo button state
             })
             .catch((err) => console.error("[DEBUG] Error saving layout:", err));
     };
