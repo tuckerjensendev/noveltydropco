@@ -94,3 +94,9 @@
     justify-self: center;
     align-self: center;
 }
+
+/* Delete Mode Styling */
+.delete-mode .grid-item {
+    border: 3px solid red !important; /* Make it clear that blocks are deletable */
+    cursor: pointer;
+}

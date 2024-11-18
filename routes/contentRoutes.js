@@ -16,15 +16,42 @@ router.get('/api/content/:page_id', async (req, res) => {
     }
 });
 
-
-// Save layout positions and update content
+// Save layout positions, update content, and handle deleted blocks
 router.post('/api/save-layout', async (req, res) => {
-    const layout = req.body;
-    console.log('Incoming save payload:', JSON.stringify(layout, null, 2));
+    const { page_id, layout } = req.body; // Expecting `page_id` explicitly in the payload
+    console.log('Incoming save payload:', JSON.stringify(req.body, null, 2));
+
+    if (!page_id) {
+        console.error('Error: Missing page_id for saving layout.');
+        return res.status(400).json({ error: 'Missing page_id for saving layout.' });
+    }
 
     try {
+        // Handle empty layout case
+        if (!layout || layout.length === 0) {
+            console.log('[ROUTE INFO] Empty layout payload received. Clearing all blocks for the page.');
+            await db.runQuery('DELETE FROM content_blocks WHERE page_id = ?', [page_id]);
+            return res.json({ message: 'All blocks cleared for the page.', layout: [] });
+        }
+
         // Start a transaction for atomicity
         await db.runQuery('BEGIN TRANSACTION');
+
+        // Track which blocks are in the new layout
+        const updatedBlockIds = layout.filter(block => block.block_id && !block.block_id.startsWith('temp-')).map(block => block.block_id);
+
+        // Delete blocks not present in the layout anymore
+        const deleteQuery = `
+            DELETE FROM content_blocks
+            WHERE block_id NOT IN (${updatedBlockIds.map(() => '?').join(', ')})
+            AND page_id = ?
+        `;
+        if (updatedBlockIds.length > 0) {
+            await db.runQuery(deleteQuery, [...updatedBlockIds, page_id]);
+        } else {
+            // If no blocks in updated layout, delete all blocks from the page
+            await db.runQuery(`DELETE FROM content_blocks WHERE page_id = ?`, [page_id]);
+        }
 
         const updatedLayout = []; // Store the updated layout for response
 
@@ -32,7 +59,6 @@ router.post('/api/save-layout', async (req, res) => {
             const block = layout[i];
             const {
                 block_id,
-                page_id,
                 type,
                 content,
                 col,
@@ -106,6 +132,7 @@ router.post('/api/save-layout', async (req, res) => {
 // Delete content block
 router.delete('/api/content/:block_id', async (req, res) => {
     const { block_id } = req.params;
+    console.log(`[ROUTE DEBUG] Deleting block with ID: ${block_id}`);
     try {
         await db.runQuery('DELETE FROM content_blocks WHERE block_id = ?', [block_id]);
         res.json({ message: 'Content block deleted successfully' });
