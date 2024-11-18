@@ -7,8 +7,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveButton = document.getElementById("saveButton");
     const undoButton = document.getElementById("undoButton");
     const deleteModeButton = document.getElementById("deleteModeButton");
+    const toolbar = document.getElementById('sharedToolbar'); // Floating toolbar reference
+    const mainContent = document.querySelector('.main-content'); // Main content section
 
-    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveButton || !undoButton || !deleteModeButton) {
+    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveButton || !undoButton || !deleteModeButton || !toolbar || !mainContent) {
         console.error("[DEBUG] One or more critical DOM elements are missing. Script aborted.");
         return;
     }
@@ -149,6 +151,15 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
     };
+
+    // Floating toolbar enhancement
+    mainContent.addEventListener('scroll', () => {
+        if (mainContent.scrollTop > 0) {
+            toolbar.classList.add('scrolled');
+        } else {
+            toolbar.classList.remove('scrolled');
+        }
+    });
 
     // Update in-memory layout from the DOM
     const updateLocalLayoutFromDOM = () => {

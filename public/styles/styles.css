@@ -462,6 +462,24 @@ header {
     box-sizing: border-box; /* Includes padding in height calculation */
 }
 
+/* Floating Toolbar */
+#sharedToolbar {
+    position: sticky; /* Makes the toolbar stick to its container */
+    top: 0; /* Stick to the top of its container */
+    background-color: #fff; /* Ensure background color for better visibility */
+    padding: 10px; /* Padding for aesthetics */
+    z-index: 100; /* Stay above other content */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add slight shadow for visual separation */
+    display: flex; /* Keeps buttons aligned properly */
+    gap: 10px; /* Adds some space between buttons for clarity */
+}
+
+#sharedToolbar.scrolled {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Stronger shadow when scrolled */
+    background-color: #f9f9f9; /* Change background color slightly when scrolled */
+}
+
+
 /* Create-Staff Form Styling */
 .create-staff-container {
     max-width: 800px;
