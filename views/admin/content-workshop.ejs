@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Staff - Content Workshop</title>
-    <link rel="stylesheet" href="/styles/grid-styles.css">
+    <link rel="stylesheet" href="/styles/grid-styles.css"> <!-- Add the updated Grid Styles -->
 </head>
 <body>
     <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
@@ -40,6 +40,7 @@
                 <button id="saveButton">Save Layout</button>
             </div>
 
+            <!-- Ensure `grid-container` class is used to apply consistent grid styles -->
             <div id="contentPreview" class="grid-container"></div>
         </section>
     </div>

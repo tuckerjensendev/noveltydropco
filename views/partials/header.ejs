@@ -3,12 +3,16 @@
 <% if (isProduction) { %>
   <!-- Production: Load Webpack Bundles -->
   <link rel="stylesheet" href="/styles.css">
-  <script src="/bundle.js"></script>
+  <link rel="stylesheet" href="/styles/grid-styles.css"> <!-- Add Grid Styles -->
+  <script nonce="<%= scriptNonce %>" src="/bundle.js"></script>
 <% } else { %>
   <!-- Development: Load Unbundled Files -->
   <link rel="stylesheet" href="/styles/styles.css">
-  <script src="/scripts/main.js"></script>
+  <link rel="stylesheet" href="/styles/grid-styles.css"> <!-- Add Grid Styles -->
+  <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
 <% } %>
+
+
 
 <!-- Include Staff Header only for staff roles -->
 <% if (['superadmin', 'staff1', 'staff2', 'manager1', 'manager2'].includes(user?.role)) { %>

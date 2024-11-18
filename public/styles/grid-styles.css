@@ -1,12 +1,12 @@
 /* Main preview container */
-#contentPreview {
+#contentPreview, #contentDisplay {
     display: grid;
-    grid-template-columns: repeat(12, minmax(100px, 1fr)); /* 12 columns with minimum width */
-    grid-auto-rows: 100px; /* Default row height */
-    gap: 5px; /* Reduced gap for tighter spacing */
+    grid-template-columns: repeat(12, minmax(100px, 1fr));
+    grid-auto-rows: 100px;
+    gap: 5px;
     max-width: 100%;
-    padding-bottom: 150px; /* Adds significant space at the bottom for better UX */
-    overflow-x: hidden; /* Hides horizontal overflow */
+    padding-bottom: 150px;
+    overflow-x: hidden;
 }
 
 /* General grid item styling */
