@@ -1,12 +1,12 @@
 /* Existing CSS */
 
 /* Main preview container */
-#contentPreview, #contentDisplay {
+#contentPreview {
     display: grid;
     grid-template-columns: repeat(12, minmax(100px, 1fr));
     grid-auto-rows: 100px;
     gap: 5px;
-    max-width: 100%;
+    max-width: 1600px;
     padding-top: 20px;
     padding-bottom: 125px;
     overflow-x: hidden;
@@ -15,6 +15,17 @@
 #contentPreview {
     overflow-y: auto;
     max-height: 80vh;
+}
+
+#contentDisplay {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(100px, 1fr));
+    grid-auto-rows: 100px;
+    gap: 10px;
+    margin: 0 auto; /* Center the grid horizontally */
+    max-width: 1625px;
+    padding: 250px 80px 0px 80px;
+    overflow-x: hidden;
 }
 
 /* General grid item styling */
