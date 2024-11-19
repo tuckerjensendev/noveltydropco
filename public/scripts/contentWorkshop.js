@@ -7,12 +7,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveDraftButton = document.getElementById("saveDraftButton");
     const pushLiveButton = document.getElementById("pushLiveButton");
     const undoButton = document.getElementById("undoButton");
+    const redoButton = document.getElementById("redoButton"); // New redo button
     const deleteModeButton = document.getElementById("deleteModeButton");
     const viewToggleButton = document.getElementById("viewToggleButton"); // New toggle button
     const toolbar = document.getElementById('sharedToolbar'); // Floating toolbar reference
     const mainContent = document.querySelector('.main-content'); // Main content section
 
-    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !deleteModeButton || !viewToggleButton || !toolbar || !mainContent) {
+    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !redoButton || !deleteModeButton || !viewToggleButton || !toolbar || !mainContent) {
         console.error("[DEBUG] One or more critical DOM elements are missing. Script aborted.");
         return;
     }
@@ -21,7 +22,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let sortableInstance;
     let localLayout = []; // In-memory layout for unsaved updates
     let layoutHistory = []; // Stack for undo functionality for non-deletion actions
+    let redoHistory = [];   // Stack for redo functionality for non-deletion actions
     let deleteHistory = []; // Stack for undo functionality for deletions
+    let deleteRedoHistory = []; // Stack for redo functionality for deletions
     let deleteMode = false; // Track delete mode state
     let viewMode = 'draft'; // Initial view mode is 'draft'
     let unsavedChanges = false; // Track unsaved changes
@@ -32,10 +35,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // Set initial button text
     viewToggleButton.textContent = 'View Live';
 
-    // Disable undo button and save buttons initially
+    // Disable undo, redo, and save buttons initially
     undoButton.disabled = true;
+    redoButton.disabled = true;
     saveDraftButton.disabled = true;
     pushLiveButton.disabled = true;
+
+    // Function to update the state of Undo and Redo buttons
+    const updateHistoryButtonsState = () => {
+        // Update undo button
+        undoButton.disabled = deleteMode ? deleteHistory.length === 0 : layoutHistory.length <= 1;
+        // Update redo button
+        redoButton.disabled = deleteMode ? deleteRedoHistory.length === 0 : redoHistory.length === 0;
+        console.log(`[DEBUG] Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
+        console.log(`[DEBUG] Redo button is now ${redoButton.disabled ? "disabled" : "enabled"}.`);
+    };
 
     // Function to update the state of Save Draft and Push Live buttons
     const updateButtonStates = () => {
@@ -84,13 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("[DEBUG] Sortable.js initialized successfully.");
     };
 
-    // Update undo button state
-    const updateUndoButtonState = () => {
-        // Enable undo button if there's anything in either history stack
-        undoButton.disabled = deleteHistory.length === 0 && layoutHistory.length <= 1;
-        console.log(`[DEBUG] Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
-    };
-
     // Toggle Delete Mode
     const toggleDeleteMode = () => {
         if (viewMode !== 'draft') return; // Prevent delete mode in live mode
@@ -98,7 +105,7 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`[DEBUG] Delete mode ${deleteMode ? "enabled" : "disabled"}.`);
         gridContainer.classList.toggle("delete-mode", deleteMode);
 
-        // Disable all buttons except undo when delete mode is active
+        // Disable all buttons except undo and redo when delete mode is active
         addBlockButton.disabled = deleteMode;
         saveDraftButton.disabled = deleteMode;
         pushLiveButton.disabled = deleteMode;
@@ -140,6 +147,9 @@ document.addEventListener("DOMContentLoaded", () => {
             block.style.border = deleteMode ? "3px solid red" : "1px solid var(--border-color, #ccc)";
             block.style.cursor = deleteMode ? "pointer" : "default";
         });
+
+        // Update undo and redo buttons
+        updateHistoryButtonsState();
     };
 
     // Delete a block when in delete mode
@@ -152,16 +162,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Save the block state before deletion to delete history for undo purposes
             deleteHistory.push({
-                blockId: blockElement.dataset.blockId,
-                row: blockElement.style.gridRow,
-                col: blockElement.style.gridColumn,
-                type: blockElement.classList[1],
-                content: blockElement.querySelector(".block-content")?.innerHTML || "",
+                blockElement: blockElement.cloneNode(true),
             });
+            // Clear redo history for delete mode
+            deleteRedoHistory = [];
+            updateHistoryButtonsState(); // Update buttons
 
             blockElement.remove(); // Remove the block from the DOM
             updateLocalLayoutFromDOM(); // Update the layout after removing the block
-            updateUndoButtonState(); // Update undo button state
             deletionsDuringDeleteMode = true; // Mark that deletions have occurred
         }
     };
@@ -275,8 +283,9 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewMode !== 'draft') return; // Prevent saving state in live mode
         console.log("[DEBUG] Saving current layout state to history...");
         layoutHistory.push(JSON.parse(JSON.stringify(localLayout))); // Save a deep copy
+        redoHistory = []; // Clear redo history on new action
         console.log("[DEBUG] Layout history updated. Current history length:", layoutHistory.length);
-        updateUndoButtonState(); // Update undo button state
+        updateHistoryButtonsState(); // Update undo and redo button states
     };
 
     // Undo the last action (deletion or layout change)
@@ -284,15 +293,15 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewMode !== 'draft') return; // Prevent undo in live mode
         if (deleteMode && deleteHistory.length > 0) {
             // Handle undo for deletions
-            const lastDeletedBlock = deleteHistory.pop(); // Get the last deleted block
-            console.log("[DEBUG] Undoing last deletion. Restoring block:", JSON.stringify(lastDeletedBlock, null, 2));
-            const blockElement = document.createElement("div");
-            blockElement.className = `grid-item ${lastDeletedBlock.type}`;
-            blockElement.dataset.blockId = lastDeletedBlock.blockId;
-            blockElement.style.gridRow = lastDeletedBlock.row;
-            blockElement.style.gridColumn = lastDeletedBlock.col;
-            blockElement.innerHTML = `<div class="block-content" contenteditable="true">${lastDeletedBlock.content}</div>`;
-            gridContainer.appendChild(blockElement);
+            const lastDeleted = deleteHistory.pop(); // Get the last deleted block
+            console.log("[DEBUG] Undoing last deletion.");
+
+            // Push the undone action to redo history
+            deleteRedoHistory.push({
+                blockElement: lastDeleted.blockElement,
+            });
+
+            gridContainer.appendChild(lastDeleted.blockElement.cloneNode(true));
 
             // Update local layout and sortable
             updateLocalLayoutFromDOM();
@@ -301,7 +310,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } else if (!deleteMode && layoutHistory.length > 1) {
             // Handle undo for layout changes
-            layoutHistory.pop(); // Remove the latest change
+            redoHistory.push(layoutHistory.pop()); // Move the latest state to redoHistory
             const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
             console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
             renderLayout(previousState);
@@ -311,7 +320,46 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             console.log("[DEBUG] No more undo steps available.");
         }
-        updateUndoButtonState(); // Update undo button state
+        updateHistoryButtonsState(); // Update undo and redo button states
+    };
+
+    // Redo the last undone action (deletion or layout change)
+    const redoLayoutChange = () => {
+        if (viewMode !== 'draft') return; // Prevent redo in live mode
+        if (deleteMode && deleteRedoHistory.length > 0) {
+            // Handle redo for deletions
+            const lastRedo = deleteRedoHistory.pop(); // Get the last redo action
+            console.log("[DEBUG] Redoing last deletion.");
+
+            // Push the action back to deleteHistory
+            deleteHistory.push({
+                blockElement: lastRedo.blockElement,
+            });
+
+            // Remove the block from the DOM
+            const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
+            if (blockElement) {
+                blockElement.remove();
+            }
+
+            // Update local layout and sortable
+            updateLocalLayoutFromDOM();
+            initializeSortable();
+            // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
+
+        } else if (!deleteMode && redoHistory.length > 0) {
+            // Handle redo for layout changes
+            const nextState = redoHistory.pop();
+            layoutHistory.push(nextState); // Add the next state to layoutHistory
+            console.log("[DEBUG] Redoing layout change. Moving to next state:", JSON.stringify(nextState, null, 2));
+            renderLayout(nextState);
+            unsavedChanges = true; // Mark changes as unsaved
+            hasPushedLive = false; // Reset after changes
+            updateButtonStates(); // Update button states
+        } else {
+            console.log("[DEBUG] No more redo steps available.");
+        }
+        updateHistoryButtonsState(); // Update undo and redo button states
     };
 
     // Render layout from a given state
@@ -390,10 +438,12 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((data) => {
                 console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
 
-                // Clear undo history after a successful save
-                layoutHistory = [];
+                // Clear undo and redo history after a successful save
+                layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
+                redoHistory = [];
                 deleteHistory = [];
-                updateUndoButtonState(); // Update undo button state
+                deleteRedoHistory = [];
+                updateHistoryButtonsState(); // Update undo and redo button states
 
                 unsavedChanges = false; // Mark changes as saved
 
@@ -466,6 +516,10 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("[DEBUG] Undo button clicked.");
         undoLayoutChange();
     });
+    redoButton.addEventListener("click", () => {
+        console.log("[DEBUG] Redo button clicked.");
+        redoLayoutChange();
+    });
     deleteModeButton.addEventListener("click", () => {
         console.log("[DEBUG] Delete Mode button clicked.");
         toggleDeleteMode();
@@ -480,6 +534,8 @@ document.addEventListener("DOMContentLoaded", () => {
             pushLiveButton.disabled = true;
             deleteModeButton.disabled = true;
             blockTypeControl.disabled = true;
+            undoButton.disabled = true;
+            redoButton.disabled = true;
             viewToggleButton.disabled = false; // Ensure the button is enabled here
             // Exit delete mode if active
             if (deleteMode) {
@@ -501,6 +557,7 @@ document.addEventListener("DOMContentLoaded", () => {
             blockTypeControl.disabled = false;
             hasPushedLive = false; // Reset after switching views
             updateButtonStates(); // Update buttons based on current state
+            updateHistoryButtonsState(); // Update undo and redo buttons
             // Render the draft from localLayout to preserve unsaved changes
             renderLayout(localLayout, true);
         }
@@ -512,6 +569,17 @@ document.addEventListener("DOMContentLoaded", () => {
             unsavedChanges = true; // Mark changes as unsaved
             hasPushedLive = false; // Reset after changes
             updateButtonStates(); // Update button states
+            // Save state for undo/redo
+            updateLocalLayoutFromDOM();
+            saveLayoutState();
+        }
+    });
+
+    // Handle the beforeunload event to warn the user about unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+        if (unsavedChanges) {
+            // Cancel the event as stated by the standard.
+            e.preventDefault();
         }
     });
 
