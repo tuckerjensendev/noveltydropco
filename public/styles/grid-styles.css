@@ -1,3 +1,5 @@
+/* Existing CSS */
+
 /* Main preview container */
 #contentPreview, #contentDisplay {
     display: grid;
@@ -60,7 +62,7 @@
     width: 100%;
     height: 100%;
     background-color: transparent; /* Make it invisible */
-    border: 1px dashed #ccc; /* Optional: Dashed border for visibility during development */
+    border: 1px dashed #ccc; /* Dashed border for visibility during development */
 }
 
 .grid-item.block-spacer-medium {
@@ -99,4 +101,22 @@
 .delete-mode .grid-item {
     border: 3px solid red !important; /* Make it clear that blocks are deletable */
     cursor: pointer;
+}
+
+/* **New CSS: Hide Spacers on home.ejs** */
+#contentDisplay .grid-item.block-spacer-centerpiece,
+#contentDisplay .grid-item.block-spacer-medium,
+#contentDisplay .grid-item.block-spacer-large,
+#contentDisplay .grid-item.block-spacer-banner,
+#contentDisplay .grid-item.block-spacer-small {
+    background-color: transparent !important; /* Ensure no background */
+    border: none !important; /* Remove dashed borders */
+}
+
+#contentDisplay .grid-item.block-spacer-centerpiece .block-content,
+#contentDisplay .grid-item.block-spacer-medium .block-content,
+#contentDisplay .grid-item.block-spacer-large .block-content,
+#contentDisplay .grid-item.block-spacer-banner .block-content,
+#contentDisplay .grid-item.block-spacer-small .block-content {
+    visibility: hidden !important; /* Hide the content while retaining grid space */
 }

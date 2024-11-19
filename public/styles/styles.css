@@ -463,24 +463,285 @@ header {
     box-sizing: border-box; /* Includes padding in height calculation */
 }
 
-/* Floating Toolbar */
+/* Enhanced Floating Toolbar */
 #sharedToolbar {
     position: sticky;
     top: 0;
-    background-color: #fff;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff;
+    padding: 12px 20px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
-    gap: 10px;
+    align-items: center;
+    gap: 15px;
+    transition: background-color 0.3s, box-shadow 0.3s;
+    border-bottom: 1px solid #e0e0e0;
 }
 
+/* Scrolled State */
 #sharedToolbar.scrolled {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     background-color: #f9f9f9;
 }
 
+/* Toolbar Label */
+#sharedToolbar label {
+    font-size: 14px;
+    color: #333333;
+    white-space: nowrap;
+}
 
+/* Hidden Select Element */
+#blockTypeControl {
+    display: none; /* Ensure it's hidden */
+    /* Removed margin-left as it's hidden */
+}
 
+/* Toolbar Buttons */
+#sharedToolbar button {
+    background-color: #007BFF; /* Primary blue color */
+    color: #ffffff;
+    border: none;
+    padding: 6px 12px; /* Reduced padding from 8px 16px */
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center text horizontally */
+    /* Removed gap: 6px; since most buttons don't have icons */
+    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
+    text-align: center;
+    /* Removed min-width and max-width to prevent affecting all buttons */
+}
+
+#sharedToolbar button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+#sharedToolbar button:active {
+    background-color: #004085; /* Even darker blue on click */
+    transform: scale(0.98); /* Slightly shrink on click */
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
+}
+
+#sharedToolbar button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Specific Button Styling (Optional) */
+/* Customize specific buttons with different colors for better UX */
+#addBlockButton {
+    background-color: #28a745; /* Green */
+}
+
+#addBlockButton:hover {
+    background-color: #218838;
+}
+
+#undoButton, #redoButton {
+    background-color: #6c757d; /* Gray */
+}
+
+#undoButton:hover, #redoButton:hover {
+    background-color: #5a6268;
+}
+
+#deleteModeButton {
+    background-color: #dc3545; /* Red */
+}
+
+#deleteModeButton:hover {
+    background-color: #c82333;
+}
+
+#saveDraftButton {
+    background-color: #17a2b8; /* Teal */
+}
+
+#saveDraftButton:hover {
+    background-color: #138496;
+}
+
+#pushLiveButton {
+    background-color: #ffc107; /* Amber */
+    color: #212529; /* Dark text for contrast */
+    margin-left: auto; /* Pushes the button to the far right */
+}
+
+#pushLiveButton:hover {
+    background-color: #e0a800;
+}
+
+/* New Wrapper for View Toggle and Block Type Dropdown */
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Adjust spacing as needed */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Wrapper for View Toggle Button */
+.view-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto; /* Prevent growing or shrinking */
+}
+
+.view-toggle-wrapper button {
+    /* Set a fixed width to prevent shifting */
+    width: 100px; /* Fixed width to accommodate the longest text ("View Draft") */
+    box-sizing: border-box; /* Include padding and border in the width */
+    white-space: nowrap; /* Prevent text from wrapping */
+    justify-content: center;
+    padding: 6px 10px; /* Adjusted padding */
+    font-size: 14px; /* Consistent font size */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Ensure text is centered */
+}
+
+/* Block Type Dropdown Styling */
+.block-type-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.block-type-group .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+#customBlockTypeDropdown {
+    background-color: #ffffff;
+    color: #333333;
+    padding: 6px 10px; /* Reduced padding from 8px 12px */
+    font-size: 14px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Set a fixed width to match the View Toggle Button */
+    width: 155px; /* Adjust as needed */
+    transition: background-color 0.2s, box-shadow 0.2s;
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+#customBlockTypeDropdown:hover {
+    background-color: #f1f1f1;
+}
+
+#customBlockTypeDropdown:focus {
+    border-color: #007BFF;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+/* Dropdown Menu */
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    z-index: 1001; /* Above the toolbar */
+    margin-top: 5px;
+    list-style: none;
+    padding: 0;
+}
+
+.dropdown.show .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+    position: relative;
+}
+
+.dropdown-menu li:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown-submenu::after {
+    content: '▶'; /* Right Chevron */
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-left: 1px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu, .dropdown-submenu .dropdown-menu {
+    user-select: none;
+}
+
+.dropdown-menu li.selected {
+    background-color: #e0e0e0;
+}
+
+.dropdown-menu, .dropdown-submenu .dropdown-menu {
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #sharedToolbar {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 15px;
+    }
+
+    /* Adjust toolbar-group for responsiveness */
+    .toolbar-group {
+        flex: 1 1 100%;
+        gap: 10px;
+    }
+
+    /* Ensure all toolbar elements take full width */
+    #sharedToolbar label,
+    #sharedToolbar select,
+    #sharedToolbar button,
+    .dropdown {
+        flex: 1 1 100%;
+    }
+
+    #sharedToolbar button {
+        justify-content: center;
+        min-width: 100%; /* Override min-width for full-width buttons */
+    }
+
+    /* Adjust View Toggle Container on small screens */
+    .view-toggle-wrapper {
+        flex: 1 1 100%; /* Make it full width on small screens */
+    }
+
+    .view-toggle-wrapper button {
+        width: 100%; /* Ensure button spans full width */
+    }
+
+    /* Adjust Dropdown Menu for Mobile */
+    .dropdown-menu {
+        min-width: 150px;
+    }
+}
 
 /* Create-Staff Form Styling */
 .create-staff-container {

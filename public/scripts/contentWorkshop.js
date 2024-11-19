@@ -1,3 +1,5 @@
+// contentWorkshop.js
+
 document.addEventListener("DOMContentLoaded", () => {
     console.log("[DEBUG] contentWorkshop.js loaded and DOMContentLoaded triggered.");
 
@@ -22,7 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let sortableInstance;
     let localLayout = []; // In-memory layout for unsaved updates
     let layoutHistory = []; // Stack for undo functionality for non-deletion actions
-    let redoHistory = [];   // Stack for redo functionality for non-deletion actions
+    let redoHistoryStack = [];   // Stack for redo functionality for non-deletion actions
     let deleteHistory = []; // Stack for undo functionality for deletions
     let deleteRedoHistory = []; // Stack for redo functionality for deletions
     let deleteMode = false; // Track delete mode state
@@ -31,6 +33,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let deletionsDuringDeleteMode = false; // Track deletions during delete mode
     let isSaving = false; // Flag to prevent multiple concurrent saves
     let hasPushedLive = false; // Track if Push Live has been clicked
+
+    let selectedBlockType = null; // Declare the variable
 
     // Set initial button text
     viewToggleButton.textContent = 'View Live';
@@ -46,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update undo button
         undoButton.disabled = deleteMode ? deleteHistory.length === 0 : layoutHistory.length <= 1;
         // Update redo button
-        redoButton.disabled = deleteMode ? deleteRedoHistory.length === 0 : redoHistory.length === 0;
+        redoButton.disabled = deleteMode ? deleteRedoHistory.length === 0 : redoHistoryStack.length === 0;
         console.log(`[DEBUG] Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
         console.log(`[DEBUG] Redo button is now ${redoButton.disabled ? "disabled" : "enabled"}.`);
     };
@@ -110,6 +114,7 @@ document.addEventListener("DOMContentLoaded", () => {
         saveDraftButton.disabled = deleteMode;
         pushLiveButton.disabled = deleteMode;
         blockTypeControl.disabled = deleteMode;
+        customDropdownToggle.disabled = deleteMode || (viewMode === 'live'); // Ensure dropdown is disabled if deleteMode or live view
         viewToggleButton.disabled = deleteMode; // Disable "View Live" button
 
         if (deleteMode) {
@@ -124,7 +129,10 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             gridContainer.removeEventListener("click", deleteBlock);
             addBlockButton.disabled = false;
+            saveDraftButton.disabled = unsavedChanges || isSaving;
+            pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive;
             blockTypeControl.disabled = false;
+            customDropdownToggle.disabled = viewMode === 'live'; // Enable only if not live
             viewToggleButton.disabled = false; // Re-enable "View Live" button
 
             // If deletions occurred during delete mode
@@ -209,7 +217,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     blockElement.style.gridRow = `${block.row} / span ${block.height}`;
                     blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-                    const isEditable = (viewMode === 'draft' && !deleteMode);
+                    
+                    // Determine if the block is a spacer
+                    const isSpacer = block.type.startsWith('block-spacer');
+
+                    // Set contenteditable based on block type
+                    const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
+                    
                     blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
                     gridContainer.appendChild(blockElement);
                 });
@@ -283,7 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (viewMode !== 'draft') return; // Prevent saving state in live mode
         console.log("[DEBUG] Saving current layout state to history...");
         layoutHistory.push(JSON.parse(JSON.stringify(localLayout))); // Save a deep copy
-        redoHistory = []; // Clear redo history on new action
+        redoHistoryStack = []; // Clear redo history on new action
         console.log("[DEBUG] Layout history updated. Current history length:", layoutHistory.length);
         updateHistoryButtonsState(); // Update undo and redo button states
     };
@@ -310,7 +324,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         } else if (!deleteMode && layoutHistory.length > 1) {
             // Handle undo for layout changes
-            redoHistory.push(layoutHistory.pop()); // Move the latest state to redoHistory
+            redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
             const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
             console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
             renderLayout(previousState);
@@ -347,9 +361,9 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeSortable();
             // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
 
-        } else if (!deleteMode && redoHistory.length > 0) {
+        } else if (!deleteMode && redoHistoryStack.length > 0) {
             // Handle redo for layout changes
-            const nextState = redoHistory.pop();
+            const nextState = redoHistoryStack.pop();
             layoutHistory.push(nextState); // Add the next state to layoutHistory
             console.log("[DEBUG] Redoing layout change. Moving to next state:", JSON.stringify(nextState, null, 2));
             renderLayout(nextState);
@@ -376,7 +390,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
             blockElement.style.gridRow = `${block.row} / span ${block.height}`;
             blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-            const isEditable = (viewMode === 'draft' && !deleteMode);
+            
+            // Determine if the block is a spacer
+            const isSpacer = block.type.startsWith('block-spacer');
+
+            // Set contenteditable based on block type
+            const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
+            
             blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
             gridContainer.appendChild(blockElement);
         });
@@ -440,7 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Clear undo and redo history after a successful save
                 layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
-                redoHistory = [];
+                redoHistoryStack = [];
                 deleteHistory = [];
                 deleteRedoHistory = [];
                 updateHistoryButtonsState(); // Update undo and redo button states
@@ -477,7 +497,17 @@ document.addEventListener("DOMContentLoaded", () => {
         block.dataset.blockId = `temp-${Date.now()}`; // Temporary ID for new blocks
         block.style.gridRow = `${row} / span 2`;
         block.style.gridColumn = `${col} / span 3`;
-        block.innerHTML = `<div class="block-content" contenteditable="true">New ${blockType.replace("-", " ").toUpperCase()}</div>`;
+
+        // Determine if the block is a spacer
+        const isSpacer = blockType.startsWith('block-spacer');
+
+        // Set contenteditable based on block type
+        const contentEditable = isSpacer ? "false" : "true";
+
+        // Set inner content without "New"
+        const displayText = blockType.replace("-", " ").toUpperCase();
+
+        block.innerHTML = `<div class="block-content" contenteditable="${contentEditable}">${displayText}</div>`;
 
         gridContainer.appendChild(block);
         console.log("[DEBUG] Added new block:", block);
@@ -524,7 +554,9 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log("[DEBUG] Delete Mode button clicked.");
         toggleDeleteMode();
     });
-    viewToggleButton.addEventListener("click", () => {
+
+    // Function to handle view toggling and update button text
+    const handleViewToggle = () => {
         if (viewMode === 'draft') {
             viewMode = 'live';
             viewToggleButton.textContent = 'View Draft';
@@ -534,6 +566,7 @@ document.addEventListener("DOMContentLoaded", () => {
             pushLiveButton.disabled = true;
             deleteModeButton.disabled = true;
             blockTypeControl.disabled = true;
+            customDropdownToggle.disabled = true; // Disable dropdown in live view
             undoButton.disabled = true;
             redoButton.disabled = true;
             viewToggleButton.disabled = false; // Ensure the button is enabled here
@@ -555,13 +588,18 @@ document.addEventListener("DOMContentLoaded", () => {
             addBlockButton.disabled = false;
             deleteModeButton.disabled = false;
             blockTypeControl.disabled = false;
+            customDropdownToggle.disabled = false; // Enable dropdown in draft view
             hasPushedLive = false; // Reset after switching views
             updateButtonStates(); // Update buttons based on current state
             updateHistoryButtonsState(); // Update undo and redo buttons
             // Render the draft from localLayout to preserve unsaved changes
             renderLayout(localLayout, true);
         }
-    });
+    };
+
+    // **Update the primary event listener to call handleViewToggle**
+    viewToggleButton.removeEventListener("click", () => {}); // Ensure no other listeners
+    viewToggleButton.addEventListener("click", handleViewToggle);
 
     // Event listener for content changes in blocks
     gridContainer.addEventListener('input', (event) => {
@@ -581,6 +619,111 @@ document.addEventListener("DOMContentLoaded", () => {
             // Cancel the event as stated by the standard.
             e.preventDefault();
         }
+    });
+
+    // Custom Dropdown Handling
+    const customDropdownToggle = document.getElementById("customBlockTypeDropdown");
+    const customDropdownMenu = document.querySelector(".dropdown-menu");
+
+    if (!customDropdownToggle || !customDropdownMenu) {
+        console.error("[DEBUG] Custom dropdown elements are missing.");
+    } else {
+        // Toggle dropdown visibility
+        customDropdownToggle.addEventListener("click", (e) => {
+            e.stopPropagation(); // Prevent click from bubbling up
+            const isOpen = customDropdownMenu.style.display === "block";
+            customDropdownMenu.style.display = isOpen ? "none" : "block";
+            customDropdownToggle.setAttribute("aria-expanded", !isOpen);
+        });
+
+        // Handle selection of dropdown items
+        customDropdownMenu.querySelectorAll("li").forEach(item => {
+            item.addEventListener("click", (e) => {
+                e.stopPropagation(); // Prevent click from bubbling up
+                if (item.classList.contains("dropdown-submenu")) {
+                    // Submenu is handled via CSS hover
+                    return;
+                }
+                const selectedValue = item.getAttribute("data-value");
+                const selectedText = item.textContent.trim();
+                selectedBlockType = selectedValue;
+
+                // Update the dropdown toggle button's text with Unicode icon
+                customDropdownToggle.innerHTML = `${selectedText} &#9662;`; // ▼
+
+                // Update the hidden select's value
+                blockTypeControl.value = selectedValue;
+
+                // Close the dropdown menu
+                customDropdownMenu.style.display = "none";
+                customDropdownToggle.setAttribute("aria-expanded", "false");
+
+                // **Removed the following line to prevent fetching blocks on selection**
+                // fetchBlocks(selectedBlockType);
+            });
+        });
+
+        // Close the dropdown when clicking outside
+        document.addEventListener("click", () => {
+            customDropdownMenu.style.display = "none";
+            customDropdownToggle.setAttribute("aria-expanded", "false");
+        });
+    }
+
+    // Function to fetch blocks based on selected type
+    const fetchBlocks = async (blockType) => {
+        try {
+            // Replace 'contentPreview' with 'gridContainer'
+            gridContainer.innerHTML = '<p>Loading blocks...</p>';
+            const response = await fetch(`/api/blocks?type=${blockType}`);
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            const blocks = await response.json();
+            displayBlocks(blocks);
+        } catch (error) {
+            console.error('Fetch error:', error);
+            gridContainer.innerHTML = '<p>Error loading blocks.</p>';
+        }
+    };
+
+    // Function to display blocks in the preview area
+    const displayBlocks = (blocks) => {
+        gridContainer.innerHTML = ''; // Clear existing content
+        if (blocks.length === 0) {
+            gridContainer.innerHTML = '<p>No blocks available.</p>';
+            return;
+        }
+        blocks.forEach(block => {
+            const blockElement = document.createElement('div');
+            blockElement.classList.add('block');
+            blockElement.textContent = block.name; // Adjust based on your data structure
+            gridContainer.appendChild(blockElement);
+        });
+    };
+
+    // Event listener for Add Block button
+    addBlockButton.addEventListener('click', () => {
+        if (!selectedBlockType) {
+            alert('Please select a block type first.');
+            return;
+        }
+        // Implement add block functionality
+        console.log(`Adding block of type: ${selectedBlockType}`);
+        // Example: Send a POST request to add a block
+        fetch('/api/blocks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: selectedBlockType })
+        })
+        .then(response => response.json())
+        .then(data => {
+            console.log('Block added:', data);
+            fetchBlocks(selectedBlockType); // Refresh the block list
+        })
+        .catch(error => console.error('Error adding block:', error));
     });
 
     // Initial fetch and setup
