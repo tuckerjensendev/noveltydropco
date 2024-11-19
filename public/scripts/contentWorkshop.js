@@ -158,6 +158,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update undo and redo buttons
         updateHistoryButtonsState();
+
+        // Apply or remove spacer visibility based on viewMode and deleteMode
+        applySpacerVisibility();
     };
 
     // Delete a block when in delete mode
@@ -225,6 +228,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
                     
                     blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
+                    
+                    // Apply spacer visibility based on viewMode
+                    if (isSpacer && viewMode === 'live') {
+                        blockElement.style.visibility = 'hidden'; // Hide spacer content but retain grid space
+                    } else {
+                        blockElement.style.visibility = 'visible';
+                    }
+
                     gridContainer.appendChild(blockElement);
                 });
 
@@ -254,6 +265,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     hasPushedLive = false; // Reset after fetching
                     updateButtonStates(); // Update button states
                 }
+
+                // Apply spacer visibility after rendering
+                applySpacerVisibility();
             })
             .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
     };
@@ -322,6 +336,9 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeSortable();
             // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
 
+            // Apply spacer visibility after undoing deletion
+            applySpacerVisibility();
+
         } else if (!deleteMode && layoutHistory.length > 1) {
             // Handle undo for layout changes
             redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
@@ -361,6 +378,9 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeSortable();
             // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
 
+            // Apply spacer visibility after redoing deletion
+            applySpacerVisibility();
+
         } else if (!deleteMode && redoHistoryStack.length > 0) {
             // Handle redo for layout changes
             const nextState = redoHistoryStack.pop();
@@ -398,6 +418,14 @@ document.addEventListener("DOMContentLoaded", () => {
             const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
             
             blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
+            
+            // Apply spacer visibility based on viewMode
+            if (isSpacer && viewMode === 'live') {
+                blockElement.style.visibility = 'hidden'; // Hide spacer content but retain grid space
+            } else {
+                blockElement.style.visibility = 'visible';
+            }
+
             gridContainer.appendChild(blockElement);
         });
 
@@ -419,6 +447,9 @@ document.addEventListener("DOMContentLoaded", () => {
             sortableInstance = null;
             console.log("[DEBUG] Sortable.js instance destroyed in renderLayout.");
         }
+
+        // Apply spacer visibility after rendering
+        applySpacerVisibility();
     };
 
     // Save layout to the database with status
@@ -509,6 +540,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
         block.innerHTML = `<div class="block-content" contenteditable="${contentEditable}">${displayText}</div>`;
 
+        // Apply spacer visibility based on viewMode
+        if (isSpacer && viewMode === 'live') {
+            block.style.visibility = 'hidden'; // Hide spacer content but retain grid space
+        } else {
+            block.style.visibility = 'visible';
+        }
+
         gridContainer.appendChild(block);
         console.log("[DEBUG] Added new block:", block);
 
@@ -595,6 +633,21 @@ document.addEventListener("DOMContentLoaded", () => {
             // Render the draft from localLayout to preserve unsaved changes
             renderLayout(localLayout, true);
         }
+
+        // Apply or remove spacer visibility based on viewMode and deleteMode
+        applySpacerVisibility();
+    };
+
+    // Function to apply spacer visibility based on current view mode
+    const applySpacerVisibility = () => {
+        const spacerBlocks = gridContainer.querySelectorAll(".grid-item[class*='block-spacer']");
+        spacerBlocks.forEach((block) => {
+            if (viewMode === 'live') {
+                block.style.visibility = 'hidden'; // Hide spacers in live view
+            } else {
+                block.style.visibility = 'visible'; // Show spacers in draft view
+            }
+        });
     };
 
     // **Update the primary event listener to call handleViewToggle**
@@ -618,6 +671,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (unsavedChanges) {
             // Cancel the event as stated by the standard.
             e.preventDefault();
+            e.returnValue = '';
         }
     });
 
@@ -648,7 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selectedText = item.textContent.trim();
                 selectedBlockType = selectedValue;
 
-                // Update the dropdown toggle button's text with Unicode icon
+                // Update the dropdown toggle button's text with a single Unicode arrow
                 customDropdownToggle.innerHTML = `${selectedText} &#9662;`; // ▼
 
                 // Update the hidden select's value
@@ -657,9 +711,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Close the dropdown menu
                 customDropdownMenu.style.display = "none";
                 customDropdownToggle.setAttribute("aria-expanded", "false");
-
-                // **Removed the following line to prevent fetching blocks on selection**
-                // fetchBlocks(selectedBlockType);
             });
         });
 
