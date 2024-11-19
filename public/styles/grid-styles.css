@@ -7,9 +7,14 @@
     grid-auto-rows: 100px;
     gap: 5px;
     max-width: 100%;
-    padding-top: 25px;
+    padding-top: 20px;
     padding-bottom: 125px;
     overflow-x: hidden;
+}
+
+#contentPreview {
+    overflow-y: auto;
+    max-height: 80vh;
 }
 
 /* General grid item styling */

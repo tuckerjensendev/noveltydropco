@@ -36,6 +36,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let selectedBlockType = null; // Declare the variable
 
+    // Floating toolbar enhancement
+    mainContent.addEventListener('scroll', () => {
+        if (mainContent.scrollTop > 0) {
+            toolbar.style.zIndex = '10'; // Place toolbar on top
+            toolbar.classList.add('scrolled');
+        } else {
+            toolbar.style.zIndex = ''; // Reset z-index when not scrolled
+            toolbar.classList.remove('scrolled');
+        }
+    });
+
     // Set initial button text
     viewToggleButton.textContent = 'View Live';
 
@@ -62,45 +73,120 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`[DEBUG] Button states updated. Save Draft is ${saveDraftButton.disabled ? 'disabled' : 'enabled'}, Push Live is ${pushLiveButton.disabled ? 'disabled' : 'enabled'}.`);
     };
 
+    const disableBodyScroll = () => {
+        document.body.style.overflow = "hidden";
+        console.log("[DEBUG] Body scrolling disabled.");
+    };
+    
+    const enableBodyScroll = () => {
+        document.body.style.overflow = "";
+        console.log("[DEBUG] Body scrolling enabled.");
+    };
+    
     // Initialize Sortable.js
     const initializeSortable = () => {
         console.log("[DEBUG] Initializing Sortable.js...");
+    
+        // Destroy any existing Sortable.js instance to avoid duplicates
         if (sortableInstance) {
-            sortableInstance.destroy(); // Destroy the existing instance
-            sortableInstance = null;
+            sortableInstance.destroy();
+            sortableInstance = null; // Explicitly reset to null
             console.log("[DEBUG] Previous Sortable.js instance destroyed.");
         }
-
+    
+        // Skip initialization in 'live' view or delete mode
         if (viewMode === 'live' || deleteMode) {
             console.log("[DEBUG] View mode is 'live' or delete mode is active; skipping Sortable.js initialization.");
             return;
         }
-
+    
         // Remove `grid-area` styles for proper sorting
         Array.from(gridContainer.children).forEach((block) => {
             block.style.gridArea = ""; // Clear conflicting styles
         });
-
+    
+        // Ensure gridContainer is scrollable, and body cannot scroll
+        gridContainer.style.overflowY = "auto";
+        gridContainer.style.overflowX = "hidden"; // Optional, assuming no horizontal scrolling is needed
+        document.body.style.overflow = "hidden";
+    
+        // Variables for scrolling logic
+        let scrollInterval; // Timer for continuous scrolling
+        const edgeThreshold = 150; // Expanded distance from edges to trigger scroll
+        const scrollSpeed = 10; // Speed of scrolling in px per tick
+        const scrollBoost = 1.5; // Additional speed when closer to edges
+        const upperEdgeThreshold = 200; // Higher sensitivity for downward scrolling
+        let isScrolling = false; // Flag to track active scrolling
+        let lastClientY = 0; // Store the last Y position
+    
+        // Start scrolling if near the edges
+        const startScrolling = (clientY) => {
+            const rect = gridContainer.getBoundingClientRect();
+            lastClientY = clientY;
+    
+            if (isScrolling) return; // Prevent multiple intervals
+            isScrolling = true;
+    
+            scrollInterval = setInterval(() => {
+                if (lastClientY < rect.top + edgeThreshold) {
+                    const boost = Math.max(1, (rect.top + edgeThreshold - lastClientY) / edgeThreshold);
+                    gridContainer.scrollTop -= scrollSpeed * boost; // Scroll up with acceleration
+                    console.log(`[DEBUG] Scrolling gridContainer up. Speed: ${scrollSpeed * boost}`);
+                } else if (lastClientY > rect.bottom - upperEdgeThreshold) {
+                    const boost = Math.max(1, (lastClientY - (rect.bottom - upperEdgeThreshold)) / edgeThreshold);
+                    gridContainer.scrollTop += scrollSpeed * boost; // Scroll down with acceleration
+                    console.log(`[DEBUG] Scrolling gridContainer down. Speed: ${scrollSpeed * boost}`);
+                } else {
+                    stopScrolling(); // Stop if no longer near edges
+                }
+            }, 16); // Run the check every ~16ms for smooth scrolling (60fps).
+        };
+    
+        // Stop scrolling
+        const stopScrolling = () => {
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            console.log("[DEBUG] Scrolling stopped.");
+        };
+    
+        // Initialize Sortable.js
         sortableInstance = Sortable.create(gridContainer, {
             animation: 150,
             handle: ".grid-item",
+            scroll: false, // Disable Sortable's built-in scrolling
+            onStart: (evt) => {
+                disableBodyScroll();
+                console.log("[DEBUG] Dragging started.");
+                startScrolling(evt.originalEvent.clientY); // Start scrolling based on initial position
+            },
+            onMove: (evt) => {
+                const clientY = evt.originalEvent.clientY;
+                lastClientY = clientY; // Update the Y position during dragging
+                startScrolling(clientY); // Continuously check position and adjust scrolling
+            },
             onEnd: (event) => {
+                enableBodyScroll();
+                stopScrolling();
                 console.log("[DEBUG] Drag event ended.");
                 console.log(`[DEBUG] Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
-
+    
+                // Check if the order of blocks changed
                 if (event.oldIndex !== event.newIndex) {
                     updateLocalLayoutFromDOM(); // Update in-memory layout after sorting
                     saveLayoutState(); // Save current state to history
                     unsavedChanges = true; // Mark changes as unsaved
                     hasPushedLive = false; // Reset after changes
                     updateButtonStates(); // Update button states
+                    console.log("[DEBUG] Block order changed and layout updated.");
                 } else {
                     console.log("[DEBUG] Block order unchanged.");
                 }
             },
         });
+    
         console.log("[DEBUG] Sortable.js initialized successfully.");
     };
+    
 
     // Toggle Delete Mode
     const toggleDeleteMode = () => {
@@ -271,16 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
     };
-
-    // Floating toolbar enhancement
-    mainContent.addEventListener('scroll', () => {
-        if (mainContent.scrollTop > 0) {
-            toolbar.classList.add('scrolled');
-        } else {
-            toolbar.classList.remove('scrolled');
-        }
-    });
-
+    
     // Update in-memory layout from the DOM
     const updateLocalLayoutFromDOM = () => {
         if (viewMode !== 'draft') return; // Prevent updating layout in live mode

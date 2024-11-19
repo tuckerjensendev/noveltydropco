@@ -413,7 +413,6 @@ header {
 .content-workshop-container {
     display: flex;
     height: 100vh;
-    overflow: hidden;
 }
 
 .side-panel {
@@ -463,18 +462,34 @@ header {
     box-sizing: border-box; /* Includes padding in height calculation */
 }
 
+.main-content h1 {
+    margin-bottom: 10px;
+}
+
 /* Enhanced Floating Toolbar */
 #sharedToolbar {
     position: sticky;
     top: 0;
     background-color: #ffffff;
-    padding: 12px 20px;
+    padding: 5px 10px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
     align-items: center;
     gap: 15px;
     transition: background-color 0.3s, box-shadow 0.3s;
     border-bottom: 1px solid #e0e0e0;
+}
+
+/* Unified background for dropdown and add button */
+.dropdown-add-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    background-color: #f9f9f9; /* Light gray background for contrast */
+    padding: 10px 15px;
+    border-radius: 6px; /* Slightly rounded edges for a soft look */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    margin: 5px 0; /* Add some spacing around */
 }
 
 /* Scrolled State */
@@ -509,7 +524,6 @@ header {
     align-items: center;
     justify-content: center; /* Center text horizontally */
     /* Removed gap: 6px; since most buttons don't have icons */
-    transition: background-color 0.2s, transform 0.1s, box-shadow 0.2s;
     text-align: center;
     /* Removed min-width and max-width to prevent affecting all buttons */
 }
@@ -628,7 +642,6 @@ header {
     justify-content: space-between;
     /* Set a fixed width to match the View Toggle Button */
     width: 155px; /* Adjust as needed */
-    transition: background-color 0.2s, box-shadow 0.2s;
     white-space: nowrap; /* Prevent text from wrapping */
 }
 
@@ -651,7 +664,7 @@ header {
     box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
     border: 1px solid #cccccc;
     border-radius: 4px;
-    z-index: 1001; /* Above the toolbar */
+    z-index: 1050;
     margin-top: 5px;
     list-style: none;
     padding: 0;
@@ -696,10 +709,6 @@ header {
     background-color: #e0e0e0;
 }
 
-.dropdown-menu, .dropdown-submenu .dropdown-menu {
-    transition: opacity 0.3s ease, visibility 0.3s ease;
-}
-
 /* Responsive Design */
 @media (max-width: 768px) {
     #sharedToolbar {
@@ -741,6 +750,7 @@ header {
         min-width: 150px;
     }
 }
+
 
 /* Create-Staff Form Styling */
 .create-staff-container {
@@ -901,7 +911,6 @@ header {
     font-size: clamp(0.9em, 1.2vw, 1em); /* Responsive font size */
     cursor: pointer;
     border-radius: 5px;
-    transition: background-color 0.3s ease;
     margin-top: 20px;
     align-self: flex-start;
     width: auto;

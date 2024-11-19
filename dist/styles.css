@@ -13,7 +13,6 @@
 /* 2. Global Styles */
 body, html {
     height: 100%;
-    overflow: hidden; /* Prevent page scrolling */
     background-color: #f4f4f4;
     font-family: Arial, sans-serif;
 }
@@ -436,7 +435,6 @@ header {
 .content-workshop-container {
     display: flex;
     height: 100vh; /* Full viewport height */
-    overflow: hidden; /* Prevent container from scrolling */
 }
 
 .side-panel {
