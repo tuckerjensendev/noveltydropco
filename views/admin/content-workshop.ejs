@@ -35,16 +35,19 @@
                     <option value="block-spacer-large">Large Spacer Block</option>
                     <option value="block-spacer-centerpiece">Centerpiece Spacer Block</option>
                     <option value="block-spacer-banner">Banner Spacer Block</option>
-                </select>                
+                </select>
                 <button id="addBlockButton">Add Block</button>
-                <button id="undoButton">Undo</button> <!-- New Undo Button -->
-                <button id="deleteModeButton">Toggle Delete Mode</button> <!-- New Delete Mode Button -->
-                <button id="saveButton">Save Layout</button>
+                <button id="undoButton">Undo</button>
+                <button id="deleteModeButton">Toggle Delete Mode</button>
+                <!-- Updated Buttons -->
+                <button id="saveDraftButton">Save Draft</button>
+                <button id="viewToggleButton">View Live</button>
+                <button id="pushLiveButton">Push Live</button>
             </div>
-        
+
             <!-- Ensure `grid-container` class is used to apply consistent grid styles -->
             <div id="contentPreview" class="grid-container"></div>
-        </section>        
+        </section>
     </div>
 
     <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script>

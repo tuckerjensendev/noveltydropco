@@ -227,8 +227,9 @@ header {
     border-radius: 12px;
     box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
     transform-origin: top right;
-    z-index: 10;
+    z-index: 9999; /* Set a high z-index */
 }
+
 
 /* Moves Login form into Register form position */
 .dropdown-content.register-mode {
@@ -464,20 +465,21 @@ header {
 
 /* Floating Toolbar */
 #sharedToolbar {
-    position: sticky; /* Makes the toolbar stick to its container */
-    top: 0; /* Stick to the top of its container */
-    background-color: #fff; /* Ensure background color for better visibility */
-    padding: 10px; /* Padding for aesthetics */
-    z-index: 100; /* Stay above other content */
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Add slight shadow for visual separation */
-    display: flex; /* Keeps buttons aligned properly */
-    gap: 10px; /* Adds some space between buttons for clarity */
+    position: sticky;
+    top: 0;
+    background-color: #fff;
+    padding: 10px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    display: flex;
+    gap: 10px;
 }
 
 #sharedToolbar.scrolled {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15); /* Stronger shadow when scrolled */
-    background-color: #f9f9f9; /* Change background color slightly when scrolled */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    background-color: #f9f9f9;
 }
+
+
 
 
 /* Create-Staff Form Styling */

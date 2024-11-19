@@ -1,27 +1,45 @@
 const sqlite3 = require('sqlite3').verbose();
 const db = new sqlite3.Database('./noveltydropco.db');
 
-// Fetch content blocks for a specific page
+// Fetch content blocks for a specific page (deprecated in favor of getContentBlocksByStatus)
 db.getContentBlocksFromDatabase = function (pageId) {
   return new Promise((resolve, reject) => {
-      console.log(`[DB INFO] Fetching content blocks for page ID: ${pageId}`);
-      db.all(
-          'SELECT * FROM content_blocks WHERE page_id = ? ORDER BY row ASC',
-          [pageId],
-          (err, rows) => {
-              if (err) {
-                  console.error(`[DB ERROR] Failed to fetch content blocks: ${err.message}`);
-                  reject(err);
-              } else {
-                  console.log(`[DB INFO] Fetched content blocks: ${JSON.stringify(rows, null, 2)}`);
-                  resolve(rows);
-              }
-          }
-      );
+    console.log(`[DB INFO] Fetching content blocks for page ID: ${pageId}`);
+    db.all(
+      'SELECT * FROM content_blocks WHERE page_id = ? ORDER BY row ASC',
+      [pageId],
+      (err, rows) => {
+        if (err) {
+          console.error(`[DB ERROR] Failed to fetch content blocks: ${err.message}`);
+          reject(err);
+        } else {
+          console.log(`[DB INFO] Fetched content blocks: ${JSON.stringify(rows, null, 2)}`);
+          resolve(rows);
+        }
+      }
+    );
   });
 };
 
-
+// New function to fetch content blocks by page ID and status
+db.getContentBlocksByStatus = function (pageId, status) {
+  return new Promise((resolve, reject) => {
+    console.log(`[DB INFO] Fetching ${status} content blocks for page ID: ${pageId}`);
+    db.all(
+      'SELECT * FROM content_blocks WHERE page_id = ? AND status = ? ORDER BY row ASC',
+      [pageId, status],
+      (err, rows) => {
+        if (err) {
+          console.error(`[DB ERROR] Failed to fetch ${status} content blocks: ${err.message}`);
+          reject(err);
+        } else {
+          console.log(`[DB INFO] Fetched ${status} content blocks: ${JSON.stringify(rows, null, 2)}`);
+          resolve(rows);
+        }
+      }
+    );
+  });
+};
 
 // Helper function to use Promises with db.run
 db.runQuery = (query, params = []) => {
