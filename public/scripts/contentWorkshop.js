@@ -671,7 +671,6 @@ document.addEventListener("DOMContentLoaded", () => {
         if (unsavedChanges) {
             // Cancel the event as stated by the standard.
             e.preventDefault();
-            e.returnValue = '';
         }
     });
 
@@ -702,8 +701,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 const selectedText = item.textContent.trim();
                 selectedBlockType = selectedValue;
 
-                // Update the dropdown toggle button's text with a single Unicode arrow
-                customDropdownToggle.innerHTML = `${selectedText} &#9662;`; // ▼
+                // Update the dropdown toggle button
+                customDropdownToggle.innerHTML = `${selectedText}`;
 
                 // Update the hidden select's value
                 blockTypeControl.value = selectedValue;

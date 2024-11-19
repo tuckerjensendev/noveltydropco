@@ -492,8 +492,7 @@ header {
 
 /* Hidden Select Element */
 #blockTypeControl {
-    display: none; /* Ensure it's hidden */
-    /* Removed margin-left as it's hidden */
+    display: none;
 }
 
 /* Toolbar Buttons */
