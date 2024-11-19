@@ -26,6 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let viewMode = 'draft'; // Initial view mode is 'draft'
     let unsavedChanges = false; // Track unsaved changes
     let deletionsDuringDeleteMode = false; // Track deletions during delete mode
+    let isSaving = false; // Flag to prevent multiple concurrent saves
+    let hasPushedLive = false; // Track if Push Live has been clicked
 
     // Set initial button text
     viewToggleButton.textContent = 'View Live';
@@ -37,8 +39,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to update the state of Save Draft and Push Live buttons
     const updateButtonStates = () => {
-        saveDraftButton.disabled = !unsavedChanges;
-        pushLiveButton.disabled = unsavedChanges;
+        saveDraftButton.disabled = !unsavedChanges || isSaving;
+        pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive;
         console.log(`[DEBUG] Button states updated. Save Draft is ${saveDraftButton.disabled ? 'disabled' : 'enabled'}, Push Live is ${pushLiveButton.disabled ? 'disabled' : 'enabled'}.`);
     };
 
@@ -72,6 +74,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateLocalLayoutFromDOM(); // Update in-memory layout after sorting
                     saveLayoutState(); // Save current state to history
                     unsavedChanges = true; // Mark changes as unsaved
+                    hasPushedLive = false; // Reset after changes
                     updateButtonStates(); // Update button states
                 } else {
                     console.log("[DEBUG] Block order unchanged.");
@@ -114,17 +117,17 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             gridContainer.removeEventListener("click", deleteBlock);
             addBlockButton.disabled = false;
-            saveDraftButton.disabled = !unsavedChanges; // Update based on unsaved changes
-            pushLiveButton.disabled = unsavedChanges;    // Update based on unsaved changes
             blockTypeControl.disabled = false;
             viewToggleButton.disabled = false; // Re-enable "View Live" button
 
             // If deletions occurred during delete mode
             if (deletionsDuringDeleteMode) {
                 unsavedChanges = true; // Mark changes as unsaved
-                updateButtonStates(); // Update button states
+                hasPushedLive = false; // Reset after changes
                 deletionsDuringDeleteMode = false; // Reset the flag
             }
+
+            updateButtonStates(); // Update button states
 
             // Re-initialize sortable if in draft mode and delete mode is off
             if (viewMode === 'draft') {
@@ -226,6 +229,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     updateLocalLayoutFromDOM();
                     saveLayoutState(); // Save the initial fetched state
                     unsavedChanges = false; // No unsaved changes after fetching
+                    hasPushedLive = false; // Reset after fetching
                     updateButtonStates(); // Update button states
                 }
             })
@@ -302,6 +306,7 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
             renderLayout(previousState);
             unsavedChanges = true; // Mark changes as unsaved
+            hasPushedLive = false; // Reset after changes
             updateButtonStates(); // Update button states
         } else {
             console.log("[DEBUG] No more undo steps available.");
@@ -351,9 +356,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // Save layout to the database with status
     const saveLayoutToDatabase = (status) => {
         if (viewMode !== 'draft') return; // Prevent saving in live mode
+        if (isSaving) {
+            console.log("[DEBUG] Save operation already in progress. Aborting new save request.");
+            return;
+        }
+        isSaving = true; // Set saving flag
+        updateButtonStates(); // Disable buttons during save
+
         const pageId = document.querySelector(".side-panel .active").dataset.page; // Ensure the page ID is retrieved
         if (!pageId) {
             console.error("[DEBUG] Page ID is missing. Save aborted.");
+            isSaving = false;
+            updateButtonStates(); // Re-enable buttons
             return;
         }
 
@@ -382,9 +396,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateUndoButtonState(); // Update undo button state
 
                 unsavedChanges = false; // Mark changes as saved
-                updateButtonStates(); // Update button states
+
+                if (status === 'live') {
+                    hasPushedLive = true; // Indicate that live content has been pushed
+                }
+
+                isSaving = false; // Reset saving flag
+                updateButtonStates(); // Re-enable buttons
             })
-            .catch((err) => console.error("[DEBUG] Error saving layout:", err));
+            .catch((err) => {
+                console.error("[DEBUG] Error saving layout:", err);
+                isSaving = false; // Reset saving flag
+                updateButtonStates(); // Re-enable buttons
+            });
     };
 
     // Add a new block to the DOM and update memory
@@ -411,6 +435,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateLocalLayoutFromDOM(); // Update in-memory layout with the new block
         saveLayoutState(); // Save the current state to history
         unsavedChanges = true; // Mark changes as unsaved
+        hasPushedLive = false; // Reset after changes
         updateButtonStates(); // Update button states
         initializeSortable(); // Re-initialize sortable to include the new block
     };
@@ -428,7 +453,13 @@ document.addEventListener("DOMContentLoaded", () => {
             alert("Please save your changes before pushing live.");
             return;
         }
+        if (isSaving) {
+            console.log("[DEBUG] Save operation in progress. Please wait.");
+            return;
+        }
         console.log("[DEBUG] Push Live button clicked.");
+        hasPushedLive = true; // Indicate that live content has been pushed
+        updateButtonStates(); // Disable buttons
         saveLayoutToDatabase("live");
     });
     undoButton.addEventListener("click", () => {
@@ -466,10 +497,10 @@ document.addEventListener("DOMContentLoaded", () => {
             viewToggleButton.textContent = 'View Live';
             // Enable editing features
             addBlockButton.disabled = false;
-            saveDraftButton.disabled = !unsavedChanges; // Update based on unsaved changes
-            pushLiveButton.disabled = unsavedChanges;    // Update based on unsaved changes
             deleteModeButton.disabled = false;
             blockTypeControl.disabled = false;
+            hasPushedLive = false; // Reset after switching views
+            updateButtonStates(); // Update buttons based on current state
             // Render the draft from localLayout to preserve unsaved changes
             renderLayout(localLayout, true);
         }
@@ -479,6 +510,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gridContainer.addEventListener('input', (event) => {
         if (event.target.classList.contains('block-content')) {
             unsavedChanges = true; // Mark changes as unsaved
+            hasPushedLive = false; // Reset after changes
             updateButtonStates(); // Update button states
         }
     });
