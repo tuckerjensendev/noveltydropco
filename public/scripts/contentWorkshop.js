@@ -106,7 +106,8 @@ document.addEventListener("DOMContentLoaded", () => {
     // Function to update the state of Save Draft and Push Live buttons
     const updateButtonStates = () => {
         saveDraftButton.disabled = !unsavedChanges || isSaving || viewMode === 'live';
-        pushLiveButton.disabled = !unsavedChanges || isSaving || hasPushedLive || viewMode === 'live';
+        // **Corrected Push Live Button Logic**
+        pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive || viewMode === 'live';
         console.log(`[DEBUG] Button states updated. Save Draft is ${saveDraftButton.disabled ? 'disabled' : 'enabled'}, Push Live is ${pushLiveButton.disabled ? 'disabled' : 'enabled'}.`);
     };
 
