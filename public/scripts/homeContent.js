@@ -1,29 +1,18 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[DEBUG] homeContent.js loaded and DOMContentLoaded triggered.");
-
     const gridContainer = document.getElementById("contentDisplay");
 
     if (!gridContainer) {
         console.error("[DEBUG] Grid container not found. Exiting.");
         return;
     }
-    console.log("[DEBUG] Grid container found.");
 
-    // Function to fetch layout for the home page
     const fetchLayout = () => {
         const pageId = "home"; // Hardcoded for the home page
-        console.log(`[DEBUG] Fetching layout for page ID: ${pageId}`);
 
         fetch(`/api/content/${pageId}`)
-            .then((res) => {
-                console.log(`[DEBUG] Fetch response status: ${res.status}`);
-                return res.json();
-            })
+            .then((res) => res.json())
             .then((blocks) => {
-                console.log("[DEBUG] Fetched blocks:", JSON.stringify(blocks, null, 2));
-
-                // Clear the grid container and render fetched blocks
-                gridContainer.innerHTML = "";
+                gridContainer.innerHTML = ""; // Clear the grid container
 
                 const blocksToSkip = new Set(); // Track indices of blocks that are already grouped
 
@@ -33,102 +22,84 @@ document.addEventListener("DOMContentLoaded", () => {
                         return;
                     }
 
-                    // Create a block element
                     const blockElement = document.createElement("div");
-                    blockElement.className = `grid-item ${block.type}`; // Use CSS classes to control the positioning
+                    blockElement.className = `grid-item ${block.type}`;
                     blockElement.dataset.blockId = block.block_id;
                     blockElement.innerHTML = `<div class="block-content">${block.content || ""}</div>`;
 
-                    // Check if the current block and the next block should be grouped
-                    const nextBlock = blocks[index + 1];
-                    if (
-                        (block.type === "block-grid-medium" && nextBlock?.type === "block-grid-small") ||
-                        (block.type === "block-grid-small" && nextBlock?.type === "block-grid-medium")
-                    ) {
-                        // Create a group wrapper to hold the medium and small blocks together
-                        const groupWrapper = document.createElement("div");
-                        groupWrapper.className = "grid-item-group grid-item-large"; // Treat as a large block
-                        groupWrapper.dataset.blockId = `${block.block_id}-${nextBlock.block_id}`;
+                    // Check if the screen width is <= 1240px before grouping
+                    if (window.matchMedia("(max-width: 1240px)").matches) {
+                        // Identify and group medium + small blocks, regardless of order
+                        const nextBlock = blocks[index + 1];
+                        if (
+                            (block.type === "block-grid-medium" && nextBlock?.type === "block-grid-small") ||
+                            (block.type === "block-grid-small" && nextBlock?.type === "block-grid-medium")
+                        ) {
+                            const groupWrapper = document.createElement("div");
+                            groupWrapper.className = "grid-item-group";
+                            groupWrapper.style.display = "grid";
+                            groupWrapper.style.gap = "18px"; // Match gap from CSS
+                            groupWrapper.style.gridTemplateColumns = "1fr"; // Stack vertically
+                            groupWrapper.style.gridAutoRows = "92px"; // Match row height
+                            groupWrapper.style.gridColumn = "span 3"; // Ensure it spans the same as individual blocks
 
-                        // Add current and next blocks to the group
-                        groupWrapper.appendChild(blockElement);
+                            // Add the current block to the group
+                            groupWrapper.appendChild(blockElement);
 
-                        const nextBlockElement = document.createElement("div");
-                        nextBlockElement.className = `grid-item ${nextBlock.type}`;
-                        nextBlockElement.dataset.blockId = nextBlock.block_id;
-                        nextBlockElement.innerHTML = `<div class="block-content">${nextBlock.content || ""}</div>`;
-                        groupWrapper.appendChild(nextBlockElement);
+                            // Add the next block to the group
+                            const nextBlockElement = document.createElement("div");
+                            nextBlockElement.className = `grid-item ${nextBlock.type}`;
+                            nextBlockElement.dataset.blockId = nextBlock.block_id;
+                            nextBlockElement.innerHTML = `<div class="block-content">${nextBlock.content || ""}</div>`;
+                            groupWrapper.appendChild(nextBlockElement);
 
-                        // Append the group to the grid container
-                        gridContainer.appendChild(groupWrapper);
+                            // Skip processing the next block as it's already grouped
+                            blocksToSkip.add(index + 1);
 
-                        // Mark the next block as grouped
-                        blocksToSkip.add(index + 1);
+                            gridContainer.appendChild(groupWrapper); // Append the grouped block to the grid
+                        } else {
+                            // Append other blocks directly
+                            gridContainer.appendChild(blockElement);
+                        }
                     } else {
-                        // Append individual blocks directly to the grid container
+                        // Outside media query, append blocks directly without grouping
+                        blockElement.style.gridColumn = ""; // Clear any inline styles
+                        blockElement.style.gridRow = ""; // Clear any inline styles
                         gridContainer.appendChild(blockElement);
                     }
                 });
 
-                console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
-
-                // Enforce group behavior on initial rendering
-                enforceGroupIntegrity();
+                // Always ensure proper layout adjustment
+                adjustGridSpacing();
             })
             .catch((err) => console.error("[ERROR] Failed to fetch layout:", err));
     };
 
-    // Function to enforce group integrity to ensure blocks stay grouped
-    const enforceGroupIntegrity = () => {
-        console.log("[DEBUG] Enforcing group integrity.");
-        const allBlocks = [...gridContainer.children];
-        const blocksToSkip = new Set(); // Track blocks that have already been grouped
+    // Helper function to fix grid spacing issues
+    const adjustGridSpacing = () => {
+        const groupedBlocks = document.querySelectorAll(".grid-item-group");
 
-        allBlocks.forEach((block, index) => {
-            if (blocksToSkip.has(index)) return;
+        if (window.matchMedia("(max-width: 1240px)").matches) {
+            groupedBlocks.forEach((group) => {
+                group.style.gridRowEnd = `span ${Math.ceil(group.childElementCount * 2)}`; // Dynamically calculate row span
+            });
 
-            // If current block is medium or small and next is the pair
-            if (
-                block.classList.contains("block-grid-medium") ||
-                block.classList.contains("block-grid-small")
-            ) {
-                const nextBlock = allBlocks[index + 1];
-                if (
-                    nextBlock &&
-                    ((block.classList.contains("block-grid-medium") && nextBlock.classList.contains("block-grid-small")) ||
-                        (block.classList.contains("block-grid-small") && nextBlock.classList.contains("block-grid-medium")))
-                ) {
-                    // Create a new group wrapper to hold both blocks
-                    const groupWrapper = document.createElement("div");
-                    groupWrapper.className = "grid-item-group grid-item-large";
-                    groupWrapper.dataset.blockId = `${block.dataset.blockId}-${nextBlock.dataset.blockId}`;
+            // Ensure the contentDisplay grid layout adjusts properly only after 1240px
+            gridContainer.style.gridAutoRows = "minmax(75px, auto)"; // Dynamically adjust row height
+        } else {
+            groupedBlocks.forEach((group) => {
+                group.style.gridRowEnd = ""; // Reset the grouped block's row span
+            });
 
-                    // Move current and next block inside the group
-                    groupWrapper.appendChild(block);
-                    groupWrapper.appendChild(nextBlock);
-
-                    // Insert the group wrapper at the appropriate location
-                    gridContainer.insertBefore(groupWrapper, nextBlock.nextSibling);
-                    blocksToSkip.add(index + 1); // Mark next block as grouped
-                }
-            }
-        });
+            // Reset the grid styles for larger screens
+            gridContainer.style.gridAutoRows = ""; // Reset grid rows
+        }
     };
 
-    // Initial fetch and setup
     fetchLayout();
 
-    // Reapply grouping logic on window resize
+    // Re-fetch and reapply layout on window resize to adjust for media query
     window.addEventListener("resize", () => {
-        console.log("[DEBUG] Window resized, enforcing group integrity.");
-        enforceGroupIntegrity();
+        fetchLayout();
     });
-
-    // Monitor DOM changes to ensure group integrity with MutationObserver
-    const observer = new MutationObserver((mutations) => {
-        console.log("[DEBUG] DOM mutation detected, enforcing group integrity.");
-        enforceGroupIntegrity();
-    });
-
-    observer.observe(gridContainer, { childList: true, subtree: true });
 });
