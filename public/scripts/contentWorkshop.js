@@ -36,6 +36,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let selectedBlockType = null; // Declare the variable
 
+    // **Per-action flags to prevent race conditions**
+    let isAddingBlock = false;
+    let isUndoing = false;
+    let isRedoing = false;
+    let isTogglingDeleteMode = false;
+    let isTogglingView = false;
+
     // Floating toolbar enhancement
     mainContent.addEventListener('scroll', () => {
         if (mainContent.scrollTop > 0) {
@@ -635,13 +642,82 @@ document.addEventListener("DOMContentLoaded", () => {
         applySpacerVisibility();
     };
 
-    // Event listeners
-    addBlockButton.addEventListener("click", addBlock);
+    // **Event Listeners with Race Condition Prevention**
+    // Each button's event listener will now check a per-action flag before executing
+
+    // Remove duplicate event listeners for Add Block Button
+    // Original code had two event listeners; we'll consolidate them into one
+
+    // First, remove the existing listener that calls `addBlock`
+    // This assumes that the initial listener was added before this script runs
+    // If not, this line can be omitted
+    // addBlockButton.removeEventListener("click", addBlock); // Uncomment if necessary
+
+    // Add Block Button
+    addBlockButton.addEventListener("click", () => {
+        if (isAddingBlock) {
+            console.log("[DEBUG] Add Block action is already in progress. Ignoring additional click.");
+            return; // Prevent race condition
+        }
+        if (!selectedBlockType) {
+            alert('Please select a block type first.');
+            return;
+        }
+
+        isAddingBlock = true; // Set the flag
+        console.log("[DEBUG] Add Block button clicked.");
+
+        // Implement add block functionality
+        // If the `addBlock` function is synchronous, you can call it directly
+        // If it's asynchronous (e.g., involves fetch), handle it accordingly
+
+        // Here, assuming the second event listener in your original code is the intended one
+        // So we'll integrate both functionalities
+
+        // Start by calling `addBlock` to add the block to the DOM
+        try {
+            addBlock();
+        } catch (error) {
+            console.error("[DEBUG] Error in addBlock:", error);
+        }
+
+        // Then perform the asynchronous fetch to add the block to the server
+        // This part mimics your original second event listener
+        fetch('/api/blocks', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ type: selectedBlockType })
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Block added:', data);
+            fetchBlocks(selectedBlockType); // Refresh the block list
+        })
+        .catch(error => console.error('Error adding block:', error))
+        .finally(() => {
+            isAddingBlock = false; // Reset the flag after async operation completes
+        });
+    });
+
+    // Save Draft Button
     saveDraftButton.addEventListener("click", () => {
         if (viewMode !== 'draft') return; // Prevent saving in live mode
+        if (isSaving) {
+            console.log("[DEBUG] Save operation already in progress. Please wait.");
+            return; // Prevent multiple saves
+        }
         console.log("[DEBUG] Save Draft button clicked.");
         saveLayoutToDatabase("draft");
     });
+
+    // Push Live Button
     pushLiveButton.addEventListener("click", () => {
         if (viewMode !== 'draft') return; // Prevent pushing live in live mode
         if (unsavedChanges) {
@@ -650,28 +726,90 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (isSaving) {
             console.log("[DEBUG] Save operation in progress. Please wait.");
-            return;
+            return; // Prevent multiple pushes
         }
         console.log("[DEBUG] Push Live button clicked.");
         hasPushedLive = true; // Indicate that live content has been pushed
         updateButtonStates(); // Disable buttons
         saveLayoutToDatabase("live");
     });
+
+    // Undo Button
     undoButton.addEventListener("click", () => {
+        if (isUndoing) {
+            console.log("[DEBUG] Undo action is already in progress. Ignoring additional click.");
+            return; // Prevent race condition
+        }
+        if (isSaving) {
+            console.log("[DEBUG] Save operation in progress. Preventing undo.");
+            return; // Optionally prevent undo during saving
+        }
         console.log("[DEBUG] Undo button clicked.");
-        undoLayoutChange();
+        isUndoing = true; // Set the flag
+        try {
+            undoLayoutChange();
+        } catch (error) {
+            console.error("[DEBUG] Error during undo:", error);
+        } finally {
+            isUndoing = false; // Reset the flag
+        }
     });
+
+    // Redo Button
     redoButton.addEventListener("click", () => {
+        if (isRedoing) {
+            console.log("[DEBUG] Redo action is already in progress. Ignoring additional click.");
+            return; // Prevent race condition
+        }
+        if (isSaving) {
+            console.log("[DEBUG] Save operation in progress. Preventing redo.");
+            return; // Optionally prevent redo during saving
+        }
         console.log("[DEBUG] Redo button clicked.");
-        redoLayoutChange();
+        isRedoing = true; // Set the flag
+        try {
+            redoLayoutChange();
+        } catch (error) {
+            console.error("[DEBUG] Error during redo:", error);
+        } finally {
+            isRedoing = false; // Reset the flag
+        }
     });
+
+    // Delete Mode Button
     deleteModeButton.addEventListener("click", () => {
+        if (isTogglingDeleteMode) {
+            console.log("[DEBUG] Delete Mode toggle is already in progress. Ignoring additional click.");
+            return; // Prevent race condition
+        }
+        if (isSaving) {
+            console.log("[DEBUG] Save operation in progress. Preventing toggling delete mode.");
+            return; // Optionally prevent toggling delete mode during saving
+        }
         console.log("[DEBUG] Delete Mode button clicked.");
-        toggleDeleteMode();
+        isTogglingDeleteMode = true; // Set the flag
+        try {
+            toggleDeleteMode();
+        } catch (error) {
+            console.error("[DEBUG] Error toggling delete mode:", error);
+        } finally {
+            isTogglingDeleteMode = false; // Reset the flag
+        }
     });
 
     // Function to handle view toggling and update button text
     const handleViewToggle = () => {
+        if (isTogglingView) {
+            console.log("[DEBUG] View Toggle action is already in progress. Ignoring additional click.");
+            return; // Prevent race condition
+        }
+        if (isSaving) {
+            console.log("[DEBUG] Save operation in progress. Preventing view toggle.");
+            return; // Optionally prevent toggling view during saving
+        }
+
+        isTogglingView = true; // Set the flag
+
         if (viewMode === 'draft') {
             viewMode = 'live';
             viewToggleButton.textContent = 'View Draft';
@@ -681,10 +819,12 @@ document.addEventListener("DOMContentLoaded", () => {
             pushLiveButton.disabled = true;
             deleteModeButton.disabled = true;
             blockTypeControl.disabled = true;
-            customDropdownToggle.disabled = true; // Disable dropdown in live view
+            if (customDropdownToggle) {
+                customDropdownToggle.disabled = true;
+            }
             undoButton.disabled = true;
             redoButton.disabled = true;
-            viewToggleButton.disabled = false; // Ensure the button is enabled here
+            // viewToggleButton remains enabled for user to toggle back
             // Exit delete mode if active
             if (deleteMode) {
                 toggleDeleteMode();
@@ -703,7 +843,9 @@ document.addEventListener("DOMContentLoaded", () => {
             addBlockButton.disabled = false;
             deleteModeButton.disabled = false;
             blockTypeControl.disabled = false;
-            customDropdownToggle.disabled = false; // Enable dropdown in draft view
+            if (customDropdownToggle) {
+                customDropdownToggle.disabled = false; // Enable dropdown in draft view
+            }
             hasPushedLive = false; // Reset after switching views
             updateButtonStates(); // Update buttons based on current state
             updateHistoryButtonsState(); // Update undo and redo buttons
@@ -713,6 +855,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Apply or remove spacer visibility based on viewMode and deleteMode
         applySpacerVisibility();
+
+        isTogglingView = false; // Reset the flag
     };
 
     // Function to apply spacer visibility based on current view mode
@@ -728,8 +872,9 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // **Update the primary event listener to call handleViewToggle**
-    viewToggleButton.removeEventListener("click", () => {}); // Ensure no other listeners
-    viewToggleButton.addEventListener("click", handleViewToggle);
+    viewToggleButton.addEventListener("click", () => {
+        handleViewToggle();
+    });
 
     // Event listener for content changes in blocks
     gridContainer.addEventListener('input', (event) => {
@@ -829,29 +974,13 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
+    // **Removed Duplicate Event Listeners for Add Block Button**
+    // In your original code, you had duplicate event listeners for the Add Block button.
+    // Ensure each button has only one event listener to prevent unexpected behaviors.
+
     // Event listener for Add Block button
-    addBlockButton.addEventListener('click', () => {
-        if (!selectedBlockType) {
-            alert('Please select a block type first.');
-            return;
-        }
-        // Implement add block functionality
-        console.log(`Adding block of type: ${selectedBlockType}`);
-        // Example: Send a POST request to add a block
-        fetch('/api/blocks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ type: selectedBlockType })
-        })
-        .then(response => response.json())
-        .then(data => {
-            console.log('Block added:', data);
-            fetchBlocks(selectedBlockType); // Refresh the block list
-        })
-        .catch(error => console.error('Error adding block:', error));
-    });
+    // (Consolidated into the earlier listener with race condition prevention)
+    // If you prefer to keep the asynchronous fetch separate, you can adjust accordingly.
 
     // Initial fetch and setup
     fetchLayout(true);
