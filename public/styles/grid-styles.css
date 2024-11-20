@@ -25,7 +25,7 @@
 /* Specific styles for contentDisplay */
 #contentDisplay {
     gap: 18px;
-    padding: 215px 80px 0px 80px;
+    padding: 230px 80px 0px 80px;
     padding-bottom: calc(100px + 2vh);
     /* No overflow-y or max-height to ensure it relies on main scrollbar */
 }
@@ -66,35 +66,40 @@
 }
 
 /* MINI SQUARE - Proper size and tighter spacing */
-.grid-item.block-grid-small {
-    grid-column: span 3; /* Allocates 3 columns per square for tighter spacing */
-    grid-row: span 2; /* Ensures it spans the correct height */
-    width: 75%; /* Keeps a balanced square within reduced column space */
-    height: 100%; /* Maintains square aspect ratio */
-    justify-self: center; /* Centers horizontally within its 3-column space */
-    align-self: center; /* Centers vertically within its grid area */
+.grid-item.block-grid-small,
+.grid-item.block-spacer-small {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    justify-self: center;
+    align-self: center;
+}
+
+/* Other elements remain unchanged */
+.grid-item.block-grid-medium,
+.grid-item.block-spacer-medium {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+
+.grid-item.block-grid-large,
+.grid-item.block-spacer-large {
+    grid-column: span 3;
+    grid-row: span 4;
 }
 
 /* CENTERPIECE BLOCK - Centered across its 8-column span */
-.grid-item.block-centerpiece {
-    grid-column: 3 / span 8; /* Start from column 3, span 8 columns */
+.grid-item.block-centerpiece,
+.grid-item.block-spacer-centerpiece {
+    grid-column: 3 / span 8;
     grid-row: span 2;
     width: 100%;
     height: 100%;
 }
 
-/* Other elements remain unchanged */
-.grid-item.block-grid-medium {
-    grid-column: span 3;
-    grid-row: span 2;
-}
-
-.grid-item.block-grid-large {
-    grid-column: span 3;
-    grid-row: span 4;
-}
-
-.grid-item.block-banner {
+.grid-item.block-banner,
+.grid-item.block-spacer-banner {
     grid-column: span 12;
     grid-row: span 2;
 }

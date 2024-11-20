@@ -292,9 +292,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (blockElement) {
             console.log(`[DEBUG] Block clicked for deletion: ${blockElement.dataset.blockId}`);
 
+            // **Store the original index of the block before deletion**
+            const blockIndex = Array.from(gridContainer.children).indexOf(blockElement);
+
             // Save the block state before deletion to delete history for undo purposes
             deleteHistory.push({
                 blockElement: blockElement.cloneNode(true),
+                index: blockIndex, // Store the original index
             });
             // Clear redo history for delete mode
             deleteRedoHistory = [];
@@ -350,11 +354,20 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("[DEBUG] Undoing last deletion.");
 
             // Push the undone action to redo history
-            deleteRedoHistory.push({
-                blockElement: lastDeleted.blockElement,
-            });
+            deleteRedoHistory.push(lastDeleted);
 
-            gridContainer.appendChild(lastDeleted.blockElement.cloneNode(true));
+            const newBlock = lastDeleted.blockElement.cloneNode(true);
+
+            // **Insert the block back at its original index**
+            if (lastDeleted.index >= gridContainer.children.length) {
+                gridContainer.appendChild(newBlock);
+                console.log(`[DEBUG] Inserted block at the end (index ${lastDeleted.index}).`);
+            } else {
+                gridContainer.insertBefore(newBlock, gridContainer.children[lastDeleted.index]);
+                console.log(`[DEBUG] Inserted block at index ${lastDeleted.index}.`);
+            }
+
+            // **No additional handling needed for spacers; CSS will manage their styling based on class names**
 
             // Update local layout and sortable
             updateLocalLayoutFromDOM();
@@ -386,14 +399,15 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("[DEBUG] Redoing last deletion.");
 
             // Push the action back to deleteHistory
-            deleteHistory.push({
-                blockElement: lastRedo.blockElement,
-            });
+            deleteHistory.push(lastRedo);
 
-            // Remove the block from the DOM
-            const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
-            if (blockElement) {
-                blockElement.remove();
+            // **Remove the block from its original index**
+            const blockToRemove = gridContainer.children[lastRedo.index];
+            if (blockToRemove) {
+                blockToRemove.remove();
+                console.log(`[DEBUG] Removed block from index ${lastRedo.index}.`);
+            } else {
+                console.log(`[DEBUG] No block found at index ${lastRedo.index} to remove.`);
             }
 
             // Update local layout and sortable
