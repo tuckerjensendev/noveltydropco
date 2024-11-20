@@ -3,13 +3,12 @@
     box-sizing: border-box;
     margin: 0;
     padding: 0;
-    
 }
 
 /* 2. Global Styles */
 body, html {
     height: 100%;
-    overflow: hidden; /* Prevent page scrolling */
+    overflow: auto; /* Enable scrolling by default */
     font-family: Arial, sans-serif;
     background-color: #DCE0E2;
 }
@@ -211,7 +210,7 @@ header {
     border-color: #999;
 }
 
-/* 5. Login Dropdown Menu (Login/Register) */
+/* 4. Login Dropdown Menu (Login/Register) */
 .dropdown-content {
     display: none;
     position: absolute;
@@ -225,7 +224,6 @@ header {
     transform-origin: top right;
     z-index: 9999; /* Set a high z-index */
 }
-
 
 /* Moves Login form into Register form position */
 .dropdown-content.register-mode {
@@ -309,7 +307,8 @@ header {
     width: 50%; /* Half size and centered */
 }
 
-#login-form button:hover, #register-form button:hover {
+#login-form button:hover,
+#register-form button:hover {
     background-color: #0056b3;
 }
 
@@ -464,16 +463,6 @@ header {
     margin-bottom: 10px;
 }
 
-.main-content-display {
-    flex: 1;
-    padding: 15px;
-    overflow-y: scroll; /* Ensures vertical scrolling is always enabled */
-    overflow-x: hidden; /* Prevent horizontal scrolling */
-    scrollbar-width: none; /* Hide scrollbar in Firefox */
-    height: calc(100vh); /* Ensures it takes up the full viewport height */
-    box-sizing: border-box; /* Includes padding in height calculation */
-}
-
 /* Enhanced Floating Toolbar */
 #sharedToolbar {
     position: sticky;
@@ -523,7 +512,7 @@ header {
     background-color: #007BFF; /* Primary blue color */
     color: #ffffff;
     border: none;
-    padding: 6px 12px; /* Reduced padding from 8px 16px */
+    padding: 6px 12px; /* Reduced padding */
     border-radius: 4px;
     cursor: pointer;
     font-size: 14px;
@@ -531,7 +520,6 @@ header {
     display: flex;
     align-items: center;
     justify-content: center; /* Center text horizontally */
-    /* Removed gap: 6px; since most buttons don't have icons */
     text-align: center;
     /* Removed min-width and max-width to prevent affecting all buttons */
 }
@@ -644,7 +632,7 @@ header {
 #customBlockTypeDropdown {
     background-color: #ffffff;
     color: #333333;
-    padding: 6px 10px; /* Reduced padding from 8px 12px */
+    padding: 6px 10px; /* Reduced padding */
     font-size: 14px;
     border: 1px solid #cccccc;
     border-radius: 4px;
@@ -721,6 +709,35 @@ header {
     background-color: #e0e0e0;
 }
 
+/* 4. Conditional Scrollbar Styles */
+
+/* Hide main scrollbar and enable internal scrolling on pages with 'no-main-scroll' class */
+body.no-main-scroll, html.no-main-scroll {
+    overflow: hidden; /* Prevent main page scrolling */
+    width: none;
+}
+
+/* Enable internal scrolling within .main-content on 'no-main-scroll' pages */
+body.no-main-scroll .main-content,
+html.no-main-scroll .main-content {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar in WebKit-based browsers for main content on 'no-main-scroll' pages */
+body.no-main-scroll .main-content::-webkit-scrollbar,
+html.no-main-scroll .main-content::-webkit-scrollbar {
+    width: none;
+}
+
+/* Ensure that on 'no-main-scroll' pages, the .content-workshop-container occupies full height */
+body.no-main-scroll .content-workshop-container,
+html.no-main-scroll .content-workshop-container {
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevent internal container from causing overflow */
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     #sharedToolbar {
@@ -762,7 +779,6 @@ header {
         min-width: 150px;
     }
 }
-
 
 /* Create-Staff Form Styling */
 .create-staff-container {
@@ -837,8 +853,6 @@ header {
 #createStaffForm button:hover {
     background-color: #0056b3;
 }
-
-
 
 /* Manage-Access.ejs Styling */
 /* Permissions Table Container */
@@ -937,6 +951,7 @@ header {
     cursor: not-allowed;
 }
 
+/* Responsive Design */
 @media (max-width: 480px) {
     header {
         flex-direction: column;

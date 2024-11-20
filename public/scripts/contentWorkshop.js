@@ -3,7 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
     console.log("[DEBUG] contentWorkshop.js loaded and DOMContentLoaded triggered.");
 
-    const gridContainer = document.getElementById("contentPreview");
+    const gridContainer = document.getElementById("contentPreview") || document.getElementById("contentDisplay");
     const blockTypeControl = document.getElementById("blockTypeControl");
     const addBlockButton = document.getElementById("addBlockButton");
     const saveDraftButton = document.getElementById("saveDraftButton");
@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let deleteHistory = []; // Stack for undo functionality for deletions
     let deleteRedoHistory = []; // Stack for redo functionality for deletions
     let deleteMode = false; // Track delete mode state
-    let viewMode = 'draft'; // Initial view mode is 'draft'
+    let viewMode = gridContainer.id === 'contentPreview' ? 'draft' : 'live'; // Determine initial view mode based on container
     let unsavedChanges = false; // Track unsaved changes
     let deletionsDuringDeleteMode = false; // Track deletions during delete mode
     let isSaving = false; // Flag to prevent multiple concurrent saves
@@ -43,6 +43,36 @@ document.addEventListener("DOMContentLoaded", () => {
     let isTogglingDeleteMode = false;
     let isTogglingView = false;
 
+    // **Global Mutex Implementation**
+    class Mutex {
+        constructor() {
+            this.queue = [];
+            this.locked = false;
+        }
+
+        lock() {
+            return new Promise(resolve => {
+                if (this.locked) {
+                    this.queue.push(resolve);
+                } else {
+                    this.locked = true;
+                    resolve();
+                }
+            });
+        }
+
+        unlock() {
+            if (this.queue.length > 0) {
+                const nextResolve = this.queue.shift();
+                nextResolve();
+            } else {
+                this.locked = false;
+            }
+        }
+    }
+
+    const mutex = new Mutex(); // Instantiate the global mutex
+
     // Floating toolbar enhancement
     mainContent.addEventListener('scroll', () => {
         if (mainContent.scrollTop > 0) {
@@ -55,13 +85,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Set initial button text
-    viewToggleButton.textContent = 'View Live';
+    viewToggleButton.textContent = viewMode === 'draft' ? 'View Live' : 'View Draft';
 
     // Disable undo, redo, and save buttons initially
     undoButton.disabled = true;
     redoButton.disabled = true;
     saveDraftButton.disabled = true;
-    pushLiveButton.disabled = true;
+    pushLiveButton.disabled = viewMode === 'live'; // Disable Push Live if in live mode
 
     // Function to update the state of Undo and Redo buttons
     const updateHistoryButtonsState = () => {
@@ -75,8 +105,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Function to update the state of Save Draft and Push Live buttons
     const updateButtonStates = () => {
-        saveDraftButton.disabled = !unsavedChanges || isSaving;
-        pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive;
+        saveDraftButton.disabled = !unsavedChanges || isSaving || viewMode === 'live';
+        pushLiveButton.disabled = !unsavedChanges || isSaving || hasPushedLive || viewMode === 'live';
         console.log(`[DEBUG] Button states updated. Save Draft is ${saveDraftButton.disabled ? 'disabled' : 'enabled'}, Push Live is ${pushLiveButton.disabled ? 'disabled' : 'enabled'}.`);
     };
 
@@ -114,47 +144,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         // Ensure gridContainer is scrollable, and body cannot scroll
         gridContainer.style.overflowY = "auto";
-        gridContainer.style.overflowX = "hidden"; // Optional, assuming no horizontal scrolling is needed
-        document.body.style.overflow = "hidden";
-    
-        // Variables for scrolling logic
-        let scrollInterval; // Timer for continuous scrolling
-        const edgeThreshold = 150; // Expanded distance from edges to trigger scroll
-        const scrollSpeed = 10; // Speed of scrolling in px per tick
-        const scrollBoost = 1.5; // Additional speed when closer to edges
-        const upperEdgeThreshold = 200; // Higher sensitivity for downward scrolling
-        let isScrolling = false; // Flag to track active scrolling
-        let lastClientY = 0; // Store the last Y position
-    
-        // Start scrolling if near the edges
-        const startScrolling = (clientY) => {
-            const rect = gridContainer.getBoundingClientRect();
-            lastClientY = clientY;
-    
-            if (isScrolling) return; // Prevent multiple intervals
-            isScrolling = true;
-    
-            scrollInterval = setInterval(() => {
-                if (lastClientY < rect.top + edgeThreshold) {
-                    const boost = Math.max(1, (rect.top + edgeThreshold - lastClientY) / edgeThreshold);
-                    gridContainer.scrollTop -= scrollSpeed * boost; // Scroll up with acceleration
-                    console.log(`[DEBUG] Scrolling gridContainer up. Speed: ${scrollSpeed * boost}`);
-                } else if (lastClientY > rect.bottom - upperEdgeThreshold) {
-                    const boost = Math.max(1, (lastClientY - (rect.bottom - upperEdgeThreshold)) / edgeThreshold);
-                    gridContainer.scrollTop += scrollSpeed * boost; // Scroll down with acceleration
-                    console.log(`[DEBUG] Scrolling gridContainer down. Speed: ${scrollSpeed * boost}`);
-                } else {
-                    stopScrolling(); // Stop if no longer near edges
-                }
-            }, 16); // Run the check every ~16ms for smooth scrolling (60fps).
-        };
-    
-        // Stop scrolling
-        const stopScrolling = () => {
-            clearInterval(scrollInterval);
-            isScrolling = false;
-            console.log("[DEBUG] Scrolling stopped.");
-        };
+        gridContainer.style.overflowX = "hidden"; // Prevent horizontal scrolling
     
         // Initialize Sortable.js
         sortableInstance = Sortable.create(gridContainer, {
@@ -164,16 +154,9 @@ document.addEventListener("DOMContentLoaded", () => {
             onStart: (evt) => {
                 disableBodyScroll();
                 console.log("[DEBUG] Dragging started.");
-                startScrolling(evt.originalEvent.clientY); // Start scrolling based on initial position
-            },
-            onMove: (evt) => {
-                const clientY = evt.originalEvent.clientY;
-                lastClientY = clientY; // Update the Y position during dragging
-                startScrolling(clientY); // Continuously check position and adjust scrolling
             },
             onEnd: (event) => {
                 enableBodyScroll();
-                stopScrolling();
                 console.log("[DEBUG] Drag event ended.");
                 console.log(`[DEBUG] Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
     
@@ -193,7 +176,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         console.log("[DEBUG] Sortable.js initialized successfully.");
     };
-    
+
 
     // Toggle Delete Mode
     const toggleDeleteMode = () => {
@@ -207,7 +190,9 @@ document.addEventListener("DOMContentLoaded", () => {
         saveDraftButton.disabled = deleteMode;
         pushLiveButton.disabled = deleteMode;
         blockTypeControl.disabled = deleteMode;
-        customDropdownToggle.disabled = deleteMode || (viewMode === 'live'); // Ensure dropdown is disabled if deleteMode or live view
+        if (customDropdownToggle) {
+            customDropdownToggle.disabled = deleteMode || (viewMode === 'live'); // Ensure dropdown is disabled if deleteMode or live view
+        }
         viewToggleButton.disabled = deleteMode; // Disable "View Live" button
 
         if (deleteMode) {
@@ -222,10 +207,12 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             gridContainer.removeEventListener("click", deleteBlock);
             addBlockButton.disabled = false;
-            saveDraftButton.disabled = unsavedChanges || isSaving;
-            pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive;
+            saveDraftButton.disabled = unsavedChanges || isSaving || viewMode === 'live';
+            pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive || viewMode === 'live';
             blockTypeControl.disabled = false;
-            customDropdownToggle.disabled = viewMode === 'live'; // Enable only if not live
+            if (customDropdownToggle) {
+                customDropdownToggle.disabled = viewMode === 'live'; // Enable only if not live
+            }
             viewToggleButton.disabled = false; // Re-enable "View Live" button
 
             // If deletions occurred during delete mode
@@ -252,8 +239,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update undo and redo buttons
         updateHistoryButtonsState();
 
-        // Apply or remove spacer visibility based on viewMode and deleteMode
-        applySpacerVisibility();
+        // No longer apply spacer visibility via JS
     };
 
     // Add a new block to the DOM and update memory
@@ -284,12 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         block.innerHTML = `<div class="block-content" contenteditable="${contentEditable}">${displayText}</div>`;
 
-        // Apply spacer visibility based on viewMode
-        if (isSpacer && viewMode === 'live') {
-            block.style.visibility = 'hidden'; // Hide spacer content but retain grid space
-        } else {
-            block.style.visibility = 'visible';
-        }
+        // No longer set inline visibility; CSS will handle it based on container
 
         gridContainer.appendChild(block);
         console.log("[DEBUG] Added new block:", block);
@@ -379,9 +360,7 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeSortable();
             // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
 
-            // Apply spacer visibility after undoing deletion
-            applySpacerVisibility();
-
+            // Spacer visibility is handled by CSS
         } else if (!deleteMode && layoutHistory.length > 1) {
             // Handle undo for layout changes
             redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
@@ -421,9 +400,7 @@ document.addEventListener("DOMContentLoaded", () => {
             initializeSortable();
             // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
 
-            // Apply spacer visibility after redoing deletion
-            applySpacerVisibility();
-
+            // Spacer visibility is handled by CSS
         } else if (!deleteMode && redoHistoryStack.length > 0) {
             // Handle redo for layout changes
             const nextState = redoHistoryStack.pop();
@@ -440,7 +417,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
 
     // Save layout to the database with status
-    const saveLayoutToDatabase = (status) => {
+    const saveLayoutToDatabase = async (status) => {
         if (viewMode !== 'draft') return; // Prevent saving in live mode
         if (isSaving) {
             console.log("[DEBUG] Save operation already in progress. Aborting new save request.");
@@ -464,126 +441,115 @@ document.addEventListener("DOMContentLoaded", () => {
         // Add this line to verify the payload
         console.log("[DEBUG] Payload being sent:", payload);
 
-        fetch("/api/save-layout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload), // Send the payload including `page_id` and `status`
-        })
-            .then((res) => {
-                console.log(`[DEBUG] Save response status: ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
-                console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
-
-                // Clear undo and redo history after a successful save
-                layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
-                redoHistoryStack = [];
-                deleteHistory = [];
-                deleteRedoHistory = [];
-                updateHistoryButtonsState(); // Update undo and redo button states
-
-                unsavedChanges = false; // Mark changes as saved
-
-                if (status === 'live') {
-                    hasPushedLive = true; // Indicate that live content has been pushed
-                }
-
-                isSaving = false; // Reset saving flag
-                updateButtonStates(); // Re-enable buttons
-            })
-            .catch((err) => {
-                console.error("[DEBUG] Error saving layout:", err);
-                isSaving = false; // Reset saving flag
-                updateButtonStates(); // Re-enable buttons
+        try {
+            const res = await fetch("/api/save-layout", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload), // Send the payload including `page_id` and `status`
             });
+
+            console.log(`[DEBUG] Save response status: ${res.status}`);
+            const data = await res.json();
+            console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
+
+            // Clear undo and redo history after a successful save
+            layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
+            redoHistoryStack = [];
+            deleteHistory = [];
+            deleteRedoHistory = [];
+            updateHistoryButtonsState(); // Update undo and redo button states
+
+            unsavedChanges = false; // Mark changes as saved
+
+            if (status === 'live') {
+                hasPushedLive = true; // Indicate that live content has been pushed
+            }
+
+        } catch (err) {
+            console.error("[DEBUG] Error saving layout:", err);
+        } finally {
+            isSaving = false; // Reset saving flag
+            updateButtonStates(); // Re-enable buttons
+        }
     };
 
     // Fetch layout and initialize Sortable.js
-    const fetchLayout = (reinitializeSortable = false) => {
+    const fetchLayout = async (reinitializeSortable = false) => {
         const pageId = document.querySelector(".side-panel .active").dataset.page;
         console.log(`[DEBUG] Fetching layout for page ID: ${pageId}`);
 
-        fetch(`/api/content/${pageId}?status=${viewMode}`)
-            .then((res) => {
-                console.log(`[DEBUG] Fetch response status: ${res.status}`);
-                return res.json();
-            })
-            .then((blocks) => {
-                if (blocks.length === 0 && viewMode === 'draft') {
-                    // If no draft exists, fetch live content
-                    console.log("[DEBUG] No draft found, fetching live content.");
-                    return fetch(`/api/content/${pageId}?status=live`).then((res) => res.json());
-                } else {
-                    return blocks;
-                }
-            })
-            .then((blocks) => {
-                console.log("[DEBUG] Fetched blocks:", JSON.stringify(blocks, null, 2));
+        try {
+            const res = await fetch(`/api/content/${pageId}?status=${viewMode}`);
+            console.log(`[DEBUG] Fetch response status: ${res.status}`);
+            let blocks = await res.json();
 
-                // Clear the grid container and render fetched blocks
-                gridContainer.innerHTML = "";
-                blocks.forEach((block) => {
-                    const blockElement = document.createElement("div");
-                    blockElement.className = `grid-item ${block.type}`;
-                    blockElement.dataset.blockId = block.block_id;
-                    blockElement.dataset.row = block.row;
-                    blockElement.dataset.col = block.col;
-                    blockElement.dataset.width = block.width;
-                    blockElement.dataset.height = block.height;
+            if (blocks.length === 0 && viewMode === 'draft') {
+                // If no draft exists, fetch live content
+                console.log("[DEBUG] No draft found, fetching live content.");
+                const liveRes = await fetch(`/api/content/${pageId}?status=live`);
+                blocks = await liveRes.json();
+            }
 
-                    blockElement.style.gridRow = `${block.row} / span ${block.height}`;
-                    blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-                    
-                    // Determine if the block is a spacer
-                    const isSpacer = block.type.startsWith('block-spacer');
+            console.log("[DEBUG] Fetched blocks:", JSON.stringify(blocks, null, 2));
 
-                    // Set contenteditable based on block type
-                    const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
-                    
-                    blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
-                    
-                    // Apply spacer visibility based on viewMode
-                    if (isSpacer && viewMode === 'live') {
-                        blockElement.style.visibility = 'hidden'; // Hide spacer content but retain grid space
-                    } else {
-                        blockElement.style.visibility = 'visible';
-                    }
+            // Clear the grid container and render fetched blocks
+            gridContainer.innerHTML = "";
+            blocks.forEach((block) => {
+                const blockElement = document.createElement("div");
+                blockElement.className = `grid-item ${block.type}`;
+                blockElement.dataset.blockId = block.block_id;
+                blockElement.dataset.row = block.row;
+                blockElement.dataset.col = block.col;
+                blockElement.dataset.width = block.width;
+                blockElement.dataset.height = block.height;
 
-                    gridContainer.appendChild(blockElement);
-                });
+                blockElement.style.gridRow = `${block.row} / span ${block.height}`;
+                blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
+                
+                // Determine if the block is a spacer
+                const isSpacer = block.type.startsWith('block-spacer');
 
-                // Remove `grid-area` styles to prevent conflicts
-                Array.from(gridContainer.children).forEach((block) => {
-                    block.style.gridArea = ""; // Clear conflicting styles
-                });
+                // Set contenteditable based on block type
+                const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
+                
+                blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
+                
+                // No longer set inline visibility; CSS will handle it based on container
 
-                // Ensure grid container has correct grid settings
-                gridContainer.style.display = 'grid';
-                gridContainer.style.gridTemplateColumns = 'repeat(12, 1fr)'; // Adjust as per your grid
-                gridContainer.style.gridAutoRows = 'minmax(100px, auto)'; // Adjust as needed
-                gridContainer.style.gap = '10px'; // Adjust as needed
+                gridContainer.appendChild(blockElement);
+            });
 
-                console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
+            // Remove `grid-area` styles to prevent conflicts
+            Array.from(gridContainer.children).forEach((block) => {
+                block.style.gridArea = ""; // Clear conflicting styles
+            });
 
-                if (reinitializeSortable && viewMode === 'draft' && !deleteMode) {
-                    console.log("[DEBUG] Reinitializing Sortable.js after fetching layout...");
-                    initializeSortable();
-                }
+            // Ensure grid container has correct grid settings
+            gridContainer.style.display = 'grid';
+            gridContainer.style.gridTemplateColumns = 'repeat(12, 1fr)'; // Adjust as per your grid
+            gridContainer.style.gridAutoRows = 'minmax(100px, auto)'; // Adjust as needed
+            gridContainer.style.gap = '10px'; // Adjust as needed
 
-                // Sync layout to memory only if in draft mode
-                if (viewMode === 'draft') {
-                    updateLocalLayoutFromDOM();
-                    saveLayoutState(); // Save the initial fetched state
-                    unsavedChanges = false; // No unsaved changes after fetching
-                    hasPushedLive = false; // Reset after fetching
-                    updateButtonStates(); // Update button states
-                }
+            console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
 
-                // Apply spacer visibility after rendering
-                applySpacerVisibility();
-            })
-            .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
+            if (reinitializeSortable && viewMode === 'draft' && !deleteMode) {
+                console.log("[DEBUG] Reinitializing Sortable.js after fetching layout...");
+                initializeSortable();
+            }
+
+            // Sync layout to memory only if in draft mode
+            if (viewMode === 'draft') {
+                updateLocalLayoutFromDOM();
+                saveLayoutState(); // Save the initial fetched state
+                unsavedChanges = false; // No unsaved changes after fetching
+                hasPushedLive = false; // Reset after fetching
+                updateButtonStates(); // Update button states
+            }
+
+            // Spacer visibility is handled by CSS
+        } catch (err) {
+            console.error("[DEBUG] Error fetching layout:", err);
+        }
     };
 
     // Render layout from a given state
@@ -609,12 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
             
             blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
             
-            // Apply spacer visibility based on viewMode
-            if (isSpacer && viewMode === 'live') {
-                blockElement.style.visibility = 'hidden'; // Hide spacer content but retain grid space
-            } else {
-                blockElement.style.visibility = 'visible';
-            }
+            // No longer set inline visibility; CSS will handle it based on container
 
             gridContainer.appendChild(blockElement);
         });
@@ -638,243 +599,248 @@ document.addEventListener("DOMContentLoaded", () => {
             console.log("[DEBUG] Sortable.js instance destroyed in renderLayout.");
         }
 
-        // Apply spacer visibility after rendering
-        applySpacerVisibility();
+        // Spacer visibility is handled by CSS
     };
 
-    // **Event Listeners with Race Condition Prevention**
-    // Each button's event listener will now check a per-action flag before executing
-
-    // Remove duplicate event listeners for Add Block Button
-    // Original code had two event listeners; we'll consolidate them into one
-
-    // First, remove the existing listener that calls `addBlock`
-    // This assumes that the initial listener was added before this script runs
-    // If not, this line can be omitted
-    // addBlockButton.removeEventListener("click", addBlock); // Uncomment if necessary
+    // **Event Listeners with Enhanced Race Condition Prevention**
+    // All button event listeners are wrapped with the global mutex to prevent race conditions
 
     // Add Block Button
-    addBlockButton.addEventListener("click", () => {
-        if (isAddingBlock) {
-            console.log("[DEBUG] Add Block action is already in progress. Ignoring additional click.");
-            return; // Prevent race condition
-        }
-        if (!selectedBlockType) {
-            alert('Please select a block type first.');
-            return;
-        }
-
-        isAddingBlock = true; // Set the flag
-        console.log("[DEBUG] Add Block button clicked.");
-
-        // Implement add block functionality
-        // If the `addBlock` function is synchronous, you can call it directly
-        // If it's asynchronous (e.g., involves fetch), handle it accordingly
-
-        // Here, assuming the second event listener in your original code is the intended one
-        // So we'll integrate both functionalities
-
-        // Start by calling `addBlock` to add the block to the DOM
+    addBlockButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
         try {
-            addBlock();
-        } catch (error) {
-            console.error("[DEBUG] Error in addBlock:", error);
-        }
-
-        // Then perform the asynchronous fetch to add the block to the server
-        // This part mimics your original second event listener
-        fetch('/api/blocks', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ type: selectedBlockType })
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
+            if (isAddingBlock) {
+                console.log("[DEBUG] Add Block action is already in progress. Ignoring additional click.");
+                return; // Prevent race condition
             }
-            return response.json();
-        })
-        .then(data => {
-            console.log('Block added:', data);
-            fetchBlocks(selectedBlockType); // Refresh the block list
-        })
-        .catch(error => console.error('Error adding block:', error))
-        .finally(() => {
-            isAddingBlock = false; // Reset the flag after async operation completes
-        });
+            if (!selectedBlockType) {
+                alert('Please select a block type first.');
+                return;
+            }
+
+            isAddingBlock = true; // Set the flag
+            console.log("[DEBUG] Add Block button clicked.");
+
+            // Implement add block functionality
+            // Synchronously add the block to the DOM
+            try {
+                addBlock();
+            } catch (error) {
+                console.error("[DEBUG] Error in addBlock:", error);
+            }
+
+            // Then perform the asynchronous fetch to add the block to the server
+            try {
+                const response = await fetch('/api/blocks', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: selectedBlockType })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Network response was not ok (${response.status})`);
+                }
+
+                const data = await response.json();
+                console.log('[DEBUG] Block added:', data);
+                await fetchBlocks(selectedBlockType); // Refresh the block list
+            } catch (error) {
+                console.error('[DEBUG] Error adding block:', error);
+            }
+        } finally {
+            isAddingBlock = false; // Reset the flag after operation completes
+            mutex.unlock(); // Release the mutex
+        }
     });
 
     // Save Draft Button
-    saveDraftButton.addEventListener("click", () => {
-        if (viewMode !== 'draft') return; // Prevent saving in live mode
-        if (isSaving) {
-            console.log("[DEBUG] Save operation already in progress. Please wait.");
-            return; // Prevent multiple saves
+    saveDraftButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
+        try {
+            if (viewMode !== 'draft') return; // Prevent saving in live mode
+            if (isSaving) {
+                console.log("[DEBUG] Save operation already in progress. Please wait.");
+                return; // Prevent multiple saves
+            }
+            console.log("[DEBUG] Save Draft button clicked.");
+            await saveLayoutToDatabase("draft");
+        } finally {
+            mutex.unlock(); // Release the mutex
         }
-        console.log("[DEBUG] Save Draft button clicked.");
-        saveLayoutToDatabase("draft");
     });
 
     // Push Live Button
-    pushLiveButton.addEventListener("click", () => {
-        if (viewMode !== 'draft') return; // Prevent pushing live in live mode
-        if (unsavedChanges) {
-            alert("Please save your changes before pushing live.");
-            return;
+    pushLiveButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
+        try {
+            if (viewMode !== 'draft') return; // Prevent pushing live in live mode
+            if (unsavedChanges) {
+                alert("Please save your changes before pushing live.");
+                return;
+            }
+            if (isSaving) {
+                console.log("[DEBUG] Save operation in progress. Please wait.");
+                return; // Prevent multiple pushes
+            }
+            console.log("[DEBUG] Push Live button clicked.");
+            hasPushedLive = true; // Indicate that live content has been pushed
+            updateButtonStates(); // Disable buttons
+            await saveLayoutToDatabase("live");
+        } finally {
+            mutex.unlock(); // Release the mutex
         }
-        if (isSaving) {
-            console.log("[DEBUG] Save operation in progress. Please wait.");
-            return; // Prevent multiple pushes
-        }
-        console.log("[DEBUG] Push Live button clicked.");
-        hasPushedLive = true; // Indicate that live content has been pushed
-        updateButtonStates(); // Disable buttons
-        saveLayoutToDatabase("live");
     });
 
     // Undo Button
-    undoButton.addEventListener("click", () => {
-        if (isUndoing) {
-            console.log("[DEBUG] Undo action is already in progress. Ignoring additional click.");
-            return; // Prevent race condition
-        }
-        if (isSaving) {
-            console.log("[DEBUG] Save operation in progress. Preventing undo.");
-            return; // Optionally prevent undo during saving
-        }
-        console.log("[DEBUG] Undo button clicked.");
-        isUndoing = true; // Set the flag
+    undoButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
         try {
-            undoLayoutChange();
-        } catch (error) {
-            console.error("[DEBUG] Error during undo:", error);
+            if (isUndoing) {
+                console.log("[DEBUG] Undo action is already in progress. Ignoring additional click.");
+                return; // Prevent race condition
+            }
+            if (isSaving) {
+                console.log("[DEBUG] Save operation in progress. Preventing undo.");
+                return; // Optionally prevent undo during saving
+            }
+            console.log("[DEBUG] Undo button clicked.");
+            isUndoing = true; // Set the flag
+            try {
+                undoLayoutChange();
+            } catch (error) {
+                console.error("[DEBUG] Error during undo:", error);
+            }
         } finally {
             isUndoing = false; // Reset the flag
+            mutex.unlock(); // Release the mutex
         }
     });
 
     // Redo Button
-    redoButton.addEventListener("click", () => {
-        if (isRedoing) {
-            console.log("[DEBUG] Redo action is already in progress. Ignoring additional click.");
-            return; // Prevent race condition
-        }
-        if (isSaving) {
-            console.log("[DEBUG] Save operation in progress. Preventing redo.");
-            return; // Optionally prevent redo during saving
-        }
-        console.log("[DEBUG] Redo button clicked.");
-        isRedoing = true; // Set the flag
+    redoButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
         try {
-            redoLayoutChange();
-        } catch (error) {
-            console.error("[DEBUG] Error during redo:", error);
+            if (isRedoing) {
+                console.log("[DEBUG] Redo action is already in progress. Ignoring additional click.");
+                return; // Prevent race condition
+            }
+            if (isSaving) {
+                console.log("[DEBUG] Save operation in progress. Preventing redo.");
+                return; // Optionally prevent redo during saving
+            }
+            console.log("[DEBUG] Redo button clicked.");
+            isRedoing = true; // Set the flag
+            try {
+                redoLayoutChange();
+            } catch (error) {
+                console.error("[DEBUG] Error during redo:", error);
+            }
         } finally {
             isRedoing = false; // Reset the flag
+            mutex.unlock(); // Release the mutex
         }
     });
 
     // Delete Mode Button
-    deleteModeButton.addEventListener("click", () => {
-        if (isTogglingDeleteMode) {
-            console.log("[DEBUG] Delete Mode toggle is already in progress. Ignoring additional click.");
-            return; // Prevent race condition
-        }
-        if (isSaving) {
-            console.log("[DEBUG] Save operation in progress. Preventing toggling delete mode.");
-            return; // Optionally prevent toggling delete mode during saving
-        }
-        console.log("[DEBUG] Delete Mode button clicked.");
-        isTogglingDeleteMode = true; // Set the flag
+    deleteModeButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
         try {
-            toggleDeleteMode();
-        } catch (error) {
-            console.error("[DEBUG] Error toggling delete mode:", error);
+            if (isTogglingDeleteMode) {
+                console.log("[DEBUG] Delete Mode toggle is already in progress. Ignoring additional click.");
+                return; // Prevent race condition
+            }
+            if (isSaving) {
+                console.log("[DEBUG] Save operation in progress. Preventing toggling delete mode.");
+                return; // Optionally prevent toggling delete mode during saving
+            }
+            console.log("[DEBUG] Delete Mode button clicked.");
+            isTogglingDeleteMode = true; // Set the flag
+            try {
+                toggleDeleteMode();
+            } catch (error) {
+                console.error("[DEBUG] Error toggling delete mode:", error);
+            }
         } finally {
             isTogglingDeleteMode = false; // Reset the flag
+            mutex.unlock(); // Release the mutex
         }
     });
 
     // Function to handle view toggling and update button text
-    const handleViewToggle = () => {
-        if (isTogglingView) {
-            console.log("[DEBUG] View Toggle action is already in progress. Ignoring additional click.");
-            return; // Prevent race condition
+    const handleViewToggle = async () => {
+        await mutex.lock(); // Acquire the mutex
+        try {
+            if (isTogglingView) {
+                console.log("[DEBUG] View Toggle action is already in progress. Ignoring additional click.");
+                return; // Prevent race condition
+            }
+            if (isSaving) {
+                console.log("[DEBUG] Save operation in progress. Preventing view toggle.");
+                return; // Optionally prevent toggling view during saving
+            }
+
+            isTogglingView = true; // Set the flag
+            try {
+                if (viewMode === 'draft') {
+                    viewMode = 'live';
+                    viewToggleButton.textContent = 'View Draft';
+                    // Disable editing features
+                    addBlockButton.disabled = true;
+                    saveDraftButton.disabled = true;
+                    pushLiveButton.disabled = true;
+                    deleteModeButton.disabled = true;
+                    blockTypeControl.disabled = true;
+                    if (customDropdownToggle) {
+                        customDropdownToggle.disabled = true;
+                    }
+                    undoButton.disabled = true;
+                    redoButton.disabled = true;
+                    // viewToggleButton remains enabled for user to toggle back
+                    // Exit delete mode if active
+                    if (deleteMode) {
+                        toggleDeleteMode();
+                    }
+                    // Destroy sortable instance if it exists
+                    if (sortableInstance) {
+                        sortableInstance.destroy();
+                        sortableInstance = null;
+                        console.log("[DEBUG] Sortable.js instance destroyed for live view.");
+                    }
+                    await fetchLayout(false); // Fetch live layout from server
+                } else {
+                    viewMode = 'draft';
+                    viewToggleButton.textContent = 'View Live';
+                    // Enable editing features
+                    addBlockButton.disabled = false;
+                    deleteModeButton.disabled = false;
+                    blockTypeControl.disabled = false;
+                    if (customDropdownToggle) {
+                        customDropdownToggle.disabled = false; // Enable dropdown in draft view
+                    }
+                    hasPushedLive = false; // Reset after switching views
+                    updateButtonStates(); // Update buttons based on current state
+                    updateHistoryButtonsState(); // Update undo and redo buttons
+                    // Render the draft from localLayout to preserve unsaved changes
+                    renderLayout(localLayout, true);
+                }
+
+                // Spacer visibility is handled by CSS based on container ID
+
+            } catch (error) {
+                console.error("[DEBUG] Error toggling view:", error);
+            } finally {
+                isTogglingView = false; // Reset the flag
+            }
+        } finally {
+            mutex.unlock(); // Release the mutex
         }
-        if (isSaving) {
-            console.log("[DEBUG] Save operation in progress. Preventing view toggle.");
-            return; // Optionally prevent toggling view during saving
-        }
-
-        isTogglingView = true; // Set the flag
-
-        if (viewMode === 'draft') {
-            viewMode = 'live';
-            viewToggleButton.textContent = 'View Draft';
-            // Disable editing features
-            addBlockButton.disabled = true;
-            saveDraftButton.disabled = true;
-            pushLiveButton.disabled = true;
-            deleteModeButton.disabled = true;
-            blockTypeControl.disabled = true;
-            if (customDropdownToggle) {
-                customDropdownToggle.disabled = true;
-            }
-            undoButton.disabled = true;
-            redoButton.disabled = true;
-            // viewToggleButton remains enabled for user to toggle back
-            // Exit delete mode if active
-            if (deleteMode) {
-                toggleDeleteMode();
-            }
-            // Destroy sortable instance if it exists
-            if (sortableInstance) {
-                sortableInstance.destroy();
-                sortableInstance = null;
-                console.log("[DEBUG] Sortable.js instance destroyed for live view.");
-            }
-            fetchLayout(false); // Fetch live layout from server
-        } else {
-            viewMode = 'draft';
-            viewToggleButton.textContent = 'View Live';
-            // Enable editing features
-            addBlockButton.disabled = false;
-            deleteModeButton.disabled = false;
-            blockTypeControl.disabled = false;
-            if (customDropdownToggle) {
-                customDropdownToggle.disabled = false; // Enable dropdown in draft view
-            }
-            hasPushedLive = false; // Reset after switching views
-            updateButtonStates(); // Update buttons based on current state
-            updateHistoryButtonsState(); // Update undo and redo buttons
-            // Render the draft from localLayout to preserve unsaved changes
-            renderLayout(localLayout, true);
-        }
-
-        // Apply or remove spacer visibility based on viewMode and deleteMode
-        applySpacerVisibility();
-
-        isTogglingView = false; // Reset the flag
-    };
-
-    // Function to apply spacer visibility based on current view mode
-    const applySpacerVisibility = () => {
-        const spacerBlocks = gridContainer.querySelectorAll(".grid-item[class*='block-spacer']");
-        spacerBlocks.forEach((block) => {
-            if (viewMode === 'live') {
-                block.style.visibility = 'hidden'; // Hide spacers in live view
-            } else {
-                block.style.visibility = 'visible'; // Show spacers in draft view
-            }
-        });
     };
 
     // **Update the primary event listener to call handleViewToggle**
-    viewToggleButton.addEventListener("click", () => {
-        handleViewToggle();
-    });
+    viewToggleButton.removeEventListener("click", () => {}); // Ensure no other listeners
+    viewToggleButton.addEventListener("click", handleViewToggle);
 
     // Event listener for content changes in blocks
     gridContainer.addEventListener('input', (event) => {
@@ -893,6 +859,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (unsavedChanges) {
             // Cancel the event as stated by the standard.
             e.preventDefault();
+            e.returnValue = ''; // Required for Chrome to show the confirmation dialog
         }
     });
 
@@ -973,14 +940,6 @@ document.addEventListener("DOMContentLoaded", () => {
             gridContainer.appendChild(blockElement);
         });
     };
-
-    // **Removed Duplicate Event Listeners for Add Block Button**
-    // In your original code, you had duplicate event listeners for the Add Block button.
-    // Ensure each button has only one event listener to prevent unexpected behaviors.
-
-    // Event listener for Add Block button
-    // (Consolidated into the earlier listener with race condition prevention)
-    // If you prefer to keep the asynchronous fetch separate, you can adjust accordingly.
 
     // Initial fetch and setup
     fetchLayout(true);
