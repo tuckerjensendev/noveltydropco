@@ -3,12 +3,11 @@
 /* Main preview container */
 #contentPreview, #contentDisplay {
     display: grid;
-    grid-template-columns: repeat(12, minmax(100px, 1fr));
-    grid-auto-rows: minmax(95px, 1fr);
+    grid-template-columns: repeat(12, minmax(75px, 1fr));
+    grid-auto-rows: 92px;
     max-width: 1625px;
     margin: 0 auto;
     overflow-x: hidden;
-    /* Removed overflow-y and max-height from the shared container styles */
 }
 
 /* Specific styles for contentPreview */
@@ -24,11 +23,29 @@
 
 /* Specific styles for contentDisplay */
 #contentDisplay {
-    gap: 18px;
-    padding: 230px 80px 0px 80px;
+    display: grid;
+    grid-template-columns: repeat(12, minmax(75px, 1fr));
+    grid-auto-rows: 92px; /* Adjust this for finer row control */
+    max-width: 1475px;
+    margin: 0 auto;
+    overflow-x: hidden;
+
+    /* Responsive padding */
+    padding-left: min(10px, max(5vw, 80px)); /* Shrinks to 10px when below 1515px */
+    padding-right: min(10px, max(5vw, 80px));
+    padding-top: 260px; /* Keep this fixed unless needed */
     padding-bottom: calc(100px + 2vh);
-    /* No overflow-y or max-height to ensure it relies on main scrollbar */
+    gap: 18px; /* Fixed gap */
 }
+
+/* Stop at 1515px and lock padding */
+@media (max-width: 1515px) {
+    #contentDisplay {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}
+
 
 /* For Webkit-based browsers (Chrome, Edge, Safari) */
 #contentPreview::-webkit-scrollbar {
@@ -54,7 +71,6 @@
     background: transparent; /* Corner where vertical and horizontal scrollbars meet */
 }
 
-
 /* General grid item styling */
 .grid-item {
     display: flex;
@@ -73,14 +89,15 @@
     width: 75%;
     height: 100%;
     justify-self: center;
-    align-self: center;
+    align-self: start;
 }
 
-/* Other elements remain unchanged */
+/* Specific adjustment for medium blocks (slightly reduced height) */
 .grid-item.block-grid-medium,
 .grid-item.block-spacer-medium {
     grid-column: span 3;
-    grid-row: span 2;
+    grid-row: span 2; /* Reduce row span */
+    height: auto; /* Let the grid-row determine height */
 }
 
 .grid-item.block-grid-large,
@@ -101,7 +118,7 @@
 .grid-item.block-banner,
 .grid-item.block-spacer-banner {
     grid-column: span 12;
-    grid-row: span 2;
+    grid-row: span 3;
 }
 
 /* Spacer versions of blocks */
@@ -135,4 +152,12 @@
 .delete-mode .grid-item {
     border: 3px solid red !important; /* Make it clear that blocks are deletable */
     cursor: pointer;
+}
+
+@media (max-width: 1240px) {
+    #contentDisplay {
+        grid-template-columns: repeat(9, minmax(90px, 1fr));
+        grid-auto-rows: 75px;
+        padding-bottom: calc(60px + 2vh);
+    }
 }
