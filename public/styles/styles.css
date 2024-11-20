@@ -458,6 +458,8 @@ header {
     padding: 15px;
     background-color: #f4f4f4;
     overflow-y: scroll; /* Ensures vertical scrolling is always enabled */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
     height: calc(100vh); /* Ensures it takes up the full viewport height */
     box-sizing: border-box; /* Includes padding in height calculation */
 }
