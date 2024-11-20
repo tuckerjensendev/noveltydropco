@@ -12,7 +12,7 @@
     padding-bottom: calc(10px + 2vh);
     overflow-x: hidden;
     overflow-y: auto;
-    max-height: 75vh;
+    max-height: 74.5vh;
     scrollbar-width: thin; /* For Firefox: thin scrollbar */
     scrollbar-color: var(--scrollbar-thumb, #b0b0b0) var(--scrollbar-track, #f5f5f5);
 }
@@ -60,7 +60,7 @@
     align-items: center;
     justify-content: center;
     text-align: center;
-    border: 1px solid var(--border-color, #ccc);
+    border: 1px solid var(--border-color, #EAEAEA);
     background-color: #fff;
 }
 

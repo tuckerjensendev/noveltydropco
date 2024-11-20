@@ -249,6 +249,52 @@ document.addEventListener("DOMContentLoaded", () => {
         applySpacerVisibility();
     };
 
+    // Add a new block to the DOM and update memory
+    const addBlock = () => {
+        if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
+        console.log("[DEBUG] Add Block button clicked.");
+        const blockType = blockTypeControl.value;
+
+        // Calculate row and column for new block
+        const row = localLayout.length + 1; // Add new block to the next row
+        const col = 1; // Default column
+
+        const block = document.createElement("div");
+
+        block.className = `grid-item ${blockType}`;
+        block.dataset.blockId = `temp-${Date.now()}`; // Temporary ID for new blocks
+        block.style.gridRow = `${row} / span 2`;
+        block.style.gridColumn = `${col} / span 3`;
+
+        // Determine if the block is a spacer
+        const isSpacer = blockType.startsWith('block-spacer');
+
+        // Set contenteditable based on block type
+        const contentEditable = isSpacer ? "false" : "true";
+
+        // Set inner content without "New"
+        const displayText = blockType.replace("-", " ").toUpperCase();
+
+        block.innerHTML = `<div class="block-content" contenteditable="${contentEditable}">${displayText}</div>`;
+
+        // Apply spacer visibility based on viewMode
+        if (isSpacer && viewMode === 'live') {
+            block.style.visibility = 'hidden'; // Hide spacer content but retain grid space
+        } else {
+            block.style.visibility = 'visible';
+        }
+
+        gridContainer.appendChild(block);
+        console.log("[DEBUG] Added new block:", block);
+
+        updateLocalLayoutFromDOM(); // Update in-memory layout with the new block
+        saveLayoutState(); // Save the current state to history
+        unsavedChanges = true; // Mark changes as unsaved
+        hasPushedLive = false; // Reset after changes
+        updateButtonStates(); // Update button states
+        initializeSortable(); // Re-initialize sortable to include the new block
+    };
+
     // Delete a block when in delete mode
     const deleteBlock = (event) => {
         if (!deleteMode) return;
@@ -269,6 +315,181 @@ document.addEventListener("DOMContentLoaded", () => {
             updateLocalLayoutFromDOM(); // Update the layout after removing the block
             deletionsDuringDeleteMode = true; // Mark that deletions have occurred
         }
+    };
+
+    // Save current layout state to the history stack
+    const saveLayoutState = () => {
+        if (viewMode !== 'draft') return; // Prevent saving state in live mode
+        console.log("[DEBUG] Saving current layout state to history...");
+        layoutHistory.push(JSON.parse(JSON.stringify(localLayout))); // Save a deep copy
+        redoHistoryStack = []; // Clear redo history on new action
+        console.log("[DEBUG] Layout history updated. Current history length:", layoutHistory.length);
+        updateHistoryButtonsState(); // Update undo and redo button states
+    };
+
+    // Update in-memory layout from the DOM
+    const updateLocalLayoutFromDOM = () => {
+        if (viewMode !== 'draft') return; // Prevent updating layout in live mode
+        console.log("[DEBUG] Updating local layout from DOM...");
+        const blocks = Array.from(gridContainer.querySelectorAll(".grid-item"));
+        localLayout = blocks.map((block, index) => {
+            const computedStyle = window.getComputedStyle(block);
+            const rowSpan = parseInt(computedStyle.getPropertyValue("grid-row").split("span")[1]?.trim() || 1);
+            const colSpan = parseInt(computedStyle.getPropertyValue("grid-column").split("span")[1]?.trim() || 1);
+
+            return {
+                block_id: block.dataset.blockId || null,
+                content: block.querySelector(".block-content")?.innerHTML || "",
+                row: index + 1, // Rows based on index
+                col: 1, // Column set to 1
+                width: colSpan,
+                height: rowSpan,
+                style: block.style.cssText || null,
+                type: block.classList[1],
+                page_id: document.querySelector(".side-panel .active").dataset.page,
+            };
+        });
+        console.log("[DEBUG] Updated local layout:", JSON.stringify(localLayout, null, 2));
+    };
+
+    // Undo the last action (deletion or layout change)
+    const undoLayoutChange = () => {
+        if (viewMode !== 'draft') return; // Prevent undo in live mode
+        if (deleteMode && deleteHistory.length > 0) {
+            // Handle undo for deletions
+            const lastDeleted = deleteHistory.pop(); // Get the last deleted block
+            console.log("[DEBUG] Undoing last deletion.");
+
+            // Push the undone action to redo history
+            deleteRedoHistory.push({
+                blockElement: lastDeleted.blockElement,
+            });
+
+            gridContainer.appendChild(lastDeleted.blockElement.cloneNode(true));
+
+            // Update local layout and sortable
+            updateLocalLayoutFromDOM();
+            initializeSortable();
+            // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
+
+            // Apply spacer visibility after undoing deletion
+            applySpacerVisibility();
+
+        } else if (!deleteMode && layoutHistory.length > 1) {
+            // Handle undo for layout changes
+            redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
+            const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
+            console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
+            renderLayout(previousState);
+            unsavedChanges = true; // Mark changes as unsaved
+            hasPushedLive = false; // Reset after changes
+            updateButtonStates(); // Update button states
+        } else {
+            console.log("[DEBUG] No more undo steps available.");
+        }
+        updateHistoryButtonsState(); // Update undo and redo button states
+    };
+
+    // Redo the last undone action (deletion or layout change)
+    const redoLayoutChange = () => {
+        if (viewMode !== 'draft') return; // Prevent redo in live mode
+        if (deleteMode && deleteRedoHistory.length > 0) {
+            // Handle redo for deletions
+            const lastRedo = deleteRedoHistory.pop(); // Get the last redo action
+            console.log("[DEBUG] Redoing last deletion.");
+
+            // Push the action back to deleteHistory
+            deleteHistory.push({
+                blockElement: lastRedo.blockElement,
+            });
+
+            // Remove the block from the DOM
+            const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
+            if (blockElement) {
+                blockElement.remove();
+            }
+
+            // Update local layout and sortable
+            updateLocalLayoutFromDOM();
+            initializeSortable();
+            // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
+
+            // Apply spacer visibility after redoing deletion
+            applySpacerVisibility();
+
+        } else if (!deleteMode && redoHistoryStack.length > 0) {
+            // Handle redo for layout changes
+            const nextState = redoHistoryStack.pop();
+            layoutHistory.push(nextState); // Add the next state to layoutHistory
+            console.log("[DEBUG] Redoing layout change. Moving to next state:", JSON.stringify(nextState, null, 2));
+            renderLayout(nextState);
+            unsavedChanges = true; // Mark changes as unsaved
+            hasPushedLive = false; // Reset after changes
+            updateButtonStates(); // Update button states
+        } else {
+            console.log("[DEBUG] No more redo steps available.");
+        }
+        updateHistoryButtonsState(); // Update undo and redo button states
+    };
+
+    // Save layout to the database with status
+    const saveLayoutToDatabase = (status) => {
+        if (viewMode !== 'draft') return; // Prevent saving in live mode
+        if (isSaving) {
+            console.log("[DEBUG] Save operation already in progress. Aborting new save request.");
+            return;
+        }
+        isSaving = true; // Set saving flag
+        updateButtonStates(); // Disable buttons during save
+
+        const pageId = document.querySelector(".side-panel .active").dataset.page; // Ensure the page ID is retrieved
+        if (!pageId) {
+            console.error("[DEBUG] Page ID is missing. Save aborted.");
+            isSaving = false;
+            updateButtonStates(); // Re-enable buttons
+            return;
+        }
+
+        // Construct the payload with `page_id`, `layout`, and `status`
+        const payload = { page_id: pageId, layout: localLayout, status };
+
+        console.log(`[DEBUG] Saving layout with status "${status}" and payload:`, JSON.stringify(payload, null, 2));
+        // Add this line to verify the payload
+        console.log("[DEBUG] Payload being sent:", payload);
+
+        fetch("/api/save-layout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload), // Send the payload including `page_id` and `status`
+        })
+            .then((res) => {
+                console.log(`[DEBUG] Save response status: ${res.status}`);
+                return res.json();
+            })
+            .then((data) => {
+                console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
+
+                // Clear undo and redo history after a successful save
+                layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
+                redoHistoryStack = [];
+                deleteHistory = [];
+                deleteRedoHistory = [];
+                updateHistoryButtonsState(); // Update undo and redo button states
+
+                unsavedChanges = false; // Mark changes as saved
+
+                if (status === 'live') {
+                    hasPushedLive = true; // Indicate that live content has been pushed
+                }
+
+                isSaving = false; // Reset saving flag
+                updateButtonStates(); // Re-enable buttons
+            })
+            .catch((err) => {
+                console.error("[DEBUG] Error saving layout:", err);
+                isSaving = false; // Reset saving flag
+                updateButtonStates(); // Re-enable buttons
+            });
     };
 
     // Fetch layout and initialize Sortable.js
@@ -357,121 +578,6 @@ document.addEventListener("DOMContentLoaded", () => {
             })
             .catch((err) => console.error("[DEBUG] Error fetching layout:", err));
     };
-    
-    // Update in-memory layout from the DOM
-    const updateLocalLayoutFromDOM = () => {
-        if (viewMode !== 'draft') return; // Prevent updating layout in live mode
-        console.log("[DEBUG] Updating local layout from DOM...");
-        const blocks = Array.from(gridContainer.querySelectorAll(".grid-item"));
-        localLayout = blocks.map((block, index) => {
-            const computedStyle = window.getComputedStyle(block);
-            const rowSpan = parseInt(computedStyle.getPropertyValue("grid-row").split("span")[1]?.trim() || 1);
-            const colSpan = parseInt(computedStyle.getPropertyValue("grid-column").split("span")[1]?.trim() || 1);
-
-            return {
-                block_id: block.dataset.blockId || null,
-                content: block.querySelector(".block-content")?.innerHTML || "",
-                row: index + 1, // Rows based on index
-                col: 1, // Column set to 1
-                width: colSpan,
-                height: rowSpan,
-                style: block.style.cssText || null,
-                type: block.classList[1],
-                page_id: document.querySelector(".side-panel .active").dataset.page,
-            };
-        });
-        console.log("[DEBUG] Updated local layout:", JSON.stringify(localLayout, null, 2));
-    };
-
-    // Save current layout state to the history stack
-    const saveLayoutState = () => {
-        if (viewMode !== 'draft') return; // Prevent saving state in live mode
-        console.log("[DEBUG] Saving current layout state to history...");
-        layoutHistory.push(JSON.parse(JSON.stringify(localLayout))); // Save a deep copy
-        redoHistoryStack = []; // Clear redo history on new action
-        console.log("[DEBUG] Layout history updated. Current history length:", layoutHistory.length);
-        updateHistoryButtonsState(); // Update undo and redo button states
-    };
-
-    // Undo the last action (deletion or layout change)
-    const undoLayoutChange = () => {
-        if (viewMode !== 'draft') return; // Prevent undo in live mode
-        if (deleteMode && deleteHistory.length > 0) {
-            // Handle undo for deletions
-            const lastDeleted = deleteHistory.pop(); // Get the last deleted block
-            console.log("[DEBUG] Undoing last deletion.");
-
-            // Push the undone action to redo history
-            deleteRedoHistory.push({
-                blockElement: lastDeleted.blockElement,
-            });
-
-            gridContainer.appendChild(lastDeleted.blockElement.cloneNode(true));
-
-            // Update local layout and sortable
-            updateLocalLayoutFromDOM();
-            initializeSortable();
-            // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
-
-            // Apply spacer visibility after undoing deletion
-            applySpacerVisibility();
-
-        } else if (!deleteMode && layoutHistory.length > 1) {
-            // Handle undo for layout changes
-            redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
-            const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
-            console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
-            renderLayout(previousState);
-            unsavedChanges = true; // Mark changes as unsaved
-            hasPushedLive = false; // Reset after changes
-            updateButtonStates(); // Update button states
-        } else {
-            console.log("[DEBUG] No more undo steps available.");
-        }
-        updateHistoryButtonsState(); // Update undo and redo button states
-    };
-
-    // Redo the last undone action (deletion or layout change)
-    const redoLayoutChange = () => {
-        if (viewMode !== 'draft') return; // Prevent redo in live mode
-        if (deleteMode && deleteRedoHistory.length > 0) {
-            // Handle redo for deletions
-            const lastRedo = deleteRedoHistory.pop(); // Get the last redo action
-            console.log("[DEBUG] Redoing last deletion.");
-
-            // Push the action back to deleteHistory
-            deleteHistory.push({
-                blockElement: lastRedo.blockElement,
-            });
-
-            // Remove the block from the DOM
-            const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
-            if (blockElement) {
-                blockElement.remove();
-            }
-
-            // Update local layout and sortable
-            updateLocalLayoutFromDOM();
-            initializeSortable();
-            // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
-
-            // Apply spacer visibility after redoing deletion
-            applySpacerVisibility();
-
-        } else if (!deleteMode && redoHistoryStack.length > 0) {
-            // Handle redo for layout changes
-            const nextState = redoHistoryStack.pop();
-            layoutHistory.push(nextState); // Add the next state to layoutHistory
-            console.log("[DEBUG] Redoing layout change. Moving to next state:", JSON.stringify(nextState, null, 2));
-            renderLayout(nextState);
-            unsavedChanges = true; // Mark changes as unsaved
-            hasPushedLive = false; // Reset after changes
-            updateButtonStates(); // Update button states
-        } else {
-            console.log("[DEBUG] No more redo steps available.");
-        }
-        updateHistoryButtonsState(); // Update undo and redo button states
-    };
 
     // Render layout from a given state
     const renderLayout = (layout, reinitializeSortable = true) => {
@@ -527,112 +633,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Apply spacer visibility after rendering
         applySpacerVisibility();
-    };
-
-    // Save layout to the database with status
-    const saveLayoutToDatabase = (status) => {
-        if (viewMode !== 'draft') return; // Prevent saving in live mode
-        if (isSaving) {
-            console.log("[DEBUG] Save operation already in progress. Aborting new save request.");
-            return;
-        }
-        isSaving = true; // Set saving flag
-        updateButtonStates(); // Disable buttons during save
-
-        const pageId = document.querySelector(".side-panel .active").dataset.page; // Ensure the page ID is retrieved
-        if (!pageId) {
-            console.error("[DEBUG] Page ID is missing. Save aborted.");
-            isSaving = false;
-            updateButtonStates(); // Re-enable buttons
-            return;
-        }
-
-        // Construct the payload with `page_id`, `layout`, and `status`
-        const payload = { page_id: pageId, layout: localLayout, status };
-
-        console.log(`[DEBUG] Saving layout with status "${status}" and payload:`, JSON.stringify(payload, null, 2));
-        // Add this line to verify the payload
-        console.log("[DEBUG] Payload being sent:", payload);
-
-        fetch("/api/save-layout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload), // Send the payload including `page_id` and `status`
-        })
-            .then((res) => {
-                console.log(`[DEBUG] Save response status: ${res.status}`);
-                return res.json();
-            })
-            .then((data) => {
-                console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
-
-                // Clear undo and redo history after a successful save
-                layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to current state
-                redoHistoryStack = [];
-                deleteHistory = [];
-                deleteRedoHistory = [];
-                updateHistoryButtonsState(); // Update undo and redo button states
-
-                unsavedChanges = false; // Mark changes as saved
-
-                if (status === 'live') {
-                    hasPushedLive = true; // Indicate that live content has been pushed
-                }
-
-                isSaving = false; // Reset saving flag
-                updateButtonStates(); // Re-enable buttons
-            })
-            .catch((err) => {
-                console.error("[DEBUG] Error saving layout:", err);
-                isSaving = false; // Reset saving flag
-                updateButtonStates(); // Re-enable buttons
-            });
-    };
-
-    // Add a new block to the DOM and update memory
-    const addBlock = () => {
-        if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
-        console.log("[DEBUG] Add Block button clicked.");
-        const blockType = blockTypeControl.value;
-
-        // Calculate row and column for new block
-        const row = localLayout.length + 1; // Add new block to the next row
-        const col = 1; // Default column
-
-        const block = document.createElement("div");
-
-        block.className = `grid-item ${blockType}`;
-        block.dataset.blockId = `temp-${Date.now()}`; // Temporary ID for new blocks
-        block.style.gridRow = `${row} / span 2`;
-        block.style.gridColumn = `${col} / span 3`;
-
-        // Determine if the block is a spacer
-        const isSpacer = blockType.startsWith('block-spacer');
-
-        // Set contenteditable based on block type
-        const contentEditable = isSpacer ? "false" : "true";
-
-        // Set inner content without "New"
-        const displayText = blockType.replace("-", " ").toUpperCase();
-
-        block.innerHTML = `<div class="block-content" contenteditable="${contentEditable}">${displayText}</div>`;
-
-        // Apply spacer visibility based on viewMode
-        if (isSpacer && viewMode === 'live') {
-            block.style.visibility = 'hidden'; // Hide spacer content but retain grid space
-        } else {
-            block.style.visibility = 'visible';
-        }
-
-        gridContainer.appendChild(block);
-        console.log("[DEBUG] Added new block:", block);
-
-        updateLocalLayoutFromDOM(); // Update in-memory layout with the new block
-        saveLayoutState(); // Save the current state to history
-        unsavedChanges = true; // Mark changes as unsaved
-        hasPushedLive = false; // Reset after changes
-        updateButtonStates(); // Update button states
-        initializeSortable(); // Re-initialize sortable to include the new block
     };
 
     // Event listeners
