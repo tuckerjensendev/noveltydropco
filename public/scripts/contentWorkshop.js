@@ -163,6 +163,50 @@ document.addEventListener("DOMContentLoaded", () => {
         // Ensure gridContainer is scrollable, and body cannot scroll
         gridContainer.style.overflowY = "auto";
         gridContainer.style.overflowX = "hidden"; // Prevent horizontal scrolling
+        document.body.style.overflow = "hidden"; // Prevent body from scrolling
+    
+        // Variables for scrolling logic
+        let scrollInterval; // Timer for continuous scrolling
+        const edgeThreshold = 250; // Increased distance from edges to trigger scroll (previously 150)
+        const upperEdgeThreshold = 250; // Increased distance from bottom edge to trigger scroll (previously 200)
+        const scrollSpeed = 20; // Increased speed of scrolling in px per tick (previously 10)
+        let isScrolling = false; // Flag to track active scrolling
+        let lastClientY = 0; // Store the last Y position
+    
+        // Start scrolling if near the edges
+        const startScrolling = (clientY) => {
+            const rect = gridContainer.getBoundingClientRect();
+            lastClientY = clientY;
+    
+            if (isScrolling) return; // Prevent multiple intervals
+            isScrolling = true;
+    
+            scrollInterval = setInterval(() => {
+                const currentRect = gridContainer.getBoundingClientRect();
+    
+                // Check if cursor is near the top
+                if (lastClientY < currentRect.top + edgeThreshold) {
+                    const boost = Math.max(1, (currentRect.top + edgeThreshold - lastClientY) / edgeThreshold);
+                    gridContainer.scrollTop -= scrollSpeed * boost; // Scroll up with acceleration
+                    console.log(`[DEBUG] Scrolling gridContainer up. Speed: ${scrollSpeed * boost}`);
+                }
+                // Check if cursor is near the bottom
+                else if (lastClientY > currentRect.bottom - upperEdgeThreshold) {
+                    const boost = Math.max(1, (lastClientY - (currentRect.bottom - upperEdgeThreshold)) / edgeThreshold);
+                    gridContainer.scrollTop += scrollSpeed * boost; // Scroll down with acceleration
+                    console.log(`[DEBUG] Scrolling gridContainer down. Speed: ${scrollSpeed * boost}`);
+                } else {
+                    stopScrolling(); // Stop if no longer near edges
+                }
+            }, 16); // Run the check every ~16ms for smooth scrolling (60fps).
+        };
+    
+        // Stop scrolling
+        const stopScrolling = () => {
+            clearInterval(scrollInterval);
+            isScrolling = false;
+            console.log("[DEBUG] Scrolling stopped.");
+        };
     
         // Initialize Sortable.js
         sortableInstance = Sortable.create(gridContainer, {
@@ -172,9 +216,16 @@ document.addEventListener("DOMContentLoaded", () => {
             onStart: (evt) => {
                 disableBodyScroll();
                 console.log("[DEBUG] Dragging started.");
+                startScrolling(evt.originalEvent.clientY); // Start scrolling based on initial position
+            },
+            onMove: (evt) => {
+                const clientY = evt.originalEvent.clientY;
+                lastClientY = clientY; // Update the Y position during dragging
+                startScrolling(clientY); // Continuously check position and adjust scrolling
             },
             onEnd: (event) => {
                 enableBodyScroll();
+                stopScrolling();
                 console.log("[DEBUG] Drag event ended.");
                 console.log(`[DEBUG] Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
     
