@@ -18,17 +18,16 @@ document.addEventListener("DOMContentLoaded", () => {
             const currentBlock = blocks[i];
             const nextBlock = blocks[i + 1];
 
-            // Define types that can be grouped
-            const groupableTypes = ["block-grid-small", "block-spacer-small", "block-grid-medium", "block-spacer-medium"];
+            // Check if current and next blocks are specifically 1 small and 1 medium
+            const isSmallMediumPair =
+                (currentBlock.type === "block-grid-small" && nextBlock?.type === "block-grid-medium") ||
+                (currentBlock.type === "block-grid-medium" && nextBlock?.type === "block-grid-small");
 
-            const isCurrentGroupable = groupableTypes.includes(currentBlock.type);
-            const isNextGroupable = nextBlock && groupableTypes.includes(nextBlock.type);
-
-            if (isCurrentGroupable && isNextGroupable) {
-                // Group the two blocks
+            if (isSmallMediumPair) {
+                // Group the small and medium blocks
                 processedBlocks.push({
                     type: "group-wrapper",
-                    blocks: [currentBlock, nextBlock]
+                    blocks: [currentBlock, nextBlock],
                 });
                 console.log(`[DEBUG] Grouped blocks ${currentBlock.block_id} and ${nextBlock.block_id} into a group.`);
                 i += 2; // Skip the next block as it's already grouped
@@ -70,10 +69,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 gridContainer.appendChild(groupElement);
                 console.log("[DEBUG] Appended a grouped block to the grid.");
             } else {
-                // Render individual blocks as before
+                // Handle full-width blocks (e.g., banners)
                 const blockElement = document.createElement("div");
                 blockElement.className = `grid-item ${block.type}`;
                 blockElement.dataset.blockId = block.block_id;
+
+                // Add a class for full-width blocks
+                if (block.type === "block-banner" || block.type === "block-spacer-banner") {
+                    blockElement.classList.add("full-width-block");
+                }
 
                 // Set the inner content
                 blockElement.innerHTML = `<div class="block-content">${block.content || ""}</div>`;

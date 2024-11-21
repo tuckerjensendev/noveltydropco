@@ -14,72 +14,100 @@
             <h2>Pages</h2>
             <ul>
                 <li><a href="#" data-page="home" class="active">Home</a></li>
+                <!-- Add more page links as needed -->
             </ul>
         </aside>
 
         <section class="main-content">
-            <h1>Staff - Content Workshop</h1>
             <div id="sharedToolbar" class="block-controls">
-                <!-- View Toggle Button - Separate from Dropdown and Add Block -->
-                <div class="view-toggle-wrapper">
-                    <button id="viewToggleButton">View Live</button>
-                </div>
+                <!-- First Toolbar Row -->
+                <div class="toolbar-row first-row">
+                    <!-- View Toggle Button - Separate from Dropdown and Add Block -->
+                    <div class="view-toggle-wrapper">
+                        <button id="viewToggleButton">View Live</button>
+                    </div>
 
-                <!-- Unified Dropdown and Add Block Wrapper -->
-                <div class="dropdown-add-wrapper">
-                    <div class="toolbar-group">
-                        <div class="block-type-group">
-                            <select id="blockTypeControl">
-                                <option value="block-grid-small">Small Grid Block</option>
-                                <option value="block-grid-medium">Medium Grid Block</option>
-                                <option value="block-grid-large">Large Grid Block</option>
-                                <option value="block-centerpiece">Centerpiece Block</option>
-                                <option value="block-banner">Banner Block</option>
-                                <optgroup label="Spacers">
-                                    <option value="block-spacer-small">Small Spacer Block</option>
-                                    <option value="block-spacer-medium">Medium Spacer Block</option>
-                                    <option value="block-spacer-large">Large Spacer Block</option>
-                                    <option value="block-spacer-centerpiece">Centerpiece Spacer Block</option>
-                                    <option value="block-spacer-banner">Banner Spacer Block</option>
-                                </optgroup>
-                            </select>
-            
-                            <div class="dropdown">
-                                <button id="customBlockTypeDropdown" aria-haspopup="true" aria-expanded="false">
-                                    Select Block Type
-                                </button>
-                                <ul class="dropdown-menu">
-                                    <li data-value="block-grid-small">Small Grid Block</li>
-                                    <li data-value="block-grid-medium">Medium Grid Block</li>
-                                    <li data-value="block-grid-large">Large Grid Block</li>
-                                    <li data-value="block-centerpiece">Centerpiece Block</li>
-                                    <li data-value="block-banner">Banner Block</li>
-                                    <li class="dropdown-submenu">
-                                        Spacers
-                                        <ul class="dropdown-menu">
-                                            <li data-value="block-spacer-small">Small Spacer</li>
-                                            <li data-value="block-spacer-medium">Medium Spacer</li>
-                                            <li data-value="block-spacer-large">Large Spacer</li>
-                                            <li data-value="block-spacer-centerpiece">Centerpiece Spacer</li>
-                                            <li data-value="block-spacer-banner">Banner Spacer</li>
-                                        </ul>
-                                    </li>
-                                </ul>
+                    <!-- Unified Dropdown and Add Block Wrapper -->
+                    <div class="dropdown-add-wrapper">
+                        <div class="toolbar-group">
+                            <div class="block-type-group">
+                                <select id="blockTypeControl">
+                                    <option value="block-grid-small">Small Grid Block</option>
+                                    <option value="block-grid-medium">Medium Grid Block</option>
+                                    <option value="block-grid-large">Large Grid Block</option>
+                                    <option value="block-centerpiece">Centerpiece Block</option>
+                                    <option value="block-banner">Banner Block</option>
+                                    <optgroup label="Spacers">
+                                        <option value="block-spacer-small">Small Spacer Block</option>
+                                        <option value="block-spacer-medium">Medium Spacer Block</option>
+                                        <option value="block-spacer-large">Large Spacer Block</option>
+                                        <option value="block-spacer-centerpiece">Centerpiece Spacer Block</option>
+                                        <option value="block-spacer-banner">Banner Spacer Block</option>
+                                    </optgroup>
+                                </select>
+
+                                <div class="dropdown">
+                                    <button id="customBlockTypeDropdown" aria-haspopup="true" aria-expanded="false">
+                                        Select Block Type
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li data-value="block-grid-small">Small Grid Block</li>
+                                        <li data-value="block-grid-medium">Medium Grid Block</li>
+                                        <li data-value="block-grid-large">Large Grid Block</li>
+                                        <li data-value="block-centerpiece">Centerpiece Block</li>
+                                        <li data-value="block-banner">Banner Block</li>
+                                        <li class="dropdown-submenu">
+                                            Spacers
+                                            <ul class="dropdown-menu">
+                                                <li data-value="block-spacer-small">Small Spacer</li>
+                                                <li data-value="block-spacer-medium">Medium Spacer</li>
+                                                <li data-value="block-spacer-large">Large Spacer</li>
+                                                <li data-value="block-spacer-centerpiece">Centerpiece Spacer</li>
+                                                <li data-value="block-spacer-banner">Banner Spacer</li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
                             </div>
                         </div>
+                        <button id="addBlockButton">Add Block</button>
                     </div>
-                    <button id="addBlockButton"> Add Block</button>
-                </div>
-            
-                <button id="deleteModeButton">Delete Blocks</button>
-                <button id="undoButton">Undo</button>
-                <button id="redoButton">Redo</button>
-                <button id="saveDraftButton">Save Draft</button>
-                <button id="pushLiveButton">Push Live</button>
-            </div>
-            
 
-            <!-- Ensure `grid-container` class is used to apply consistent grid styles -->
+                    <!-- Other Toolbar Buttons -->
+                    <button id="deleteModeButton">Delete Blocks</button>
+                    <button id="undoButton">Undo</button>
+                    <button id="redoButton">Redo</button>
+                    <button id="saveDraftButton">Save Draft</button>
+                    <button id="pushLiveButton">Push Live</button>
+                </div>
+
+                <!-- Divider -->
+                <div class="toolbar-divider"></div>
+
+                <!-- Second Toolbar Row -->
+                <div class="toolbar-row second-row">
+                    <button id="toggleGridOverlayButton" class="toolbar-button" title="Toggle Grid Overlay">Grid Overlay</button>
+                    <button id="addImageButton" class="toolbar-button" title="Add Image">Add Image</button>
+                    <button id="imageLinkButton" class="toolbar-button" title="Image Link">Image Link</button>
+                    <button id="addTextButton" class="toolbar-button" title="Add Text">Add Text</button>
+                    <button id="textLinkButton" class="toolbar-button" title="Text Link">Text Link</button>
+                    <button id="resizeImageButton" class="toolbar-button" title="Resize Image">Resize Image</button>
+                    <button id="cropImageButton" class="toolbar-button" title="Crop Image">Crop Image</button>
+                    <button id="addGalleryButton" class="toolbar-button" title="Add Gallery">Add Gallery</button>
+                    <button id="addSponsoredAdButton" class="toolbar-button" title="Add Sponsored Ad">Sponsored Ad</button>
+                    <button id="colorPickerButton" class="toolbar-button" title="Color Picker">Color Picker</button>
+                    <button id="layerControlButton" class="toolbar-button" title="Layer Control">Layer Control</button>
+                    <button id="duplicateContentButton" class="toolbar-button" title="Duplicate Content">Duplicate Content</button>
+                    <button id="lockElementButton" class="toolbar-button" title="Lock Element">Lock Element</button>
+                    <button id="embedHTMLButton" class="toolbar-button" title="Embed HTML">Embed HTML</button>
+                    <button id="animationEffectsButton" class="toolbar-button" title="Animation Effects">Animation Effects</button>
+                    <button id="alignmentToolsButton" class="toolbar-button" title="Alignment Tools">Alignment Tools</button>
+                    <button id="fontStylingButton" class="toolbar-button" title="Font Styling">Font Styling</button>
+                    <button id="clearContentButton" class="toolbar-button" title="Clear Content">Clear Content</button>
+                </div>
+            </div>
+
+            <!-- Content Preview Section -->
             <div id="contentPreview" class="grid-container"></div>
         </section>
     </div>

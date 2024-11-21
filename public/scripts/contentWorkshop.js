@@ -167,9 +167,9 @@ document.addEventListener("DOMContentLoaded", () => {
     
         // Variables for scrolling logic
         let scrollInterval; // Timer for continuous scrolling
-        const edgeThreshold = 250; // Increased distance from edges to trigger scroll (previously 150)
-        const upperEdgeThreshold = 250; // Increased distance from bottom edge to trigger scroll (previously 200)
-        const scrollSpeed = 20; // Increased speed of scrolling in px per tick (previously 10)
+        const edgeThreshold = 190; // Increased distance from edges to trigger scroll
+        const upperEdgeThreshold = 190; // Increased distance from bottom edge to trigger scroll
+        const scrollSpeed = 10; // Increased speed of scrolling in px per tick
         let isScrolling = false; // Flag to track active scrolling
         let lastClientY = 0; // Store the last Y position
     

@@ -459,22 +459,19 @@ header {
     background-color: #f4f4f4;
 }
 
-.main-content h1 {
-    margin-bottom: 10px;
-}
-
 /* Enhanced Floating Toolbar */
 #sharedToolbar {
     position: sticky;
     top: 0;
     background-color: #ffffff;
-    padding: 5px 15px;
+    padding: 10px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     display: flex;
-    align-items: center;
-    gap: 15px;
+    align-items: left;
+    gap: 10px;
     transition: background-color 0.3s, box-shadow 0.3s;
     border-bottom: 1px solid #e0e0e0;
+    flex-direction: column;
 }
 
 /* Unified background for dropdown and add button */
@@ -486,7 +483,7 @@ header {
     padding: 10px 15px;
     border-radius: 6px; /* Slightly rounded edges for a soft look */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    margin: 5px 0; /* Add some spacing around */
+    margin: 0px 0;
 }
 
 /* Scrolled State */
@@ -761,8 +758,8 @@ html.no-main-scroll .content-workshop-container {
     }
 
     #sharedToolbar button {
-        justify-content: center;
-        min-width: 100%; /* Override min-width for full-width buttons */
+        justify-content: left;
+        min-width: 100%;
     }
 
     /* Adjust View Toggle Container on small screens */
@@ -777,6 +774,15 @@ html.no-main-scroll .content-workshop-container {
     /* Adjust Dropdown Menu for Mobile */
     .dropdown-menu {
         min-width: 150px;
+    }
+
+    /* Adjust the toolbar rows for better stacking on small screens */
+    .toolbar-row.second-row {
+        gap: 10px; /* Reduce gap on smaller screens */
+    }
+
+    .toolbar-divider {
+        margin: 8px 0; /* Adjust margin for smaller screens */
     }
 }
 
@@ -951,16 +957,50 @@ html.no-main-scroll .content-workshop-container {
     cursor: not-allowed;
 }
 
-/* Responsive Design */
-@media (max-width: 480px) {
-    header {
-        flex-direction: column;
-        align-items: center;
+/* -------------------- Added Styles Below -------------------- */
+
+/* Toolbar Row - First Row Styling */
+.toolbar-row.first-row {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Consistent spacing */
+    flex-wrap: wrap;
+}
+
+/* Toolbar Divider Styling */
+.toolbar-divider {
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+}
+
+/* Second Toolbar Row Styling */
+.toolbar-row.second-row {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Consistent spacing with the first row */
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+/* Push Live Button Alignment */
+.toolbar-row.first-row #pushLiveButton {
+    margin-left: auto; /* Pushes the button to the far right */
+}
+
+/* Optional: Ensure the divider remains visible on all screen sizes */
+@media (max-width: 768px) {
+    .toolbar-divider {
+        margin: 8px 0; /* Adjust margin for smaller screens */
     }
 
-    .profile {
-        display: flex;
-        justify-content: center;
-        padding-top: 0.5em;
+    .toolbar-row.second-row {
+        gap: 10px; /* Reduce gap on smaller screens */
     }
 }
+
+/* Optional: Adjust button styling in the second row if necessary */
+.toolbar-row.second-row .toolbar-button {
+    /* Inherit existing button styles */
+}
+
+/* -------------------- End of Added Styles -------------------- */
