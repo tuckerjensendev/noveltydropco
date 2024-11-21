@@ -260,6 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // No longer apply spacer visibility via JS
     };
 
+    // **Updated Add Block Function with Immediate Scrolling**
     // Add a new block to the DOM and update memory
     const addBlock = () => {
         if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
@@ -292,6 +293,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
         gridContainer.appendChild(block);
         console.log("[DEBUG] Added new block:", block);
+
+        // **Scroll to the newly added block immediately**
+        gridContainer.scrollTop = gridContainer.scrollHeight;
+
+        // **Alternatively, use scrollIntoView()**
+        // block.scrollIntoView({ behavior: 'auto', block: 'end', inline: 'nearest' });
 
         updateLocalLayoutFromDOM(); // Update in-memory layout with the new block
         saveLayoutState(); // Save the current state to history
