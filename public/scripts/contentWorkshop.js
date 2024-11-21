@@ -43,30 +43,47 @@ document.addEventListener("DOMContentLoaded", () => {
     let isTogglingDeleteMode = false;
     let isTogglingView = false;
 
-    // **Global Mutex Implementation**
+    // **Enhanced Mutex Implementation**
     class Mutex {
         constructor() {
             this.queue = [];
             this.locked = false;
         }
 
+        /**
+         * Acquires the mutex lock.
+         * Returns a Promise that resolves when the lock is acquired.
+         */
         lock() {
             return new Promise(resolve => {
                 if (this.locked) {
+                    console.log("[DEBUG] Mutex is currently locked. Adding to queue.");
                     this.queue.push(resolve);
                 } else {
                     this.locked = true;
+                    console.log("[DEBUG] Mutex is now locked.");
                     resolve();
                 }
             });
         }
 
+        /**
+         * Releases the mutex lock.
+         * If there are queued requests, the next one is resolved.
+         */
         unlock() {
+            if (!this.locked) {
+                console.warn("[DEBUG] Attempted to unlock a mutex that is not locked.");
+                return;
+            }
+
             if (this.queue.length > 0) {
                 const nextResolve = this.queue.shift();
+                console.log("[DEBUG] Passing lock to the next requester in the queue.");
                 nextResolve();
             } else {
                 this.locked = false;
+                console.log("[DEBUG] Mutex is now unlocked.");
             }
         }
     }

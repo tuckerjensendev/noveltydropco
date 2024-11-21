@@ -121,6 +121,33 @@
     grid-row: span 3;
 }
 
+/* Group block styling */
+.group-wrapper {
+    grid-column: span 3;
+    grid-row: span 4;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: auto;
+    gap: 18px;
+}
+
+/* Ensure inner blocks within group-wrapper span their original grid-row */
+.group-wrapper .grid-item.block-grid-small,
+.group-wrapper .grid-item.block-spacer-small {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    justify-self: center;
+    align-self: start;
+}
+
+.group-wrapper .grid-item.block-grid-medium,
+.group-wrapper .grid-item.block-spacer-medium {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+
 /* Spacer versions of blocks */
 .grid-item.block-spacer-centerpiece,
 .grid-item.block-spacer-medium,
