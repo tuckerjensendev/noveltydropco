@@ -346,6 +346,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Updated Add Block Function with Immediate Scrolling**
     // Add a new block to the DOM and update memory
+    // Initialize Add Block button with a "+" symbol
+
+    if (addBlockButton) {
+        // Update the innerHTML of the button to include a "+" symbol
+        addBlockButton.innerHTML = `<span class="add-block-icon">+</span> Add`;
+    } else {
+        console.error("[DEBUG] Add Block button not found.");
+    }
+
+    // Existing addBlock function remains unchanged
     const addBlock = () => {
         if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
         console.log("[DEBUG] Add Block button clicked.");
@@ -391,6 +401,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateButtonStates(); // Update button states
         initializeSortable(); // Re-initialize sortable to include the new block
     };
+
 
     // Delete a block when in delete mode
     const deleteBlock = (event) => {
@@ -945,55 +956,102 @@ document.addEventListener("DOMContentLoaded", () => {
         if (unsavedChanges) {
             // Cancel the event as stated by the standard.
             e.preventDefault();
-            e.returnValue = ''; // Required for Chrome to show the confirmation dialog
         }
     });
 
-    // Custom Dropdown Handling
     const customDropdownToggle = document.getElementById("customBlockTypeDropdown");
     const customDropdownMenu = document.querySelector(".dropdown-menu");
-
+    
     if (!customDropdownToggle || !customDropdownMenu) {
         console.error("[DEBUG] Custom dropdown elements are missing.");
     } else {
+        // Ensure textContent is correct and update the innerHTML
+        const dropdownText = customDropdownToggle.textContent.trim() || "Select an option"; // Fallback if textContent is empty
+        console.log("[DEBUG] customDropdownToggle textContent:", dropdownText);
+    
+        customDropdownToggle.innerHTML = `${dropdownText} <span class="block-dropdown-arrow">&#x25BC;</span>`;
+    
         // Toggle dropdown visibility
         customDropdownToggle.addEventListener("click", (e) => {
             e.stopPropagation(); // Prevent click from bubbling up
             const isOpen = customDropdownMenu.style.display === "block";
             customDropdownMenu.style.display = isOpen ? "none" : "block";
             customDropdownToggle.setAttribute("aria-expanded", !isOpen);
+    
+            if (!isOpen) {
+                // Reset submenu states when the dropdown is opened
+                customDropdownMenu.querySelectorAll(".submenu-open").forEach(submenu => {
+                    submenu.classList.remove("submenu-open");
+                });
+    
+                // Reset hover effect for "Spacers"
+                customDropdownMenu.querySelectorAll(".submenu-hover").forEach(item => {
+                    item.classList.remove("submenu-hover");
+                });
+            }
         });
-
+    
         // Handle selection of dropdown items
         customDropdownMenu.querySelectorAll("li").forEach(item => {
             item.addEventListener("click", (e) => {
                 e.stopPropagation(); // Prevent click from bubbling up
+    
+                // Handle "Spacers" submenu specifically
                 if (item.classList.contains("dropdown-submenu")) {
-                    // Submenu is handled via CSS hover
-                    return;
+                    const isOpen = item.classList.toggle("submenu-open"); // Toggle 'open' state
+    
+                    // Add or remove the hover effect class
+                    if (isOpen) {
+                        item.classList.add("submenu-hover");
+                    } else {
+                        item.classList.remove("submenu-hover");
+                    }
+    
+                    // Keep the main dropdown open if "Spacers" is clicked
+                    if (isOpen) {
+                        customDropdownMenu.style.display = "block";
+                        customDropdownToggle.setAttribute("aria-expanded", "true");
+                    }
+                    return; // Submenu hover behavior is preserved
                 }
+    
                 const selectedValue = item.getAttribute("data-value");
                 const selectedText = item.textContent.trim();
                 selectedBlockType = selectedValue;
-
+    
                 // Update the dropdown toggle button
-                customDropdownToggle.innerHTML = `${selectedText}`;
-
+                customDropdownToggle.innerHTML = `${selectedText} <span class="block-dropdown-arrow">&#x25BC;</span>`;
+    
                 // Update the hidden select's value
                 blockTypeControl.value = selectedValue;
-
+    
                 // Close the dropdown menu
                 customDropdownMenu.style.display = "none";
                 customDropdownToggle.setAttribute("aria-expanded", "false");
             });
         });
-
-        // Close the dropdown when clicking outside
-        document.addEventListener("click", () => {
-            customDropdownMenu.style.display = "none";
-            customDropdownToggle.setAttribute("aria-expanded", "false");
+    
+        // Close the dropdown when clicking outside (exclude "Spacers" clicks)
+        document.addEventListener("click", (event) => {
+            const isInsideDropdown = customDropdownMenu.contains(event.target) || 
+                                     customDropdownToggle.contains(event.target);
+    
+            if (!isInsideDropdown) {
+                customDropdownMenu.style.display = "none";
+                customDropdownToggle.setAttribute("aria-expanded", "false");
+    
+                // Reset submenu-open state for "Spacers"
+                customDropdownMenu.querySelectorAll(".submenu-open").forEach(submenu => {
+                    submenu.classList.remove("submenu-open");
+                });
+    
+                // Reset hover effect for "Spacers"
+                customDropdownMenu.querySelectorAll(".submenu-hover").forEach(item => {
+                    item.classList.remove("submenu-hover");
+                });
+            }
         });
-    }
+    }    
 
     // Function to fetch blocks based on selected type
     const fetchBlocks = async (blockType) => {

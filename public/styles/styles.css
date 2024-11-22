@@ -463,14 +463,14 @@ header {
 #sharedToolbar {
     position: sticky;
     top: 0;
-    background-color: #ffffff;
-    padding: 10px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    background-color: #ffffff; /* Clean white background */
+    padding: 12px; /* Slightly increased padding for a more spacious look */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for a floating effect */
     display: flex;
     align-items: left;
-    gap: 10px;
+    gap: 12px; /* Unified spacing */
     transition: background-color 0.3s, box-shadow 0.3s;
-    border-bottom: 1px solid #e0e0e0;
+    border-bottom: 1px solid #dcdcdc; /* Softer border */
     flex-direction: column;
 }
 
@@ -478,39 +478,35 @@ header {
 .dropdown-add-wrapper {
     display: flex;
     align-items: center;
-    gap: 15px;
-    background-color: #f9f9f9; /* Light gray background for contrast */
-    padding: 10px 15px;
-    border-radius: 6px; /* Slightly rounded edges for a soft look */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow */
-    margin: 0px 0;
+    gap: 12px; /* Slightly reduced for uniformity */
+    background-color: rgba(34, 34, 34, 0.9); /* Dark gray with a slight opacity */
+    padding: 12px 15px; /* Balanced padding */
+    border-radius: 6px; /* Consistent with overall theme */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Clean shadow for depth */
+    margin: 0; /* Remove unnecessary margin */
 }
 
 /* Scrolled State */
 #sharedToolbar.scrolled {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background-color: #f9f9f9;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow for scrolled effect */
+    background-color: #f7f7f7; /* Slightly lighter gray for contrast */
 }
 
 /* Toolbar Label */
 #sharedToolbar label {
-    font-size: 14px;
-    color: #333333;
+    font-size: 14px; /* Maintain readability */
+    color: #222222; /* Dark gray for contrast against white */
     white-space: nowrap;
-}
-
-/* Hidden Select Element */
-#blockTypeControl {
-    display: none;
+    font-weight: 500; /* Slightly bold for emphasis */
 }
 
 /* Toolbar Buttons */
 #sharedToolbar button {
-    background-color: #007BFF; /* Primary blue color */
+    background-color: #0066cc; /* Slightly darker blue for modern aesthetics */
     color: #ffffff;
     border: none;
-    padding: 6px 12px; /* Reduced padding */
-    border-radius: 4px;
+    padding: 8px 14px; /* Comfortable size for all button interactions */
+    border-radius: 5px; /* Slightly rounded corners */
     cursor: pointer;
     font-size: 14px;
     font-weight: 500;
@@ -518,17 +514,24 @@ header {
     align-items: center;
     justify-content: center; /* Center text horizontally */
     text-align: center;
-    /* Removed min-width and max-width to prevent affecting all buttons */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
 }
 
 #sharedToolbar button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: #005bb5; /* Medium-dark blue for hover effect */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Slightly deeper shadow */
 }
 
 #sharedToolbar button:active {
-    background-color: #004085; /* Even darker blue on click */
-    transform: scale(0.98); /* Slightly shrink on click */
-    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.2);
+    background-color: #004a99; /* Even darker blue for click */
+    transform: scale(0.96); /* Slightly smaller scale for visual feedback */
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.2); /* Inset shadow for pressed effect */
+}
+
+
+/* Hidden Select Element */
+#blockTypeControl {
+    display: none;
 }
 
 #sharedToolbar button:disabled {
@@ -540,49 +543,12 @@ header {
     box-shadow: none;
 }
 
-
-/* Specific Button Styling (Optional) */
-/* Customize specific buttons with different colors for better UX */
-#addBlockButton {
-    background-color: #28a745; /* Green */
-}
-
-#addBlockButton:hover {
-    background-color: #218838;
-}
-
-#undoButton, #redoButton {
-    background-color: #6c757d; /* Gray */
-}
-
-#undoButton:hover, #redoButton:hover {
-    background-color: #5a6268;
-}
-
-#deleteModeButton {
-    background-color: #dc3545; /* Red */
-}
-
-#deleteModeButton:hover {
-    background-color: #c82333;
-}
-
-#saveDraftButton {
-    background-color: #17a2b8; /* Teal */
-}
-
-#saveDraftButton:hover {
-    background-color: #138496;
-}
-
-#pushLiveButton {
-    background-color: #ffc107; /* Amber */
-    color: #212529; /* Dark text for contrast */
-    margin-left: auto; /* Pushes the button to the far right */
-}
-
-#pushLiveButton:hover {
-    background-color: #e0a800;
+/* Specific Button Styling */
+.block-dropdown-arrow {
+    margin-left: 10px;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 12px;
 }
 
 /* New Wrapper for View Toggle and Block Type Dropdown */
@@ -591,6 +557,12 @@ header {
     align-items: center;
     gap: 15px; /* Adjust spacing as needed */
     flex-shrink: 0; /* Prevent shrinking */
+}
+
+.add-block-icon {
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 10px;
 }
 
 /* Wrapper for View Toggle Button */
@@ -681,6 +653,11 @@ header {
     background-color: #f1f1f1;
 }
 
+.dropdown-menu li.submenu-hover {
+    background-color: #f1f1f1; /* Match your hover background color */
+    color: #333333; /* Match your hover text color */
+}
+
 .dropdown-submenu::after {
     content: '▶'; /* Right Chevron */
     position: absolute;
@@ -695,6 +672,10 @@ header {
 }
 
 .dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu.submenu-open > .dropdown-menu {
     display: block;
 }
 
