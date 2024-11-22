@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const deleteModeButton = document.getElementById("deleteModeButton");
     const viewToggleButton = document.getElementById("viewToggleButton"); // New toggle button
     const toolbar = document.getElementById('sharedToolbar'); // Floating toolbar reference
+    const secondToolbarRow = document.querySelector('.toolbar-row.second-row');
     const mainContent = document.querySelector('.main-content'); // Main content section
 
     if (!gridContainer || !blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !redoButton || !deleteModeButton || !viewToggleButton || !toolbar || !mainContent) {
@@ -42,6 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let isRedoing = false;
     let isTogglingDeleteMode = false;
     let isTogglingView = false;
+    let toolbarTab; // Declare a reference to the tab
 
     // **Enhanced Mutex Implementation**
     class Mutex {
@@ -100,6 +102,37 @@ document.addEventListener("DOMContentLoaded", () => {
             toolbar.classList.remove('scrolled');
         }
     });
+
+    // Toolbar tab functionality
+    const createToolbarTab = () => {
+        if (toolbarTab) {
+            console.warn("[DEBUG] Toolbar tab already exists. Skipping creation.");
+            return; // Avoid re-creating the toolbar tab
+        }
+
+        toolbarTab = document.createElement('div');
+        toolbarTab.id = 'toolbarTab';
+        toolbarTab.className = 'toolbar-tab';
+        toolbarTab.innerHTML = '<span>&#x25B2;</span>'; // Upward arrow icon
+        toolbar.appendChild(toolbarTab);
+
+        // Add click event to toggle the toolbar expansion
+        toolbarTab.addEventListener('click', () => {
+            const isExpanded = secondToolbarRow.style.display !== 'none';
+            secondToolbarRow.style.display = isExpanded ? 'none' : 'flex';
+            toolbarTab.innerHTML = isExpanded ? '<span>&#x25B2;</span>' : '<span>&#x25BC;</span>'; // Update arrow direction
+            toolbarTab.classList.toggle('expanded', !isExpanded); // Add/remove 'expanded' class for styling
+        });
+    };
+
+    // Initialize toolbar tab and ensure the second row is hidden initially
+    if (toolbar && secondToolbarRow) {
+        secondToolbarRow.style.display = 'none'; // Hide second row initially
+        createToolbarTab(); // Create and attach the tab
+    } else {
+        console.error("[DEBUG] Toolbar or second toolbar row is missing.");
+    }
+
 
     // Set initial button text
     viewToggleButton.textContent = viewMode === 'draft' ? 'View Live' : 'View Draft';
@@ -574,7 +607,6 @@ document.addEventListener("DOMContentLoaded", () => {
             let blocks = await res.json();
 
             if (blocks.length === 0 && viewMode === 'draft') {
-                // If no draft exists, fetch live content
                 console.log("[DEBUG] No draft found, fetching live content.");
                 const liveRes = await fetch(`/api/content/${pageId}?status=live`);
                 blocks = await liveRes.json();
@@ -593,32 +625,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 blockElement.dataset.width = block.width;
                 blockElement.dataset.height = block.height;
 
-                blockElement.style.gridRow = `${block.row} / span ${block.height}`;
-                blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-                
-                // Determine if the block is a spacer
+                // Spacer blocks
                 const isSpacer = block.type.startsWith('block-spacer');
+                blockElement.classList.toggle("spacer-block", isSpacer);
 
-                // Set contenteditable based on block type
+                // Contenteditable only in draft mode and non-spacer blocks
                 const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
-                
                 blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
-                
-                // No longer set inline visibility; CSS will handle it based on container
 
                 gridContainer.appendChild(blockElement);
             });
-
-            // Remove `grid-area` styles to prevent conflicts
-            Array.from(gridContainer.children).forEach((block) => {
-                block.style.gridArea = ""; // Clear conflicting styles
-            });
-
-            // Ensure grid container has correct grid settings
-            gridContainer.style.display = 'grid';
-            gridContainer.style.gridTemplateColumns = 'repeat(12, 1fr)'; // Adjust as per your grid
-            gridContainer.style.gridAutoRows = 'minmax(100px, auto)'; // Adjust as needed
-            gridContainer.style.gap = '10px'; // Adjust as needed
 
             console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
 
@@ -627,16 +643,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 initializeSortable();
             }
 
-            // Sync layout to memory only if in draft mode
             if (viewMode === 'draft') {
                 updateLocalLayoutFromDOM();
                 saveLayoutState(); // Save the initial fetched state
-                unsavedChanges = false; // No unsaved changes after fetching
-                hasPushedLive = false; // Reset after fetching
-                updateButtonStates(); // Update button states
+                unsavedChanges = false;
+                hasPushedLive = false;
+                updateButtonStates();
             }
-
-            // Spacer visibility is handled by CSS
         } catch (err) {
             console.error("[DEBUG] Error fetching layout:", err);
         }
@@ -654,32 +667,16 @@ document.addEventListener("DOMContentLoaded", () => {
             blockElement.dataset.width = block.width;
             blockElement.dataset.height = block.height;
 
-            blockElement.style.gridRow = `${block.row} / span ${block.height}`;
-            blockElement.style.gridColumn = `${block.col} / span ${block.width}`;
-            
-            // Determine if the block is a spacer
+            // Spacer blocks
             const isSpacer = block.type.startsWith('block-spacer');
+            blockElement.classList.toggle("spacer-block", isSpacer);
 
-            // Set contenteditable based on block type
+            // Contenteditable only in draft mode and non-spacer blocks
             const isEditable = (viewMode === 'draft' && !deleteMode && !isSpacer);
-            
             blockElement.innerHTML = `<div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>`;
-            
-            // No longer set inline visibility; CSS will handle it based on container
 
             gridContainer.appendChild(blockElement);
         });
-
-        // Remove `grid-area` styles to prevent conflicts
-        Array.from(gridContainer.children).forEach((block) => {
-            block.style.gridArea = ""; // Clear conflicting styles
-        });
-
-        // Ensure grid container has correct grid settings
-        gridContainer.style.display = 'grid';
-        gridContainer.style.gridTemplateColumns = 'repeat(12, 1fr)'; // Adjust as per your grid
-        gridContainer.style.gridAutoRows = 'minmax(100px, auto)'; // Adjust as needed
-        gridContainer.style.gap = '10px'; // Adjust as needed
 
         if (reinitializeSortable && viewMode === 'draft' && !deleteMode) {
             initializeSortable(); // Re-initialize sortable to ensure the layout is draggable
@@ -688,9 +685,8 @@ document.addEventListener("DOMContentLoaded", () => {
             sortableInstance = null;
             console.log("[DEBUG] Sortable.js instance destroyed in renderLayout.");
         }
-
-        // Spacer visibility is handled by CSS
     };
+
 
     // **Event Listeners with Enhanced Race Condition Prevention**
     // All button event listeners are wrapped with the global mutex to prevent race conditions

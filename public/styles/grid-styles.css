@@ -7,14 +7,15 @@
     grid-auto-rows: 92px;
     margin: 0 auto;
     overflow-x: hidden;
+    gap: 18px;
 }
 
 /* Specific styles for contentPreview */
 #contentPreview {
-    padding-top: 20px;
+    padding-top: 15px;
     padding-bottom: calc(10px + 2vh);
     max-width: 1650px;
-    max-height: 68.9vh;
+    max-height: 76.6vh;
     overflow-y: auto; /* Enables internal scrollbar for draft/edit mode */
     scrollbar-width: thin; /* For Firefox: thin scrollbar */
     scrollbar-color: var(--scrollbar-thumb, #b0b0b0) var(--scrollbar-track, #f5f5f5);
@@ -25,7 +26,6 @@
     padding-top: 245px;
     max-width: 1475px;
     padding-bottom: calc(10px + 2vh);
-    gap: 18px;
 }
 
 /* Stop at 1515px and lock padding */

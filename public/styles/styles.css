@@ -706,8 +706,37 @@ header {
     background-color: #e0e0e0;
 }
 
-/* 4. Conditional Scrollbar Styles */
+/* Toolbar Tab Styling */
+.toolbar-tab {
+    position: absolute;
+    bottom: -22px; /* Place the tab slightly below the toolbar */
+    left: 50%;
+    transform: translateX(-50%) rotate(180deg); /* Flip the half-circle */
+    width: 30px;
+    height: 22px; /* Slightly increase the height */
+    background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    text-align: center;
+    color: #ffffff; /* White arrow for better contrast */
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end; /* Move arrow closer to the flat edge */
+    padding-bottom: 2px; /* Fine-tune spacing between arrow and flat edge */
+    transition: background-color 0.3s ease; /* Smooth hover transition */
+}
 
+/* Toolbar Tab Hover Effect */
+.toolbar-tab:hover,
+.toolbar-tab.expanded { /* Apply the same styles when the tab is expanded */
+    background-color: rgba(0, 0, 0, 0.9); /* Slightly darker black with opacity */
+    color: #ffffff; /* Keep the arrow white */
+}
+
+/* 4. Conditional Scrollbar Styles */
 /* Hide main scrollbar and enable internal scrolling on pages with 'no-main-scroll' class */
 body.no-main-scroll, html.no-main-scroll {
     overflow: hidden; /* Prevent main page scrolling */
@@ -999,8 +1028,8 @@ html.no-main-scroll .content-workshop-container {
 }
 
 /* Optional: Adjust button styling in the second row if necessary */
-.toolbar-row.second-row .toolbar-button {
-    /* Inherit existing button styles */
-}
+/* .toolbar-row.second-row .toolbar-button {
+
+} */
 
 /* -------------------- End of Added Styles -------------------- */
