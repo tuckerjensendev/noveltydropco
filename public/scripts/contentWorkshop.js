@@ -9,14 +9,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveDraftButton = document.getElementById("saveDraftButton");
     const pushLiveButton = document.getElementById("pushLiveButton");
     const undoButton = document.getElementById("undoButton");
-    const redoButton = document.getElementById("redoButton"); // New redo button
+    const redoButton = document.getElementById("redoButton");
+    const lockSortButton = document.getElementById("lockSortButton");
     const deleteModeButton = document.getElementById("deleteModeButton");
     const viewToggleButton = document.getElementById("viewToggleButton"); // New toggle button
     const toolbar = document.getElementById('sharedToolbar'); // Floating toolbar reference
     const secondToolbarRow = document.querySelector('.toolbar-row.second-row');
     const mainContent = document.querySelector('.main-content'); // Main content section
 
-    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !redoButton || !deleteModeButton || !viewToggleButton || !toolbar || !mainContent) {
+    if (!gridContainer || !blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !redoButton || !lockSortButton ||   !deleteModeButton || !viewToggleButton || !toolbar || !mainContent) {
         console.error("[DEBUG] One or more critical DOM elements are missing. Script aborted.");
         return;
     }
@@ -43,7 +44,8 @@ document.addEventListener("DOMContentLoaded", () => {
     let isRedoing = false;
     let isTogglingDeleteMode = false;
     let isTogglingView = false;
-    let toolbarTab; // Declare a reference to the tab
+    let isSortLocked = false;
+    let toolbarTab;
 
     // **Enhanced Mutex Implementation**
     class Mutex {
@@ -183,8 +185,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     
         // Skip initialization in 'live' view or delete mode
-        if (viewMode === 'live' || deleteMode) {
-            console.log("[DEBUG] View mode is 'live' or delete mode is active; skipping Sortable.js initialization.");
+        if (viewMode === 'live' || deleteMode || isSortLocked) {
+            console.log("[DEBUG] View mode is 'live', delete mode is active, or sort is locked; skipping Sortable.js initialization.");
             return;
         }
     
@@ -296,6 +298,7 @@ document.addEventListener("DOMContentLoaded", () => {
             customDropdownToggle.disabled = deleteMode || (viewMode === 'live'); // Ensure dropdown is disabled if deleteMode or live view
         }
         viewToggleButton.disabled = deleteMode; // Disable "View Live" button
+        lockSortButton.disabled = deleteMode; // Disable "Lock Sort" button when delete mode is active
 
         if (deleteMode) {
             gridContainer.addEventListener("click", deleteBlock);
@@ -316,6 +319,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 customDropdownToggle.disabled = viewMode === 'live'; // Enable only if not live
             }
             viewToggleButton.disabled = false; // Re-enable "View Live" button
+            lockSortButton.disabled = deleteMode; // Re-enable "Lock Sort" button when delete mode is off
 
             // If deletions occurred during delete mode
             if (deletionsDuringDeleteMode) {
@@ -558,7 +562,7 @@ document.addEventListener("DOMContentLoaded", () => {
             return;
         }
         isSaving = true; // Set saving flag
-        updateButtonStates(); // Disable buttons during save
+        updateButtonStates(); // Disable buttons
 
         const pageId = document.querySelector(".side-panel .active").dataset.page; // Ensure the page ID is retrieved
         if (!pageId) {
@@ -649,7 +653,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
 
-            if (reinitializeSortable && viewMode === 'draft' && !deleteMode) {
+            if (reinitializeSortable && viewMode === 'draft' && !deleteMode && !isSortLocked) {
                 console.log("[DEBUG] Reinitializing Sortable.js after fetching layout...");
                 initializeSortable();
             }
@@ -689,7 +693,7 @@ document.addEventListener("DOMContentLoaded", () => {
             gridContainer.appendChild(blockElement);
         });
 
-        if (reinitializeSortable && viewMode === 'draft' && !deleteMode) {
+        if (reinitializeSortable && viewMode === 'draft' && !deleteMode && !isSortLocked) {
             initializeSortable(); // Re-initialize sortable to ensure the layout is draggable
         } else if (sortableInstance) {
             sortableInstance.destroy();
@@ -865,6 +869,40 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // Lock Sort Button Event Listener
+    lockSortButton.addEventListener("click", async () => {
+        await mutex.lock(); // Acquire the mutex
+        try {
+            if (isSortLocked) {
+                console.log("[DEBUG] Unlocking sort functionality.");
+            } else {
+                console.log("[DEBUG] Locking sort functionality.");
+            }
+
+            isSortLocked = !isSortLocked; // Toggle lock state
+            lockSortButton.textContent = isSortLocked ? "Unlock Sort" : "Lock Sort"; // Update button text
+
+            if (isSortLocked) {
+                // Destroy Sortable.js instance to disable sorting
+                if (sortableInstance) {
+                    sortableInstance.destroy();
+                    sortableInstance = null;
+                    console.log("[DEBUG] Sortable.js instance destroyed to lock sorting.");
+                }
+            } else {
+                // Re-initialize Sortable.js to enable sorting
+                if (viewMode === "draft" && !deleteMode) {
+                    initializeSortable();
+                    console.log("[DEBUG] Sortable.js instance re-initialized to unlock sorting.");
+                }
+            }
+        } catch (error) {
+            console.error("[DEBUG] Error toggling sort lock:", error);
+        } finally {
+            mutex.unlock(); // Release the mutex
+        }
+    });
+
     // Function to handle view toggling and update button text
     const handleViewToggle = async () => {
         await mutex.lock(); // Acquire the mutex
@@ -877,7 +915,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 console.log("[DEBUG] Save operation in progress. Preventing view toggle.");
                 return; // Optionally prevent toggling view during saving
             }
-
+    
             isTogglingView = true; // Set the flag
             try {
                 if (viewMode === 'draft') {
@@ -889,6 +927,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     pushLiveButton.disabled = true;
                     deleteModeButton.disabled = true;
                     blockTypeControl.disabled = true;
+                    lockSortButton.disabled = true; // Disable Lock Sort button in live mode
                     if (customDropdownToggle) {
                         customDropdownToggle.disabled = true;
                     }
@@ -913,6 +952,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     addBlockButton.disabled = false;
                     deleteModeButton.disabled = false;
                     blockTypeControl.disabled = false;
+                    lockSortButton.disabled = false; // Enable Lock Sort button in draft mode
                     if (customDropdownToggle) {
                         customDropdownToggle.disabled = false; // Enable dropdown in draft view
                     }
@@ -922,9 +962,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Render the draft from localLayout to preserve unsaved changes
                     renderLayout(localLayout, true);
                 }
-
+    
                 // Spacer visibility is handled by CSS based on container ID
-
+    
             } catch (error) {
                 console.error("[DEBUG] Error toggling view:", error);
             } finally {
@@ -934,6 +974,7 @@ document.addEventListener("DOMContentLoaded", () => {
             mutex.unlock(); // Release the mutex
         }
     };
+    
 
     // **Update the primary event listener to call handleViewToggle**
     viewToggleButton.removeEventListener("click", () => {}); // Ensure no other listeners

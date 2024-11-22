@@ -1,3 +1,5 @@
+// server.js
+
 require('dotenv').config();
 const crypto = require('crypto');
 const fs = require('fs');
@@ -14,7 +16,7 @@ const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddl
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
 const contentRoutes = require('./routes/contentRoutes');
-const db = require('./db');
+const db = require('./db'); // Ensure this points to your db.js
 
 // Logs directory and CSP log file
 const logsDir = path.join(__dirname, 'logs');
@@ -46,12 +48,19 @@ const httpsOptions = {
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
+// Serve static files from 'public' (development) or 'dist' (production)
 app.use(express.static(isProduction ? 'dist' : 'public'));
 
+// Additional static routes for development
 if (!isProduction) {
-  app.use('/scripts', express.static('public/scripts'));
-  app.use('/scripts', express.static('node_modules/gridstack/dist'));
-  app.use('/styles', express.static('public'));
+  // Serve custom scripts
+  app.use('/scripts', express.static(path.join(__dirname, 'public', 'scripts')));
+  
+  // Serve third-party scripts like Gridstack
+  app.use('/scripts/gridstack', express.static(path.join(__dirname, 'node_modules', 'gridstack', 'dist')));
+  
+  // Serve styles
+  app.use('/styles', express.static(path.join(__dirname, 'public', 'styles')));
 }
 
 app.use(express.json());
@@ -78,6 +87,7 @@ app.use(
       useDefaults: true,
       directives: {
         "default-src": ["'self'"],
+        // Corrected template literals for nonce interpolation
         "script-src": ["'self'", (req, res) => `'nonce-${res.locals.scriptNonce}'`],
         "style-src": ["'self'", (req, res) => `'nonce-${res.locals.styleNonce}'`],
         "connect-src": ["'self'"],
@@ -97,7 +107,7 @@ app.post('/csp-violation', express.json({ type: ['application/json', 'applicatio
   };
 
   // Log violation details
-  fs.appendFile('logs/csp-violations.log', JSON.stringify(violationDetails, null, 2) + '\n', (err) => {
+  fs.appendFile(cspLogFile, JSON.stringify(violationDetails, null, 2) + '\n', (err) => {
     if (err) console.error('Failed to write CSP violation to log:', err);
   });
 
@@ -105,7 +115,6 @@ app.post('/csp-violation', express.json({ type: ['application/json', 'applicatio
 
   res.status(204).end(); // Respond with No Content
 });
-
 
 app.use(
   session({
@@ -156,19 +165,20 @@ app.get('/', async (req, res) => {
   let blocks = [];
   try {
     const contentBlocks = await new Promise((resolve, reject) => {
-      db.all('SELECT * FROM content_blocks WHERE page_id = ?', ['home'], (err, rows) => {
+      db.all('SELECT * FROM content_blocks WHERE page_id = ? ORDER BY order_index ASC', ['home'], (err, rows) => {
         if (err) return reject(err);
         resolve(rows);
       });
     });
 
+    // Remove position-related properties since CSS handles layout
     blocks = contentBlocks.map(block => ({
-      ...block,
+      block_id: block.block_id,
+      type: block.type,
+      content: block.content || '',
       style: block.style || '',
-      x: block.position_x || block.col,
-      y: block.position_y || block.row,
-      width: block.width || 'auto',
-      height: block.height || 'auto'
+      page_id: block.page_id
+      // Removed: x, y, width, height
     }));
   } catch (error) {
     console.error('Error fetching content blocks:', error);
@@ -193,22 +203,115 @@ app.use('/admin', adminRoutes);
 
 app.use(contentRoutes);
 
+// **New /api/blocks Routes**
+
+// GET /api/blocks?type=blockType - Fetch blocks by type
+app.get('/api/blocks', async (req, res) => {
+    const { type } = req.query;
+    if (!type) {
+        return res.status(400).json({ error: 'Block type is required.' });
+    }
+
+    try {
+        const blocks = await new Promise((resolve, reject) => {
+            db.all('SELECT * FROM content_blocks WHERE type = ? ORDER BY order_index ASC', [type], (err, rows) => {
+                if (err) return reject(err);
+                resolve(rows);
+            });
+        });
+
+        // Remove position-related properties
+        const sanitizedBlocks = blocks.map(block => ({
+          block_id: block.block_id,
+          type: block.type,
+          content: block.content || '',
+          style: block.style || '',
+          page_id: block.page_id
+          // Removed: x, y, width, height
+        }));
+
+        res.status(200).json(sanitizedBlocks);
+    } catch (error) {
+        console.error("[DEBUG] Error fetching blocks:", error);
+        res.status(500).json({ error: 'Failed to fetch blocks.' });
+    }
+});
+
+// POST /api/blocks - Add a new block
+app.post('/api/blocks', async (req, res) => {
+    const { type, content } = req.body; // Allow content to be set during creation if needed
+    if (!type) {
+        return res.status(400).json({ error: 'Block type is required.' });
+    }
+
+    // Validate block type if necessary
+    const validBlockTypes = ['text-block', 'image-block', 'block-spacer']; // Add other valid types as needed
+    if (!validBlockTypes.includes(type)) {
+        return res.status(400).json({ error: 'Invalid block type.' });
+    }
+
+    // Generate a unique block ID
+    const blockId = crypto.randomUUID();
+
+    // Default values for new blocks
+    const defaultContent = content || ''; // Empty content by default or provided content
+    const pageId = 'home'; // Assign to 'home' page or derive dynamically if needed
+
+    // Insert the new block into the database without position fields
+    try {
+        await new Promise((resolve, reject) => {
+            const stmt = db.prepare(`INSERT INTO content_blocks 
+                (block_id, type, content, page_id) 
+                VALUES (?, ?, ?, ?)`);
+            stmt.run([blockId, type, defaultContent, pageId], function(err) {
+                if (err) return reject(err);
+                resolve();
+            });
+            stmt.finalize();
+        });
+
+        const newBlock = {
+            block_id: blockId,
+            type,
+            content: defaultContent,
+            style: '', // Initialize with empty style or allow customization later
+            page_id: pageId
+            // No position-related properties
+        };
+
+        res.status(201).json({ message: 'Block added successfully.', block: newBlock });
+    } catch (error) {
+        console.error("[DEBUG] Error adding new block:", error);
+        res.status(500).json({ error: 'Failed to add block.' });
+    }
+});
+
+// **Handle 404 for API Routes**
+app.use('/api/*', (req, res) => {
+    res.status(404).json({ error: 'API route not found.' });
+});
+
+// Handle all other 404 routes
 app.use((req, res) => {
-  res.status(404).render('404');
+    res.status(404).render('404');
 });
 
+// Global error handler
 app.use((err, req, res, next) => {
-  if (err.status === 400) {
-    return res.status(400).render('admin/create-staff', {
-      user: req.user,
-      csrfToken: req.csrfToken(),
-      flashMessage: err.message,
-      flashType: 'error'
-    });
-  }
-  next(err);
+    if (err.status === 400) {
+        return res.status(400).render('admin/create-staff', {
+            user: req.user,
+            csrfToken: req.csrfToken(),
+            flashMessage: err.message,
+            flashType: 'error'
+        });
+    }
+    // For other types of errors, you can add more conditions or render a generic error page
+    console.error("[DEBUG] Unhandled error:", err);
+    res.status(500).render('500', { error: err });
 });
 
+// Start the HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
-  console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
+    console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
 });
