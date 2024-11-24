@@ -122,6 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     const mutex = new Mutex(); // Instantiate the global mutex
+    window.sharedMutex = mutex; // Expose the mutex globally for shared access
 
     /**
      * *******************************
@@ -315,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
             currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
             console.log("[DEBUG] Block unlocked.");
     
-            // **Disable Sortable.js when a block is unlocked**
+            // Disable Sortable.js when a block is unlocked
             if (sortableInstance) {
                 sortableInstance.destroy();
                 sortableInstance = null;
@@ -328,6 +329,13 @@ document.addEventListener("DOMContentLoaded", () => {
             lockOverlay.innerHTML = `<img src="${lockSVGPath}" alt="Locked" class="lock-icon" />`;
             contentEditableElement.contentEditable = "false";
     
+            // Remove grid overlay if active
+            if (blockElement.classList.contains('grid-overlay-active')) {
+                blockElement.classList.remove('grid-overlay-active');
+                gridOverlayActive = false; // Reset the global grid overlay state
+                console.log("[DEBUG] Grid overlay removed due to block being locked.");
+            }
+    
             // Reset currently unlocked block if this block was previously unlocked
             if (currentlyUnlockedBlock === blockElement) {
                 currentlyUnlockedBlock = null;
@@ -336,18 +344,27 @@ document.addEventListener("DOMContentLoaded", () => {
     
             blockElement.classList.remove('unlocked-border');
             blockElement.classList.add('default-border'); // Re-add default border
-
+    
             console.log("[DEBUG] Block locked.");
     
-            // **Re-enable Sortable.js if no other blocks are unlocked**
+            // Re-enable Sortable.js if no other blocks are unlocked
             if (!currentlyUnlockedBlock && !deleteMode && !isSortLocked && viewMode === 'draft') {
                 initializeSortable();
                 console.log("[DEBUG] Sortable.js re-initialized after locking block.");
             }
         }
-
-        // **Update button states after toggling lock**
-        updateButtonStates();
+    
+        // Dispatch Custom Event for Lock State Change
+        const lockStateChangedEvent = new CustomEvent('blockLockChanged', {
+            detail: {
+                blockId: blockElement.dataset.blockId || null,
+                isLocked: !isLocked
+            }
+        });
+        window.dispatchEvent(lockStateChangedEvent);
+    
+        // Update secondary button states
+        updateSecondaryButtonStates();
     };
 
     // **Ensure Only One Block is Unlocked at a Time**
@@ -628,7 +645,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 width: colSpan,
                 height: rowSpan,
                 style: block.style.cssText || null,
-                page_id: document.querySelector(".side-panel .active").dataset.page,
+                page_id: document.querySelector(".side-panel .active")?.dataset.page,
                 locked: block.querySelector(".lock-overlay").dataset.locked === "false" ? false : true,
             };
         });
@@ -1155,7 +1172,6 @@ document.addEventListener("DOMContentLoaded", () => {
             mutex.unlock(); // Release the mutex
         }
     });
-
 
     // **Add Block Button Event Listener**
     addBlockButton.addEventListener("click", async () => {
@@ -1730,4 +1746,37 @@ document.addEventListener("DOMContentLoaded", () => {
     if (viewMode === 'draft' && gridContainer) {
         fetchLayout(true);
     }
+
+    /**
+     * *******************************
+     * **Custom Event Listener for Lock State Changes**
+     * *******************************
+     */
+
+    // **Listen for 'blockLockChanged' Events**
+    window.addEventListener('blockLockChanged', (e) => {
+        const { blockId, isLocked } = e.detail;
+        console.log(`[DEBUG] 'blockLockChanged' event received for block ID: ${blockId}, Locked: ${isLocked}`);
+    
+        const block = document.querySelector(`.grid-item[data-block-id="${blockId}"]`);
+    
+        if (block) {
+            // Handle lock and overlay states
+            if (isLocked) {
+                if (block.classList.contains('grid-overlay-active')) {
+                    block.classList.remove('grid-overlay-active');
+                    gridOverlayActive = false;
+                    console.log("[DEBUG] Grid overlay removed from locked block.");
+                }
+            } else {
+                // Ensure the overlay is off when unlocking fails or gets inconsistent
+                gridOverlayActive = false; 
+            }
+        }
+    
+        // Update both top-row and second-row button states
+        updateTopRowButtonStates();
+        updateSecondRowButtonStates();
+    });
+    
 });

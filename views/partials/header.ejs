@@ -3,13 +3,18 @@
 <% if (isProduction) { %>
   <!-- Production: Load Webpack Bundles -->
   <link rel="stylesheet" href="/styles.css">
-  <link rel="stylesheet" href="/styles/grid-styles.css"> <!-- Add Grid Styles -->
+  <link rel="stylesheet" href="/styles/grid-styles.css">
+  <link rel="stylesheet" href="/styles/admin-styles.css">
   <script nonce="<%= scriptNonce %>" src="/bundle.js"></script>
 <% } else { %>
   <!-- Development: Load Unbundled Files -->
   <link rel="stylesheet" href="/styles/styles.css">
-  <link rel="stylesheet" href="/styles/grid-styles.css"> <!-- Add Grid Styles -->
+  <link rel="stylesheet" href="/styles/grid-styles.css">
+  <link rel="stylesheet" href="/styles/admin-styles.css">
   <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/secondToolbar.js"></script>
 <% } %>
 
 <% if (showStaffHeader) { %>

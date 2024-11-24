@@ -303,6 +303,48 @@
     /* You can add more hover-specific styles for unlocked blocks if desired */
 }
 
+
+
+/*
+*====================
+* SECONDARY TOOLBAR ROW GRID EDITING
+*====================
+*/
+
+/* BUTTON Grid Overlay */
+.grid-overlay-active {
+    position: relative;
+}
+
+.grid-overlay-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: calc(100% / 12) 100%, 100% calc(100% / 12); /* 12 columns grid */
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 10; /* Ensure overlay is above content but below toolbar */
+}
+
+
+
+
+
+
+
+/*
+*====================
+* END SECONDARY TOOLBAR ROW GRID EDITING
+*====================
+*/
+
+
+
+
 @media (max-width: 1240px) {
     #contentDisplay {
         grid-template-columns: repeat(9, minmax(90px, 1fr));
