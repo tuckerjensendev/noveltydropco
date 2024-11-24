@@ -679,6 +679,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Handle undo for layout changes
             redoHistoryStack.push(layoutHistory.pop()); // Move the latest state to redoHistory
             const previousState = layoutHistory[layoutHistory.length - 1]; // Get the previous state
+
+            // **Fix Implemented Here**
+            localLayout = previousState; // Update localLayout to the previous state
+
             console.log("[DEBUG] Undoing layout change. Reverting to previous state:", JSON.stringify(previousState, null, 2));
             renderLayout(previousState);
             unsavedChanges = true; // Mark changes as unsaved
@@ -720,6 +724,10 @@ document.addEventListener("DOMContentLoaded", () => {
             // Handle redo for layout changes
             const nextState = redoHistoryStack.pop();
             layoutHistory.push(nextState); // Add the next state to layoutHistory
+
+            // **Fix Implemented Here**
+            localLayout = nextState; // Update localLayout to the next state
+
             console.log("[DEBUG] Redoing layout change. Moving to next state:", JSON.stringify(nextState, null, 2));
             renderLayout(nextState);
             unsavedChanges = true; // Mark changes as unsaved

@@ -31,10 +31,10 @@
         <% } %>
       <% } %>
     </div>
-    <div class="secure-logout" style="position: relative; display: inline-block;">
+    <div class="secure-logout">
       <form action="/logout" method="POST" id="logoutForm">
         <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        <button class="staff-logout-button" type="submit" id="logoutButton" style="position: relative;">
+        <button class="staff-logout-button" type="submit" id="logoutButton">
           Secure Logout
         </button>
       </form>

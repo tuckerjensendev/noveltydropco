@@ -12,10 +12,10 @@
   <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
 <% } %>
 
-<% if (['superadmin', 'staff1', 'staff2', 'manager1', 'manager2'].includes(user?.role)) { %>
+<% if (showStaffHeader) { %>
   <!-- Show only the staff header for staff roles -->
   <div class="staff-header-wrapper">
-    <%- include('../partials/staff-header', { user: user }) %>
+    <%- include('staff-header', { user: user }) %>
   </div>
 <% } else { %>
   <!-- Show the main header only for non-staff roles -->
@@ -30,6 +30,7 @@
       <% } %>
       <div id="dropdown" class="dropdown-content">
         <% if (!user) { %>
+          <!-- Login and Register Forms -->
           <div id="login-form" class="form-content">
             <h2>Login</h2>
             <form action="/login" method="POST" id="loginForm">
@@ -68,12 +69,15 @@
             <p class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></p>
           </div>
         <% } else { %>
-          <div id="user-menu" class="form-content">
-            <form action="/logout" method="POST">
-              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-              <button type="submit">Logout</button>
-            </form>
-          </div>
+          <!-- Logout Form Visible Only to 'Client' Users -->
+          <% if (user.role === 'client') { %>
+            <div id="user-menu" class="form-content">
+              <form action="/logout" method="POST">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                <button type="submit">Logout</button>
+              </form>
+            </div>
+          <% } %>
         <% } %>
       </div>
     </div>
