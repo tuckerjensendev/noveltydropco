@@ -265,6 +265,18 @@ function setupFormSubmissionSpinner() {
     });
 }
 
+// Disable logout button upon form submission to prevent multiple submissions
+function setupLogoutButtonDisable() {
+    const logoutForm = document.getElementById('logoutForm');
+    const logoutButton = document.getElementById('logoutButton');
+
+    if (logoutForm && logoutButton) {
+        logoutForm.addEventListener('submit', function(e) {
+            logoutButton.disabled = true;
+        });
+    }
+}
+
 // Manage-access.ejs: Enables/disables save button based on checkbox activity
 function setupSaveButtonToggle() {
     const checkboxes = document.querySelectorAll('input[type="checkbox"]');
@@ -306,6 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setupFlashMessageTimeout();
     setupSaveButtonToggle();
     setupActiveLinkHighlighting();
+    setupLogoutButtonDisable(); // Added this line
 
     const passwordField = document.getElementById("register_password");
     const confirmPasswordField = document.getElementById("confirm_password");

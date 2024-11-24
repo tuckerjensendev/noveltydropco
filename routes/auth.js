@@ -139,21 +139,35 @@ passport.use(new LocalStrategy({ usernameField: 'email', passwordField: 'passwor
   });
 }));
 
-// Logout Route with CSRF
+// Logout Route with CSRF and Complete Session Destruction
 router.post('/logout', csrfProtection, (req, res) => {
   req.logout((err) => {
-    if (err) return res.status(500).send("Logout error");
+    if (err) {
+      console.error("Logout error:", err);
+      return res.status(500).send("Logout error");
+    }
 
     req.session.destroy((sessionErr) => {
       if (sessionErr) {
         console.error("Session destruction error:", sessionErr);
         return res.status(500).send("Session destruction error");
       }
-      res.redirect('/');
+
+      // Clear the session cookie
+      res.clearCookie('connect.sid', {
+        path: '/',
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'strict'
+      });
+
+      // Introduce a slight delay (2-3 seconds) before redirecting to ensure all processes complete
+      setTimeout(() => {
+        res.redirect('/');
+      }, 2000); // 2000 milliseconds = 2 seconds
     });
   });
 });
-
 
 passport.serializeUser((user, done) => done(null, user.id));
 

@@ -10,12 +10,13 @@
     gap: 18px;
 }
 
-/* Specific styles for contentPreview */
+/* Add padding-right to prevent overlap with scrollbar */
 #contentPreview {
     padding-top: 15px;
     padding-bottom: calc(10px + 2vh);
+    padding-right: 10px; /* Add padding to prevent overlap */
     max-width: 1650px;
-    max-height: 76.6vh;
+    max-height: 82.5vh;
     overflow-y: auto; /* Enables internal scrollbar for draft/edit mode */
     scrollbar-width: thin; /* For Firefox: thin scrollbar */
     scrollbar-color: var(--scrollbar-thumb, #b0b0b0) var(--scrollbar-track, #f5f5f5);
@@ -35,7 +36,6 @@
         padding-right: 18px;
     }
 }
-
 
 /* For Webkit-based browsers (Chrome, Edge, Safari) */
 #contentPreview::-webkit-scrollbar {
@@ -61,15 +61,67 @@
     background: transparent; /* Corner where vertical and horizontal scrollbars meet */
 }
 
+
 /* General grid item styling */
 .grid-item {
     display: flex;
+    position: relative; /* Enable positioning for absolute children */
     align-items: center;
     justify-content: center;
     text-align: center;
     border: 1px solid var(--border-color, #EAEAEA);
     background-color: #fff;
+    overflow: hidden; /* Prevent lock overlay from escaping the block */
+    border: 2px solid transparent; /* Initialize with transparent border */
 }
+
+/* Default Border */
+.grid-item.default-border {
+    border: 2px solid transparent;
+}
+
+/* Delete Mode Border */
+.grid-item.delete-border {
+    border: 3px solid red !important; /* Use !important to ensure it takes precedence */
+}
+
+/* Unlocked State Border */
+.grid-item.unlocked-border {
+    border: 2px dashed rgba(255, 165, 0, 0.6);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+    border-radius: 4px;
+}
+
+/* Hover Effects */
+.grid-item.default-border:hover {
+    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border */
+    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2); /* Subtle glow effect */
+    border-radius: 4px; /* Slightly rounded corners */
+}
+
+.grid-item.unlocked-border:hover {
+    box-shadow: 0 0 12px rgba(255, 165, 0, 0.4); /* Slightly more pronounced glow */
+    /* You can add more hover-specific styles for unlocked blocks if desired */
+}
+
+.disable-hover .grid-item.default-border:hover {
+    border: none; /* Disable border hover effect */
+    cursor: default; /* Disable hover cursor */
+}
+
+.disable-hover .grid-item.default-border:hover {
+    border: none; /* Disable border hover effect */
+    box-shadow: none;
+    cursor: default; /* Disable hover cursor */
+}
+
+/* Persistent "editing" style when unlocked */
+.grid-item[data-unlocked="true"] {
+    border: 2px dashed rgba(255, 165, 0, 0.8); /* Light orange dashed border */
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.1); /* Slight glow for active editing */
+    border-radius: 4px;
+}
+
 
 /* MINI SQUARE - Proper size and tighter spacing */
 .grid-item.block-grid-small,
@@ -168,10 +220,87 @@
     visibility: hidden !important; /* Hide the content while retaining grid space */
 }
 
-/* Delete Mode Styling */
-.delete-mode .grid-item {
-    border: 3px solid red !important; /* Make it clear that blocks are deletable */
+/* Block Content Styling */
+.block-content {
+    flex: 1; /* Allow content to fill the block */
+    display: flex;
+    align-items: center; /* Center text vertically */
+    justify-content: center; /* Center text horizontally */
+    padding: 5px; /* Optional: Add padding for readability */
+    z-index: 1; /* Keep content below the lock */
+}
+
+.lock-overlay {
+    position: absolute; /* Place it over the block */
+    top: 1px; /* Adjust to the top-right corner */
+    right: 1px;
+    width: 24px; /* Lock container size */
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto; /* Allow interaction */
+    z-index: 10; /* Ensure visibility above block content */
+    background-color: transparent; /* No visible background */
+}
+
+.lock-icon {
+    width: 16px; /* Icon size */
+    height: 16px; /* Icon size */
+    object-fit: contain;
+    opacity: 0.08; /* Make the lock faint */
+    filter: brightness(70%); /* Optional: Further darken the icon */
+    transition: opacity 0.08s ease, filter 0.08s ease; /* Add a smooth transition */
+}
+
+.lock-icon:hover {
     cursor: pointer;
+    opacity: 0.3; /* Increase visibility on hover */
+    filter: brightness(100%); /* Optional: Brighten the icon on hover */
+}
+
+/* Style for the actively dragged block */
+.active-dragged {
+    border: 2px dashed #007BFF; /* Example color */
+    /* You can adjust the color and thickness as needed */
+}
+
+/* Style for the placeholder during dragging */
+.ghost {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important; /* Optional: make ghost transparent */
+}
+
+/* Ensure that the 'default-border' and 'unlocked-border' do not interfere with dragging styles */
+.grid-item.active-dragged.default-border,
+.grid-item.active-dragged.unlocked-border {
+    border: 2px dashed #007BFF !important; /* Override with dragging border */
+    box-shadow: none !important; /* Remove any existing box-shadow */
+}
+
+/* Optional: Reset borders for blocks not being dragged */
+.grid-item:not(.active-dragged) {
+    border: 2px solid transparent; /* Your default border */
+}
+
+/* Unlocked State Border */
+.grid-item.unlocked-border {
+    border: 2px dashed rgba(255, 165, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* Hover Effects */
+.grid-item.default-border:hover {
+    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border */
+    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2); /* Subtle glow effect */
+    border-radius: 4px; /* Slightly rounded corners */
+}
+
+.grid-item.unlocked-border:hover {
+    box-shadow: 0 0 12px rgba(255, 165, 0, 0.2); /* Slightly more pronounced glow */
+    /* You can add more hover-specific styles for unlocked blocks if desired */
 }
 
 @media (max-width: 1240px) {
@@ -187,3 +316,4 @@
         justify-self: center; /* Ensure it remains centered horizontally */
     }
 }
+

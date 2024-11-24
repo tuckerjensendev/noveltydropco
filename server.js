@@ -100,7 +100,7 @@ app.use(
 // Endpoint to handle CSP violations and log them
 app.post('/csp-violation', express.json({ type: ['application/json', 'application/csp-report'] }), (req, res) => {
   const violationReport = req.body?.["csp-report"]; // Extract CSP report if available
-  
+
   const violationDetails = {
     timestamp: new Date().toISOString(),
     ...(violationReport || req.body) // Log the full report or body for debugging
@@ -239,52 +239,49 @@ app.get('/api/blocks', async (req, res) => {
 
 // POST /api/blocks - Add a new block
 app.post('/api/blocks', async (req, res) => {
-    const { type, content } = req.body; // Allow content to be set during creation if needed
-    if (!type) {
-        return res.status(400).json({ error: 'Block type is required.' });
-    }
+  const { type, content } = req.body;
 
-    // Validate block type if necessary
-    const validBlockTypes = ['text-block', 'image-block', 'block-spacer']; // Add other valid types as needed
-    if (!validBlockTypes.includes(type)) {
-        return res.status(400).json({ error: 'Invalid block type.' });
-    }
+  // Validate the block type
+  const validBlockTypes = ['text-block', 'image-block', 'block-spacer']; // Add other valid types if necessary
+  if (!type || !validBlockTypes.includes(type)) {
+      return res.status(400).json({ error: 'Invalid or missing block type.' });
+  }
 
-    // Generate a unique block ID
-    const blockId = crypto.randomUUID();
+  // Generate a unique block ID
+  const blockId = crypto.randomUUID();
 
-    // Default values for new blocks
-    const defaultContent = content || ''; // Empty content by default or provided content
-    const pageId = 'home'; // Assign to 'home' page or derive dynamically if needed
+  // Use the provided content or default to an empty string
+  const defaultContent = content || ''; // Default to empty content if not provided
+  const pageId = 'home'; // Assign a default page ID or determine dynamically if needed
 
-    // Insert the new block into the database without position fields
-    try {
-        await new Promise((resolve, reject) => {
-            const stmt = db.prepare(`INSERT INTO content_blocks 
-                (block_id, type, content, page_id) 
-                VALUES (?, ?, ?, ?)`);
-            stmt.run([blockId, type, defaultContent, pageId], function(err) {
-                if (err) return reject(err);
-                resolve();
-            });
-            stmt.finalize();
-        });
+  // Insert the new block into the database
+  try {
+      await new Promise((resolve, reject) => {
+          const stmt = db.prepare(`INSERT INTO content_blocks 
+              (block_id, type, content, page_id) 
+              VALUES (?, ?, ?, ?)`);
+          stmt.run([blockId, type, defaultContent, pageId], function (err) {
+              if (err) return reject(err);
+              resolve();
+          });
+          stmt.finalize();
+      });
 
-        const newBlock = {
-            block_id: blockId,
-            type,
-            content: defaultContent,
-            style: '', // Initialize with empty style or allow customization later
-            page_id: pageId
-            // No position-related properties
-        };
+      const newBlock = {
+          block_id: blockId,
+          type,
+          content: defaultContent, // Send back the default content if no content was provided
+          style: '', // Initialize with empty style or allow customization later
+          page_id: pageId
+      };
 
-        res.status(201).json({ message: 'Block added successfully.', block: newBlock });
-    } catch (error) {
-        console.error("[DEBUG] Error adding new block:", error);
-        res.status(500).json({ error: 'Failed to add block.' });
-    }
+      res.status(201).json({ message: 'Block added successfully.', block: newBlock });
+  } catch (error) {
+      console.error('[DEBUG] Error adding new block:', error);
+      res.status(500).json({ error: 'Failed to add block.' });
+  }
 });
+
 
 // **Handle 404 for API Routes**
 app.use('/api/*', (req, res) => {

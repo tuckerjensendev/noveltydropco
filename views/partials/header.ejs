@@ -12,82 +12,77 @@
   <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
 <% } %>
 
-
-
-<!-- Include Staff Header only for staff roles -->
 <% if (['superadmin', 'staff1', 'staff2', 'manager1', 'manager2'].includes(user?.role)) { %>
+  <!-- Show only the staff header for staff roles -->
   <div class="staff-header-wrapper">
     <%- include('../partials/staff-header', { user: user }) %>
   </div>
-<% } %>
-
-<!-- Main header content -->
-<header>
-  <a title="Logo" href="/" class="logo">Novelty Drop Co.</a>
-  <div class="profile" id="profile" data-csrf="<%= csrfToken %>">
-    <% if (!user) { %>
-      <div class="sign-in-button" title="Sign in">Hello, Sign in</div>
-    <% } else { %>
-      <p class="welcome-message">Welcome, <%= user.first_name %>!</p>
-      <img src="/images/profile-icon.png" class="profile-pic" alt="Profile" id="profile-picture" />
-    <% } %>
-    <div id="dropdown" class="dropdown-content">
+<% } else { %>
+  <!-- Show the main header only for non-staff roles -->
+  <header>
+    <a title="Logo" href="/" class="logo">Novelty Drop Co.</a>
+    <div class="profile" id="profile" data-csrf="<%= csrfToken %>">
       <% if (!user) { %>
-        <div id="login-form" class="form-content">
-          <h2>Login</h2>
-          <form action="/login" method="POST" id="loginForm">
+        <div class="sign-in-button" title="Sign in">Hello, Sign in</div>
+      <% } else { %>
+        <p class="welcome-message">Welcome, <%= user.first_name %>!</p>
+        <img src="/images/profile-icon.png" class="profile-pic" alt="Profile" id="profile-picture" />
+      <% } %>
+      <div id="dropdown" class="dropdown-content">
+        <% if (!user) { %>
+          <div id="login-form" class="form-content">
+            <h2>Login</h2>
+            <form action="/login" method="POST" id="loginForm">
               <input type="hidden" name="_csrf" value="<%= csrfToken %>">
               <input type="text" placeholder="Email" id="email" name="email" required>
               <input type="password" placeholder="Password" id="password" name="password" required>
               <button type="submit" id="login-button">Login</button>
-          </form>
-          <!-- Separate the Create Account and Back to Login Links -->
-          <p class="left-link"><a href="#" class="create-account" id="show-register">Create account</a></p>
-      </div>
-      
-      <div id="register-form" class="form-content hidden">
-        <h2>Create Account</h2>
-        <form action="/customer-register" method="POST" id="registerForm">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-    
-            <!-- New wrapper specifically for register form inputs -->
-            <div class="input-wrapper">
+            </form>
+            <!-- Separate the Create Account and Back to Login Links -->
+            <p class="left-link"><a href="#" class="create-account" id="show-register">Create account</a></p>
+          </div>
+
+          <div id="register-form" class="form-content hidden">
+            <h2>Create Account</h2>
+            <form action="/customer-register" method="POST" id="registerForm">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <!-- New wrapper specifically for register form inputs -->
+              <div class="input-wrapper">
                 <input type="text" placeholder="First Name" id="first_name" name="first_name" required>
                 <input type="text" placeholder="Last Name" id="last_name" name="last_name" required>
                 <input type="email" placeholder="Email" id="register_email" name="personal_email" required>
                 <input type="password" placeholder="Password" id="register_password" name="password" required>
                 <input type="password" placeholder="Confirm Password" id="confirm_password" name="confirm_password" required>
-            </div>
-    
-            <button type="submit" id="register-button">Register</button>
-        </form>
-        <!-- Password Requirements Section -->
-        <div id="password-requirements-container">
-            <div id="password-requirements" class="hidden">
+              </div>
+              <button type="submit" id="register-button">Register</button>
+            </form>
+            <!-- Password Requirements Section -->
+            <div id="password-requirements-container">
+              <div id="password-requirements" class="hidden">
                 <p class="requirement" data-requirement="length">Password must contain at least 6 characters.</p>
                 <p class="requirement" data-requirement="uppercase">Password must contain at least one uppercase letter.</p>
                 <p class="requirement" data-requirement="number">Password must contain at least one number.</p>
                 <p class="requirement" data-requirement="match">Passwords match.</p>
+              </div>
             </div>
-        </div>
-        <p class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></p>
+            <p class="center-link"><a href="#" class="back-to-login" id="show-login">Back to login</a></p>
+          </div>
+        <% } else { %>
+          <div id="user-menu" class="form-content">
+            <form action="/logout" method="POST">
+              <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+              <button type="submit">Logout</button>
+            </form>
+          </div>
+        <% } %>
       </div>
-            
-      <% } else { %>
-        <div id="user-menu" class="form-content">
-          <form action="/logout" method="POST">
-            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-            <button type="submit">Logout</button>
-          </form>
-        </div>
-      <% } %>
     </div>
-  </div>
-</header>
+  </header>
+<% } %>
 
 <% if (typeof flashMessage !== 'undefined') { %>
   <div id="flashMessage" class="flash-message <%= flashType %>">
-      <%= flashMessage %>
+    <%= flashMessage %>
   </div>
 <% } %>
 

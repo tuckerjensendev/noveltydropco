@@ -74,7 +74,7 @@ body, html {
 .staff-header {
     background-color: #00008B;
     color: #f1f1f1;
-    padding: 1px 5px;
+    padding: 10px;
     font-size: 0.9em;
     position: sticky;
     top: 0;
@@ -125,7 +125,7 @@ body, html {
 }
 
 /* .active-border */
-.sign-in-button.active-border, 
+.sign-in-button.active-border,
 .profile.active-border {
     border: 2px solid #fff;
     background-color: rgba(255, 255, 255, 0.1);
@@ -136,6 +136,22 @@ body, html {
     border-color: #fff;
     background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
+}
+
+/* Reuse positioning logic */
+.secure-logout {
+    position: absolute;
+    right: 10px;
+    top: 12px;
+}
+
+/* Existing button styles remain intact */
+.staff-logout-button {
+    padding: 5px 7px;
+}
+
+.staff-logout-button:hover {
+    cursor: pointer;
 }
 
 header {
@@ -411,7 +427,7 @@ header {
 }
 
 .side-panel {
-    width: 250px;
+    width: 200px;
     background-color: #333;
     color: #fff;
     padding: 20px;
@@ -449,6 +465,7 @@ header {
 }
 
 .main-content {
+    position: relative; /* Added to position .no-saved-draft-container correctly */
     flex: 1;
     padding: 15px;
     overflow-y: scroll; /* Ensures vertical scrolling is always enabled */
@@ -457,6 +474,37 @@ header {
     height: calc(100vh); /* Ensures it takes up the full viewport height */
     box-sizing: border-box; /* Includes padding in height calculation */
     background-color: #f4f4f4;
+}
+
+.no-saved-draft-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute; /* Overlay on top of gridContainer */
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 10; /* Ensure it sits above other elements */
+    pointer-events: none; /* Allow interactions with underlying elements if necessary */
+}
+
+/* Updated Style for the "NO SAVED DRAFT" message */
+.no-saved-draft {
+    background-color: #565656;
+    font: bold 42px 'Futura', sans-serif;
+    color: transparent;
+    text-shadow: 0px 2px 3px rgba(255, 255, 255, 0.8);
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    background-clip: text;
+}
+
+/* Responsive font size for smaller screens */
+@media (max-width: 768px) {
+    .no-saved-draft {
+        font-size: 28px; /* Further reduce font size on smaller screens */
+    }
 }
 
 /* Enhanced Floating Toolbar */
@@ -472,6 +520,7 @@ header {
     transition: background-color 0.3s, box-shadow 0.3s;
     border-bottom: 1px solid #dcdcdc; /* Softer border */
     flex-direction: column;
+    z-index: 100;
 }
 
 /* Unified background for dropdown and add button */
@@ -687,35 +736,51 @@ header {
     background-color: #e0e0e0;
 }
 
+/* Updated Specific Styles for #deleteModeButton with Increased Specificity */
+#sharedToolbar #deleteModeButton {
+    border: 2px solid transparent;
+    padding: 6px 12px;
+}
+
+/* Red border applied when Delete Mode is active */
+#sharedToolbar #deleteModeButton.delete-mode-active {
+    border: 2px solid red; /* Set the entire border */
+}
+
 /* Toolbar Tab Styling */
 .toolbar-tab {
     position: absolute;
-    bottom: -22px; /* Place the tab slightly below the toolbar */
-    left: 50%;
+    bottom: -22px;
+    left: 49.5%;
     transform: translateX(-50%) rotate(180deg); /* Flip the half-circle */
     width: 30px;
-    height: 22px; /* Slightly increase the height */
-    background-color: rgba(0, 0, 0, 0.4); /* Black with opacity */
+    height: 22px;
+    background-color: rgba(0, 0, 0, 0.4);
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
     text-align: center;
-    color: #ffffff; /* White arrow for better contrast */
+    color: #ffffff;
     font-size: 14px;
     cursor: pointer;
     z-index: 20;
     display: flex;
     justify-content: center;
-    align-items: flex-end; /* Move arrow closer to the flat edge */
-    padding-bottom: 2px; /* Fine-tune spacing between arrow and flat edge */
-    transition: background-color 0.3s ease; /* Smooth hover transition */
+    align-items: flex-end;
+    padding-bottom: 2px;
 }
 
 /* Toolbar Tab Hover Effect */
 .toolbar-tab:hover,
 .toolbar-tab.expanded { /* Apply the same styles when the tab is expanded */
-    background-color: rgba(0, 0, 0, 0.9); /* Slightly darker black with opacity */
-    color: #ffffff; /* Keep the arrow white */
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
 }
+
+.toolbar-tab.no-hover {
+    cursor: default;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
 
 /* 4. Conditional Scrollbar Styles */
 /* Hide main scrollbar and enable internal scrolling on pages with 'no-main-scroll' class */
@@ -841,7 +906,6 @@ html.no-main-scroll .content-workshop-container {
     border: 1px solid #ccc;
     border-radius: 5px;
     background-color: #f9f9f9;
-    transition: background-color 0.3s ease;
 }
 
 #createStaffForm input[type="text"]:focus,
@@ -1010,6 +1074,7 @@ html.no-main-scroll .content-workshop-container {
 
 /* Optional: Adjust button styling in the second row if necessary */
 /* .toolbar-row.second-row .toolbar-button {
+
 
 } */
 
