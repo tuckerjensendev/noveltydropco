@@ -1,0 +1,34 @@
+<!-- views/layouts/main.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title || 'Novelty Drop Co.' %></title>
+  
+  <!-- Include Header Partial for CSS and JS -->
+  <%- include('../partials/header') %>
+
+  <!-- Page-Specific Head Content -->
+  <%- headExtra || '' %>
+</head>
+<body>
+  <!-- Main Content -->
+  <%- body %>
+  
+  <!-- Flash Messages (if any) -->
+  <% if (flashMessage && flashMessage.length > 0) { %>
+    <div id="flashMessage" class="flash-message <%= flashType %>">
+      <%= flashMessage %>
+    </div>
+  <% } %>
+  
+  <!-- Loading Spinner -->
+  <div class="loading-spinner" id="loadingSpinner">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Page-Specific Body Content (e.g., scripts) -->
+  <%- bodyExtra || '' %>
+</body>
+</html>

@@ -20,7 +20,7 @@
 <% if (showStaffHeader) { %>
   <!-- Show only the staff header for staff roles -->
   <div class="staff-header-wrapper">
-    <%- include('staff-header', { user: user }) %>
+    <%- include('staff-header') %>
   </div>
 <% } else { %>
   <!-- Show the main header only for non-staff roles -->
@@ -89,12 +89,14 @@
   </header>
 <% } %>
 
-<% if (typeof flashMessage !== 'undefined') { %>
+<!-- Flash Messages -->
+<% if (flashMessage && flashMessage.length > 0) { %>
   <div id="flashMessage" class="flash-message <%= flashType %>">
     <%= flashMessage %>
   </div>
 <% } %>
 
+<!-- Loading Spinner -->
 <div class="loading-spinner" id="loadingSpinner">
   <div class="spinner"></div>
 </div>

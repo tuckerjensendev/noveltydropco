@@ -1,19 +1,14 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Home Page - Novelty Drop Co.</title>
-</head>
-<body>
-  <%- include('partials/header', { user: user }) %>
+<!-- views/home.ejs -->
 
-  <div class="content-home-container">
-    <section class="main-content-display">
-      <div id="contentDisplay" class="grid-container"></div>
-    </section>
-  </div>
+<% 
+  // Set the title for the layout
+  title = 'Home Page - Novelty Drop Co.';
+%>
 
-  <script nonce="<%= scriptNonce %>" src="/scripts/homeContent.js"></script>
-</body>
-</html>
+<div class="content-home-container">
+  <section class="main-content-display">
+    <div id="contentDisplay" class="grid-container"></div>
+  </section>
+</div>
+
+<script nonce="<%= scriptNonce %>" src="/scripts/homeContent.js"></script>

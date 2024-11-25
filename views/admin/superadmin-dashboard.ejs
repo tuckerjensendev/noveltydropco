@@ -1,19 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>[bypass] Super Admin</title>
-  <link rel="stylesheet" href="/styles.css?v=1.4">
-</head>
-<body>
-  <!-- Include the Header Partial -->
-  <%- include('../partials/header', { user: user }) %>
+<!-- views/admin/superadmin-dashboard.ejs -->
 
-  <main>
-    <h1>Superadmin Dashboard</h1>
-    <p>Welcome, <%= user.first_name %>! Manage your company here.</p>
-    <!-- Additional superadmin controls can go here -->
-  </main>
-</body>
-</html>
+<% 
+  // Set the title for the layout
+  title = 'Super Admin Dashboard';
+
+  // Set additional head content if needed (e.g., page-specific styles)
+  headExtra = '<link rel="stylesheet" href="/styles.css?v=1.4">';
+%>
+
+<main>
+  <h1>Superadmin Dashboard</h1>
+  <p>Welcome, <%= user.first_name %>! Manage your company here.</p>
+  <!-- Additional superadmin controls can go here -->
+</main>
+
+<!-- Optional: Page-Specific Scripts -->
+<!-- Example:
+<script nonce="<%= scriptNonce %>" src="/scripts/superAdminDashboard.js"></script>
+-->

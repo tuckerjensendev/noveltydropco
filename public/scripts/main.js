@@ -265,18 +265,35 @@ function setupFormSubmissionSpinner() {
   });
 }
 
+// **Updated logTimeoutToServer Function with sessionStorage**
 function logTimeoutToServer() {
+  if (sessionStorage.getItem('sessionTimeoutLogged')) {
+    return; // Already logged
+  }
+
+  sessionStorage.setItem('sessionTimeoutLogged', 'true');
+
+  const userId = document.body.getAttribute('data-user-id');
+  const role = document.body.getAttribute('data-role');
+  const ip = document.body.getAttribute('data-ip');
+  
+  const data = { userId, role, ip };
+  console.log('Logging session timeout with data:', data); // Debugging Line
+  
   fetch('/admin/log-session-timeout', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      userId: document.body.getAttribute('data-user-id'),
-      role: document.body.getAttribute('data-role'),
-      ip: document.body.getAttribute('data-ip'),
-    }),
-  }).catch((error) => console.error('Error logging session timeout:', error));
+    body: JSON.stringify(data),
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error('Network response was not ok');
+    }
+    console.log('Session timeout logged successfully.');
+  })
+  .catch((error) => console.error('Error logging session timeout:', error));
 }
 
 // Client-side session timeout tracker

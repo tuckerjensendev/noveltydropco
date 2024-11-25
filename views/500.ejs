@@ -1,27 +1,16 @@
 <!-- views/500.ejs -->
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>500 - Internal Server Error</title>
-    <% if (isProduction) { %>
-        <link rel="stylesheet" href="/styles.css">
-    <% } else { %>
-        <link rel="stylesheet" href="/styles/styles.css">
-    <% } %>
-</head>
-<body>
-    <div class="error-container">
-        <h1>500</h1>
-        <p>Internal Server Error</p>
-        <p>We're sorry, but something went wrong on our end.</p>
-        <p>Please try again later or contact support if the issue persists.</p>
-        <p><a href="/">Return to Home Page</a></p>
-        <% if (!isProduction && error) { %>
-            <h2>Debug Information:</h2>
-            <pre><%= error.stack %></pre>
-        <% } %>
-    </div>
-</body>
-</html>
+<% 
+  // Set the title for the layout
+  title = '500 - Server Error';
+%>
+
+<main>
+  <h1>500 - Server Error</h1>
+  <% if (!isProduction && error) { %>
+    <pre><%= error.stack %></pre>
+  <% } else { %>
+    <p>Something went wrong. Please try again later.</p>
+  <% } %>
+  <a href="/">Go back to Home</a>
+</main>

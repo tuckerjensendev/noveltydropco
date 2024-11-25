@@ -1,47 +1,48 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>Staff - Create Employee</title>
-</head>
-<body>
-  <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
+<!-- views/admin/create-staff.ejs -->
 
-  <!-- Main Content Wrapper -->
-  <div class="main-content-wrapper">
-    <h1>Staff - Create Employee</h1>
-    <main class="create-staff-container">
-      <h1>Create Employee</h1>
-      <form id="createStaffForm" action="/admin/create-staff" method="POST">
-        <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-        
-        <label for="first_name">First Name:</label>
-        <input type="text" id="first_name" name="first_name" required>
-        
-        <label for="last_name">Last Name:</label>
-        <input type="text" id="last_name" name="last_name" required>
-        
-        <label for="personal_email">Personal Email:</label>
-        <input type="email" id="personal_email" name="personal_email" required>
-        
-        <label for="email">Work Email:</label>
-        <input type="email" id="email" name="email" required>
-        
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        
-        <label for="role">Role:</label>
-        <select id="role" name="role">
-          <option value="staff1">Staff Level 1</option>
-          <option value="staff2">Staff Level 2</option>
-          <option value="manager1">Manager Level 1</option>
-          <option value="manager2">Manager Level 2</option>
-        </select>
-        
-        <button type="submit">Create Staff Member</button>
-      </form>  
-    </main>
-  </div> <!-- End of Main Content Wrapper -->
+<% 
+  // Set the title for the layout
+  title = 'Staff - Create Employee';
 
-</body>
-</html>
+  // Set additional head content if needed (e.g., page-specific styles)
+  headExtra = '';
+
+  // Set additional body content if needed (e.g., page-specific scripts)
+  bodyExtra = '<script nonce="' + scriptNonce + '" src="/scripts/createStaff.js"></script>';
+%>
+
+<!-- Main Content Wrapper -->
+<div class="main-content-wrapper">
+  <h1>Staff - Create Employee</h1>
+  <main class="create-staff-container">
+    <h1>Create Employee</h1>
+    <form id="createStaffForm" action="/admin/create-staff" method="POST">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+      
+      <label for="first_name">First Name:</label>
+      <input type="text" id="first_name" name="first_name" required>
+      
+      <label for="last_name">Last Name:</label>
+      <input type="text" id="last_name" name="last_name" required>
+      
+      <label for="personal_email">Personal Email:</label>
+      <input type="email" id="personal_email" name="personal_email" required>
+      
+      <label for="email">Work Email:</label>
+      <input type="email" id="email" name="email" required>
+      
+      <label for="password">Password:</label>
+      <input type="password" id="password" name="password" required>
+      
+      <label for="role">Role:</label>
+      <select id="role" name="role">
+        <option value="staff1">Staff Level 1</option>
+        <option value="staff2">Staff Level 2</option>
+        <option value="manager1">Manager Level 1</option>
+        <option value="manager2">Manager Level 2</option>
+      </select>
+      
+      <button type="submit">Create Staff Member</button>
+    </form>  
+  </main>
+</div> <!-- End of Main Content Wrapper -->

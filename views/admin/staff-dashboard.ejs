@@ -1,18 +1,12 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Staff - Dashboard</title>
-</head>
-<body>
-  <!-- Include the Header Partial -->
-  <%- include('../partials/header', { user: user, csrfToken: csrfToken }) %>
+<!-- views/staff-dashboard.ejs -->
 
-  <main>
-    <h1>Staff Dashboard</h1>
-    <p>This is the employee dashboard.</p>
-    <p>Future options will allow access to update specific content and manage data.</p>
-  </main>
-</body>
-</html>
+<% 
+  // Set the title for the layout
+  title = 'Staff Dashboard';
+%>
+
+<main>
+  <h1>Staff Dashboard</h1>
+  <p>This is the employee dashboard.</p>
+  <p>Future options will allow access to update specific content and manage data.</p>
+</main>

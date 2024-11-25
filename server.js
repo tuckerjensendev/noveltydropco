@@ -12,6 +12,7 @@ const helmet = require('helmet');
 const csurf = require('csurf');
 const cookieParser = require('cookie-parser');
 const path = require('path');
+const expressLayouts = require('express-ejs-layouts'); // Import express-ejs-layouts
 const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddleware');
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
@@ -83,49 +84,15 @@ app.use((req, res, next) => {
   next();
 });
 
+// Set EJS as the view engine
 app.set('view engine', 'ejs');
 
-// Middleware to generate nonces for CSP
-app.use((req, res, next) => {
-  res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
-  res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
-  next();
-});
+// Configure express-ejs-layouts
+app.use(expressLayouts);
+app.set('layout', 'layouts/main'); // Set main.ejs as the default layout
 
-// Update Helmet to use nonce-based CSP and report violations
-app.use(
-  helmet({
-    contentSecurityPolicy: {
-      useDefaults: true,
-      directives: {
-        "default-src": ["'self'"],
-        "script-src": ["'self'", (req, res) => `'nonce-${res.locals.scriptNonce}'`],
-        "style-src": ["'self'", (req, res) => `'nonce-${res.locals.styleNonce}'`],
-        "connect-src": ["'self'"],
-        "report-uri": "/csp-violation" // Adds the violation reporting endpoint
-      }
-    }
-  })
-);
-
-// Endpoint to handle CSP violations and log them
-app.post('/csp-violation', express.json({ type: ['application/json', 'application/csp-report'] }), (req, res) => {
-  const violationReport = req.body?.["csp-report"]; // Extract CSP report if available
-
-  const violationDetails = {
-    timestamp: new Date().toISOString(),
-    ...(violationReport || req.body) // Log the full report or body for debugging
-  };
-
-  // Log violation details
-  fs.appendFile(cspLogFile, JSON.stringify(violationDetails, null, 2) + '\n', (err) => {
-    if (err) console.error('Failed to write CSP violation to log:', err);
-  });
-
-  console.error('CSP Violation Logged:', violationDetails);
-
-  res.status(204).end(); // Respond with No Content
-});
+// Initialize connect-flash
+app.use(flash());
 
 // Configure Session to Use Redis Store
 app.use(
@@ -172,8 +139,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
-
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -200,8 +165,18 @@ app.use((req, res, next) => {
   res.locals.user = req.user;
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
   res.locals.isProduction = isProduction;
-  // Update showStaffHeader to check if user role is in staffRoles
   res.locals.showStaffHeader = req.user && staffRoles.includes(req.user.role);
+  res.locals.flashMessage = req.flash('flashMessage');
+  res.locals.flashType = req.flash('flashType');
+
+  // Generate nonces for CSP
+  res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
+  res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
+
+  // Initialize headExtra and bodyExtra as empty strings
+  res.locals.headExtra = '';
+  res.locals.bodyExtra = '';
+
   next();
 });
 
@@ -232,16 +207,24 @@ app.get('/', async (req, res) => {
     console.error('Error fetching content blocks:', error);
   }
 
-  res.render('home', { products: cachedData || [], blocks });
+  res.render('home', { 
+    products: cachedData || [], 
+    blocks,
+    title: 'Home Page - Novelty Drop Co.' // Added title for the layout
+  });
 });
 
 // Admin Routes
 app.get('/admin/superadmin-dashboard', enforceRoleAccess, (req, res) => {
-  res.render('admin/superadmin-dashboard');
+  res.render('admin/superadmin-dashboard', { 
+    title: 'Super Admin Dashboard' // Added title for the layout
+  });
 });
 
 app.get('/admin/staff-dashboard', enforceRoleAccess, (req, res) => {
-  res.render('admin/staff-dashboard');
+  res.render('admin/staff-dashboard', { 
+    title: 'Staff Dashboard' // Added title for the layout
+  });
 });
 
 const authRoutes = require('./routes/auth');
@@ -337,27 +320,26 @@ app.use('/api/*', (req, res) => {
 
 // Handle all other 404 routes
 app.use((req, res) => {
-  res.status(404).render('404');
+  res.status(404).render('404', { 
+    title: '404 - Page Not Found' // Added title for the layout
+  });
 });
 
 // Global error handler
 app.use((err, req, res, next) => {
   if (err.status === 400) {
-    return res.status(400).render('admin/create-staff', {
-      user: req.user,
-      csrfToken: req.csrfToken(),
-      flashMessage: err.message,
-      flashType: 'error'
-    });
+    req.flash('flashMessage', err.message);
+    req.flash('flashType', 'error');
+    return res.redirect('back');
   }
   // For other types of errors, render the 500 error page
   console.error("[DEBUG] Unhandled error:", err);
   res.status(500).render('500', { 
+    title: '500 - Server Error', // Added title for the layout
     error: isProduction ? null : err, 
     isProduction: isProduction 
   });
 });
-
 
 // Start the HTTPS server
 https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
