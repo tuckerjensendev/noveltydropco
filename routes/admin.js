@@ -8,6 +8,17 @@ const { enforceRoleAccess, ensurePermission } = require('../middleware/authMiddl
 const { body, validationResult } = require('express-validator');
 const csurf = require('csurf');
 const csrfProtection = csurf({ cookie: true });
+const fs = require('fs');
+const path = require('path');
+
+// Path to the log file
+const logFilePath = path.join(__dirname, '../logs/staff_sessiontimeout.log');
+
+// Ensure the logs directory exists
+const logsDir = path.join(__dirname, '../logs');
+if (!fs.existsSync(logsDir)){
+    fs.mkdirSync(logsDir);
+}
 
 // Role levels are ordered from lowest to highest authority.
 const roleHierarchy = {
@@ -87,6 +98,27 @@ async function loadPermissions(req, res) {
     res.status(500).json({ error: "Server error while fetching permissions." });
   }
 }
+
+// Middleware for session timeout tracking
+// Note: Since the front-end handles inactivity, we don't need server-side inactivity tracking here.
+// Instead, we'll provide an endpoint to log session timeouts sent from the client.
+router.post('/log-session-timeout', (req, res) => {
+  const now = new Date();
+  const formattedDate = now.toLocaleString('en-US', { hour12: false });
+  const isoTimestamp = now.toISOString();
+  const { userId, role, ip } = req.body;
+
+  const logMessage = `[${formattedDate}] [${isoTimestamp}] Session timeout for role: ${role || 'unknown'}, ID: ${userId || 'unknown'}, IP: ${ip || 'unknown'}\n`;
+
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error('Error writing to log file:', err);
+      return res.status(500).json({ error: 'Failed to log session timeout.' });
+    }
+
+    res.status(200).json({ message: 'Session timeout logged successfully.' });
+  });
+});
 
 // Superadmin Dashboard Route
 router.get('/superadmin-dashboard', enforceRoleAccess, (req, res) => {
@@ -299,6 +331,25 @@ router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection
       csrfToken: req.csrfToken()
     });
   }
+});
+
+// POST route to handle session timeout logging
+router.post('/log-session-timeout', (req, res) => {
+  const now = new Date();
+  const formattedDate = now.toLocaleString('en-US', { hour12: false });
+  const isoTimestamp = now.toISOString();
+  const { userId, role, ip } = req.body;
+
+  const logMessage = `[${formattedDate}] [${isoTimestamp}] Session timeout for role: ${role || 'unknown'}, ID: ${userId || 'unknown'}, IP: ${ip || 'unknown'}\n`;
+
+  fs.appendFile(logFilePath, logMessage, (err) => {
+    if (err) {
+      console.error('Error writing to log file:', err);
+      return res.status(500).json({ error: 'Failed to log session timeout.' });
+    }
+
+    res.status(200).json({ message: 'Session timeout logged successfully.' });
+  });
 });
 
 module.exports = router;

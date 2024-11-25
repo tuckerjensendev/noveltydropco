@@ -141,6 +141,53 @@ document.addEventListener("DOMContentLoaded", () => {
         gridContainer = gridPreviewContainer;
     }
 
+    let previousToolbarHeight = 0; // Track the previous toolbar height for comparison
+
+    const updateContentPreviewPadding = () => {
+        const toolbarHeight = secondToolbarRow?.offsetHeight || 0; // Get the current toolbar height
+        const basePadding = 20; // Fixed base padding in pixels
+        const viewportHeightPadding = window.innerHeight * 0.015; // 1.5vh in pixels
+    
+        // Calculate the final bottom padding to keep consistent spacing
+        const dynamicPadding = basePadding + viewportHeightPadding;
+    
+        // Adjust the content preview padding dynamically
+        gridPreviewContainer.style.setProperty('--secondary-toolbar-height', `${toolbarHeight}px`);
+        gridPreviewContainer.style.setProperty('--dynamic-bottom-padding', `${dynamicPadding}px`);
+    
+        // Scroll adjustment to counteract content movement
+        const toolbarHeightDifference = toolbarHeight - previousToolbarHeight;
+        if (toolbarHeightDifference > 0) {
+            // Toolbar expanded, scroll down by the height difference
+            gridPreviewContainer.scrollTop += toolbarHeightDifference; // Positive scroll adjustment
+            console.log(`[DEBUG] Scrolled down by ${toolbarHeightDifference}px to adjust for toolbar expansion.`);
+        } else if (toolbarHeightDifference < 0) {
+            // Toolbar collapsed, scroll up by the height difference
+            gridPreviewContainer.scrollTop += toolbarHeightDifference; // Negative difference to scroll up
+            console.log(`[DEBUG] Scrolled up by ${-toolbarHeightDifference}px to adjust for toolbar collapse.`);
+        }
+    
+        // Update the previous toolbar height for future calculations
+        previousToolbarHeight = toolbarHeight;
+    
+        console.log(`[DEBUG] Toolbar Height: ${toolbarHeight}px | Bottom Padding: ${dynamicPadding}px`);
+    };
+    
+    // **Initial Padding Update**
+    updateContentPreviewPadding();
+    
+    // **Observe Toolbar for Changes**
+    const toolbarObserver = new MutationObserver(() => {
+        console.log("[DEBUG] Toolbar mutation observed. Updating padding.");
+        updateContentPreviewPadding();
+    });
+    toolbarObserver.observe(secondToolbarRow, { attributes: true, childList: true, subtree: false });
+    
+    // **Update Padding on Window Resize**
+    window.addEventListener("resize", updateContentPreviewPadding);
+    
+    
+
     /**
      * *******************************
      * **Toolbar Configuration**
@@ -370,16 +417,6 @@ document.addEventListener("DOMContentLoaded", () => {
             if (!currentlyUnlockedBlock && !deleteMode && !isSortLocked && viewMode === 'draft') {
                 initializeSortable();
                 console.log("[DEBUG] Sortable.js re-initialized after locking block.");
-            }
-    
-            // Close the secondary toolbar if no blocks are unlocked
-            if (!document.querySelector('[data-unlocked="true"]')) {
-                secondToolbarRow.style.display = "none"; // Hide the secondary toolbar
-                if (toolbarTab) {
-                    toolbarTab.innerHTML = '<span>&#x25B2;</span>'; // Update the toolbar tab arrow
-                    toolbarTab.classList.remove('expanded'); // Remove expanded styling
-                }
-                console.log("[DEBUG] Secondary toolbar closed because all blocks are locked.");
             }
         }
     
@@ -637,6 +674,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
         // Update undo and redo buttons
         updateHistoryButtonsState();
+    };
+
+      // **Delete a Block When in Delete Mode**
+      const deleteBlock = (event) => {
+        if (!deleteMode) return;
+
+        const blockElement = event.target.closest(".grid-item");
+        if (blockElement) {
+            console.log(`[DEBUG] Block clicked for deletion: ${blockElement.dataset.blockId}`);
+
+            // **Check if the block to be deleted is the currently unlocked block**
+            if (currentlyUnlockedBlock === blockElement) {
+                currentlyUnlockedBlock = null;
+                console.log("[DEBUG] Deleted block was unlocked. Resetting currentlyUnlockedBlock.");
+            }
+
+            // **Store the original index of the block before deletion**
+            const blocks = Array.from(gridContainer.children).filter(child => !child.classList.contains('no-saved-draft'));
+            const blockIndex = blocks.indexOf(blockElement);
+
+            // Save the block state before deletion to delete history for undo purposes
+            deleteHistory.push({
+                blockElement: blockElement.cloneNode(true),
+                index: blockIndex, // Store the original index
+            });
+            // Clear redo history for delete mode
+            deleteRedoHistory = [];
+            updateHistoryButtonsState(); // Update buttons
+
+            blockElement.remove(); // Remove the block from the DOM
+            updateLocalLayoutFromDOM(); // Update the layout after removing the block
+            deletionsDuringDeleteMode = true; // Mark that deletions have occurred
+        }
     };
 
     /**
@@ -1146,39 +1216,6 @@ document.addEventListener("DOMContentLoaded", () => {
         saveLayoutState();
 
         console.log("[DEBUG] Block added to the layout and DOM updated.");
-    };
-
-    // **Delete a Block When in Delete Mode**
-    const deleteBlock = (event) => {
-        if (!deleteMode) return;
-
-        const blockElement = event.target.closest(".grid-item");
-        if (blockElement) {
-            console.log(`[DEBUG] Block clicked for deletion: ${blockElement.dataset.blockId}`);
-
-            // **Check if the block to be deleted is the currently unlocked block**
-            if (currentlyUnlockedBlock === blockElement) {
-                currentlyUnlockedBlock = null;
-                console.log("[DEBUG] Deleted block was unlocked. Resetting currentlyUnlockedBlock.");
-            }
-
-            // **Store the original index of the block before deletion**
-            const blocks = Array.from(gridContainer.children).filter(child => !child.classList.contains('no-saved-draft'));
-            const blockIndex = blocks.indexOf(blockElement);
-
-            // Save the block state before deletion to delete history for undo purposes
-            deleteHistory.push({
-                blockElement: blockElement.cloneNode(true),
-                index: blockIndex, // Store the original index
-            });
-            // Clear redo history for delete mode
-            deleteRedoHistory = [];
-            updateHistoryButtonsState(); // Update buttons
-
-            blockElement.remove(); // Remove the block from the DOM
-            updateLocalLayoutFromDOM(); // Update the layout after removing the block
-            deletionsDuringDeleteMode = true; // Mark that deletions have occurred
-        }
     };
 
     /**

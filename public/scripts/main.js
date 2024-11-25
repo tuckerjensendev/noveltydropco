@@ -265,6 +265,108 @@ function setupFormSubmissionSpinner() {
   });
 }
 
+function logTimeoutToServer() {
+  fetch('/admin/log-session-timeout', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      userId: document.body.getAttribute('data-user-id'),
+      role: document.body.getAttribute('data-role'),
+      ip: document.body.getAttribute('data-ip'),
+    }),
+  }).catch((error) => console.error('Error logging session timeout:', error));
+}
+
+// Client-side session timeout tracker
+function setupInactivityTracker() {
+  const inactivityTimeout = 60 * 1000; // 60 seconds total for testing
+  const warningTime = 30 * 1000; // Show warning at 30 seconds before logout
+  let timeoutHandle, warningHandle;
+  let isPopupVisible = false; // Track popup visibility
+
+  // Create the warning popup element
+  const warningPopup = document.createElement('div');
+  warningPopup.id = 'warningPopup'; // Ensure the CSS applies based on this ID
+  document.body.appendChild(warningPopup);
+
+  // Reset the inactivity timer
+  function resetInactivityTimer() {
+    if (isPopupVisible) return; // Do not reset timer if popup is visible
+    clearTimeout(timeoutHandle);
+    clearTimeout(warningHandle);
+    hideWarningPopup();
+
+    // Start the warning timer
+    warningHandle = setTimeout(() => {
+      showWarningPopup(30); // Show popup with a 30-second countdown
+    }, inactivityTimeout - warningTime);
+
+    // Start the inactivity timeout
+    timeoutHandle = setTimeout(() => {
+      logTimeoutToServer(); // Log timeout to the server
+      const logoutForm = document.getElementById('logoutForm');
+      if (logoutForm) {
+        showSpinner();
+        logoutForm.submit();
+      } else {
+        console.error('Logout form not found.');
+      }
+    }, inactivityTimeout);
+  }
+
+  // Show the warning popup
+  function showWarningPopup(secondsRemaining) {
+    isPopupVisible = true; // Mark popup as visible
+    warningPopup.style.display = 'block'; // Make the popup visible
+    warningPopup.innerHTML = `
+      <p><strong>You have been inactive for ${inactivityTimeout / 1000 - warningTime / 1000} seconds.</strong></p>
+      <p>You will be logged out in <span id="countdown">${secondsRemaining}</span> seconds.</p>
+      <p id="click-anywhere-warning">Click anywhere to dismiss</p>
+    `;
+
+    // Start the countdown
+    const countdownElement = document.getElementById('countdown');
+    const countdownInterval = setInterval(() => {
+      secondsRemaining--;
+      countdownElement.textContent = secondsRemaining;
+      if (secondsRemaining <= 0) {
+        clearInterval(countdownInterval);
+        hideWarningPopup();
+      }
+    }, 1000);
+
+    // Add click listeners to close the popup
+    document.addEventListener('click', closePopupOnClick);
+  }
+
+  // Close popup on click
+  function closePopupOnClick(event) {
+    if (isPopupVisible) {
+      // Check if the click is inside or outside the popup
+      if (event.target.id === 'warningPopup' || !warningPopup.contains(event.target)) {
+        isPopupVisible = false; // Mark popup as not visible
+        hideWarningPopup();
+        document.removeEventListener('click', closePopupOnClick); // Remove the click listener
+      }
+    }
+  }
+
+  // Hide the warning popup
+  function hideWarningPopup() {
+    warningPopup.style.display = 'none';
+  }
+
+  // Attach activity listeners to reset the inactivity timer
+  ['click', 'keypress', 'scroll', 'touchstart'].forEach((event) => {
+    window.addEventListener(event, resetInactivityTimer);
+  });
+
+  // Start the inactivity timer
+  resetInactivityTimer();
+}
+
 // Disable logout button upon form submission to prevent multiple submissions
 function setupLogoutButtonDisable() {
   const logoutForm = document.getElementById('logoutForm');
@@ -318,7 +420,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setupFlashMessageTimeout();
   setupSaveButtonToggle();
   setupActiveLinkHighlighting();
-  setupLogoutButtonDisable(); // Added this line
+  setupLogoutButtonDisable();
+  setupInactivityTracker();
 
   const passwordField = document.getElementById("register_password");
   const confirmPasswordField = document.getElementById("confirm_password");

@@ -107,6 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Track if grid overlay is active on the currently unlocked block
     let gridOverlayActive = false;
+    let gridOverlaySizeIndex = 0; // 0: small, 1: medium, 2: large
 
     /**
      * *******************************
@@ -117,6 +118,10 @@ document.addEventListener("DOMContentLoaded", () => {
     /**
      * **Toggle Grid Overlay Button**
      */
+
+    // List of grid size classes
+    const gridSizeClasses = ['grid-overlay-small', 'grid-overlay-medium', 'grid-overlay-large'];
+
     toggleGridOverlayButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -130,28 +135,39 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
     
-            // Synchronize gridOverlayActive with the DOM state of the unlocked block
-            const isOverlayActive = unlockedBlock.classList.contains('grid-overlay-active');
-            console.log(`[DEBUG] Current grid overlay DOM state: ${isOverlayActive}`);
+            // Sync gridOverlayActive state with the DOM
+            gridOverlayActive = unlockedBlock.classList.contains('grid-overlay-active');
     
-            if (isOverlayActive) {
-                // Remove grid overlay
-                unlockedBlock.classList.remove('grid-overlay-active');
-                gridOverlayActive = false;
-                console.log("[DEBUG] Grid overlay removed from the unlocked block.");
-            } else {
-                // Add grid overlay
-                unlockedBlock.classList.add('grid-overlay-active');
+            if (!gridOverlayActive) {
+                // Activate grid overlay and start with the first custom size
+                gridOverlaySizeIndex = 0; // Reset to the first grid size
+                unlockedBlock.classList.add('grid-overlay-active', gridSizeClasses[gridOverlaySizeIndex]);
                 gridOverlayActive = true;
-                console.log("[DEBUG] Grid overlay added to the unlocked block.");
+                console.log(`[DEBUG] Grid overlay added to the unlocked block with size: ${gridSizeClasses[gridOverlaySizeIndex]}`);
+            } else {
+                // Cycle grid size or turn off if at the last size
+                unlockedBlock.classList.remove(...gridSizeClasses);
+    
+                gridOverlaySizeIndex = (gridOverlaySizeIndex + 1) % (gridSizeClasses.length + 1); // +1 to include "off" state
+    
+                if (gridOverlaySizeIndex === gridSizeClasses.length) {
+                    // Turn off the grid overlay
+                    unlockedBlock.classList.remove('grid-overlay-active');
+                    gridOverlayActive = false;
+                    console.log("[DEBUG] Grid overlay turned off.");
+                } else {
+                    // Apply the next grid size
+                    unlockedBlock.classList.add(gridSizeClasses[gridOverlaySizeIndex]);
+                    console.log(`[DEBUG] Grid overlay size updated to: ${gridSizeClasses[gridOverlaySizeIndex]}`);
+                }
             }
         } catch (error) {
             console.error("[DEBUG] Error in Toggle Grid Overlay button:", error);
         } finally {
             mutex.unlock();
         }
-    });    
-
+    });
+    
     /**
      * **Add Image Button**
      */

@@ -145,6 +145,35 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Session Timeout Middleware
+const STAFF_ROLES = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes staff SESSION TIMEOUT
+
+app.use((req, res, next) => {
+  if (req.session && STAFF_ROLES.includes(req.user?.role)) {
+    const currentTime = Date.now();
+
+    // Initialize the lastActivity timestamp if it doesn't exist
+    if (!req.session.lastActivity) {
+      req.session.lastActivity = currentTime;
+    }
+
+    // Destroy the session if the timeout is exceeded
+    if (currentTime - req.session.lastActivity > SESSION_TIMEOUT) {
+      req.session.destroy((err) => {
+        if (err) console.error('Error destroying session:', err);
+        return res.redirect('/'); // Redirect to login or homepage
+      });
+    } else {
+      // Update the lastActivity timestamp on each request
+      req.session.lastActivity = currentTime;
+    }
+  }
+  next();
+});
+
+
+
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -247,7 +276,6 @@ app.get('/api/blocks', async (req, res) => {
       content: block.content || '',
       style: block.style || '',
       page_id: block.page_id
-      // Removed: x, y, width, height
     }));
 
     res.status(200).json(sanitizedBlocks);
