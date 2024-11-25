@@ -66,37 +66,42 @@
     color: #fff;
 }
 
-#warningPopup {
+.timeoutpopup {
     position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     padding: 30px;
-    width: 400px;
-    height: 250px;
+    width: 550px;
+    height: 400px;
     font-size: 1.2rem;
     background-color: #fff;
     border: 2px solid #333;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
     z-index: 1000;
-    text-align: center;
-    display: none;
     color: #000;
-  }
-  
-  #warningPopup p {
-    margin: 40px 0; /* Add spacing between paragraphs */
-  }
+    text-align: center;
+    display: flex;
+    flex-direction: column; /* Stack content vertically */
+    justify-content: center; /* Center content as a group vertically */
+    align-items: center; /* Center content horizontally */
+}
 
-  #warningPopup span {
-    font-weight: bold;
-  }
+#warningPopup p,
+.timeoutpopup p {
+    padding: 25px 0;
+}
 
-  #click-anywhere-warning {
+#main-timeout-warning-line,
+#timed-out-logout {
+    font-size: 24px;
+}
+
+#click-anywhere-warning {
     font-size: 14px;
-  }
-  
+}
+ 
 
 /* 4. Conditional Scrollbar Styles */
 /* Hide main scrollbar and enable internal scrolling on pages with 'no-main-scroll' class */

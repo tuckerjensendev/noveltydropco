@@ -104,7 +104,7 @@ app.use(passport.session());
 
 // Session Timeout Middleware
 const STAFF_ROLES = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
+const SESSION_TIMEOUT = 15 * 60 * 1000; // 15 minutes in milliseconds
 
 app.use((req, res, next) => {
   if (req.session && STAFF_ROLES.includes(req.user?.role)) {

@@ -290,13 +290,13 @@ function logTimeoutToServer() {
     },
     body: JSON.stringify(data),
   })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('Network response was not ok');
-    }
-    console.log('Session timeout logged successfully.');
-  })
-  .catch((error) => console.error('Error logging session timeout:', error));
+    .then(response => {
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      console.log('Session timeout logged successfully.');
+    })
+    .catch(error => console.error('Error logging session timeout:', error));
 }
 
 // Client-side session timeout tracker
@@ -305,22 +305,13 @@ let isPopupVisible = false; // Track popup visibility
 let countdownInterval; // To clear countdown interval when needed
 
 function setupInactivityTracker() {
-  const inactivityTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const inactivityTimeout = 15 * 60 * 1000; // 15 minutes in milliseconds
   const warningTime = 60 * 1000; // Show warning 60 seconds (1 minute) before logout
 
   // Create the warning popup element
   const warningPopup = document.createElement('div');
-  warningPopup.id = 'warningPopup'; // Ensure the CSS applies based on this ID
-  warningPopup.style.position = 'fixed';
-  warningPopup.style.top = '50%';
-  warningPopup.style.left = '50%';
-  warningPopup.style.transform = 'translate(-50%, -50%)';
-  warningPopup.style.backgroundColor = '#fff';
-  warningPopup.style.border = '1px solid #ccc';
-  warningPopup.style.padding = '20px';
-  warningPopup.style.zIndex = '1000';
-  warningPopup.style.display = 'none';
-  warningPopup.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
+  warningPopup.id = 'warningPopup';
+  warningPopup.classList.add('timeoutpopup'); // Use consistent CSS styling
   document.body.appendChild(warningPopup);
 
   // Reset the inactivity timer
@@ -351,10 +342,10 @@ function setupInactivityTracker() {
   // Show the warning popup
   function showWarningPopup(secondsRemaining) {
     isPopupVisible = true; // Mark popup as visible
-    warningPopup.style.display = 'block'; // Make the popup visible
+    warningPopup.style.display = 'flex'; // Flexbox container for alignment
     warningPopup.innerHTML = `
-      <p><strong>You have been inactive for 29 minutes.</strong></p>
-      <p>You will be logged out in <span id="countdown">${secondsRemaining}</span> seconds.</p>
+      <p id="main-timeout-warning-line"><strong>You have been inactive for 14 minutes.</strong></p>
+      <p>You will be logged out in <strong><span id="countdown">${secondsRemaining}</span></strong> seconds.</p>
       <p id="click-anywhere-warning">Click anywhere to dismiss</p>
     `;
 
@@ -388,14 +379,11 @@ function setupInactivityTracker() {
 
   // Hide the warning popup
   function hideWarningPopup() {
-    const warningPopup = document.getElementById('warningPopup');
-    if (warningPopup) {
-      warningPopup.style.display = 'none';
-    }
+    warningPopup.style.display = 'none';
   }
 
   // Attach activity listeners to reset the inactivity timer
-  ['click', 'keypress', 'scroll', 'touchstart'].forEach((event) => {
+  ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
     window.addEventListener(event, resetInactivityTimer);
   });
 
@@ -405,7 +393,7 @@ function setupInactivityTracker() {
 
 // Function to remove inactivity tracker (e.g., on logout)
 function removeInactivityTracker() {
-  ['click', 'keypress', 'scroll', 'touchstart'].forEach((event) => {
+  ['click', 'keypress', 'scroll', 'touchstart'].forEach(event => {
     window.removeEventListener(event, resetInactivityTimer);
   });
   clearTimeout(timeoutHandle);
@@ -413,6 +401,35 @@ function removeInactivityTracker() {
   clearInterval(countdownInterval);
   hideWarningPopup();
 }
+
+// Show "Logged Out Due to Inactivity" popup if session timeout occurred
+document.addEventListener('DOMContentLoaded', () => {
+  if (sessionStorage.getItem('sessionTimeoutLogged')) {
+    // Show the second popup
+    const logoutPopup = document.createElement('div');
+    logoutPopup.id = 'logoutPopup';
+    logoutPopup.classList.add('timeoutpopup');
+    logoutPopup.innerHTML = `
+      <p id="timed-out-logout"><strong>You have been logged out due to inactivity.</strong></p>
+      <p>Please log back in to continue.</p>
+    `;
+
+    document.body.appendChild(logoutPopup);
+
+    // Remove the flag to prevent repeated popups
+    sessionStorage.removeItem('sessionTimeoutLogged');
+
+    // Add event listener to dismiss the popup on click
+    document.addEventListener('click', function dismissPopup(event) {
+      if (logoutPopup.contains(event.target)) {
+        // Prevent dismissing if the click is inside the popup
+        return;
+      }
+      document.body.removeChild(logoutPopup);
+      document.removeEventListener('click', dismissPopup); // Remove the listener after the popup is dismissed
+    });
+  }
+});
 
 // Disable logout button upon form submission to prevent multiple submissions
 function setupLogoutButtonDisable() {
