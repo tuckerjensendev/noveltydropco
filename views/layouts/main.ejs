@@ -9,10 +9,20 @@
   <!-- Include Header Partial for CSS and JS -->
   <%- include('../partials/header') %>
 
+  <!-- Socket.IO Client Library -->
+  <script src="/socket.io/socket.io.js"></script>
+  
+  <!-- Custom Socket Handler Script -->
+  <script src="/scripts/socket-handler.js" defer></script>
+
   <!-- Page-Specific Head Content -->
   <%- headExtra || '' %>
 </head>
-<body>
+<body 
+  data-user-id="<%= user ? user.id : '' %>" 
+  data-role="<%= user ? user.role : '' %>"
+  data-ip="<%= user ? user.ip : '' %>"
+>
   <!-- Main Content -->
   <%- body %>
   
@@ -23,12 +33,17 @@
     </div>
   <% } %>
   
+  <!-- Logout Form -->
+  <form id="logoutForm" action="/logout" method="POST" style="display: none;">
+    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+  </form>
+
   <!-- Loading Spinner -->
   <div class="loading-spinner" id="loadingSpinner">
     <div class="spinner"></div>
   </div>
-
-  <!-- Page-Specific Body Content (e.g., scripts) -->
+  
+  <!-- Additional Body Content -->
   <%- bodyExtra || '' %>
 </body>
 </html>

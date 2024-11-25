@@ -102,6 +102,8 @@ async function loadPermissions(req, res) {
 // Middleware for session timeout tracking
 // Note: Since the front-end handles inactivity, we don't need server-side inactivity tracking here.
 // Instead, we'll provide an endpoint to log session timeouts sent from the client.
+
+// **Single POST route for logging session timeout**
 router.post('/log-session-timeout', (req, res) => {
   const now = new Date();
   const formattedDate = now.toLocaleString('en-US', { hour12: false });
@@ -333,23 +335,5 @@ router.post('/create-staff', ensurePermission('can_create_user'), csrfProtection
   }
 });
 
-// POST route to handle session timeout logging
-router.post('/log-session-timeout', (req, res) => {
-  const now = new Date();
-  const formattedDate = now.toLocaleString('en-US', { hour12: false });
-  const isoTimestamp = now.toISOString();
-  const { userId, role, ip } = req.body;
-
-  const logMessage = `[${formattedDate}] [${isoTimestamp}] Session timeout for role: ${role || 'unknown'}, ID: ${userId || 'unknown'}, IP: ${ip || 'unknown'}\n`;
-
-  fs.appendFile(logFilePath, logMessage, (err) => {
-    if (err) {
-      console.error('Error writing to log file:', err);
-      return res.status(500).json({ error: 'Failed to log session timeout.' });
-    }
-
-    res.status(200).json({ message: 'Session timeout logged successfully.' });
-  });
-});
-
+// Export the router
 module.exports = router;

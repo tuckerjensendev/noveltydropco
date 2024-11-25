@@ -99,7 +99,7 @@ function validatePassword() {
     const numberReq = document.querySelector('[data-requirement="number"]');
     const matchReq = document.querySelector('[data-requirement="match"]');
 
-    const lengthMet = password.length >= 6;
+    const lengthMet = password.length >= 8;
     const uppercaseMet = /[A-Z]/.test(password);
     const numberMet = /\d/.test(password);
     const matchMet = password === confirmPassword && password !== "";
@@ -210,6 +210,9 @@ function closeDropdown() {
   sessionStorage.removeItem("registerFirstName");
   sessionStorage.removeItem("registerLastName");
   sessionStorage.removeItem("registerEmail");
+
+  // Additionally, remove inactivity tracker if implemented
+  removeInactivityTracker();
 }
 
 // For client login & registration - save input values as user types to ensure persistence across sessions
@@ -276,10 +279,10 @@ function logTimeoutToServer() {
   const userId = document.body.getAttribute('data-user-id');
   const role = document.body.getAttribute('data-role');
   const ip = document.body.getAttribute('data-ip');
-  
+
   const data = { userId, role, ip };
   console.log('Logging session timeout with data:', data); // Debugging Line
-  
+
   fetch('/admin/log-session-timeout', {
     method: 'POST',
     headers: {
@@ -297,15 +300,27 @@ function logTimeoutToServer() {
 }
 
 // Client-side session timeout tracker
+let timeoutHandle, warningHandle; // Moved to global scope for removal
+let isPopupVisible = false; // Track popup visibility
+let countdownInterval; // To clear countdown interval when needed
+
 function setupInactivityTracker() {
-  const inactivityTimeout = 60 * 1000; // 60 seconds total for testing
-  const warningTime = 30 * 1000; // Show warning at 30 seconds before logout
-  let timeoutHandle, warningHandle;
-  let isPopupVisible = false; // Track popup visibility
+  const inactivityTimeout = 30 * 60 * 1000; // 30 minutes in milliseconds
+  const warningTime = 60 * 1000; // Show warning 60 seconds (1 minute) before logout
 
   // Create the warning popup element
   const warningPopup = document.createElement('div');
   warningPopup.id = 'warningPopup'; // Ensure the CSS applies based on this ID
+  warningPopup.style.position = 'fixed';
+  warningPopup.style.top = '50%';
+  warningPopup.style.left = '50%';
+  warningPopup.style.transform = 'translate(-50%, -50%)';
+  warningPopup.style.backgroundColor = '#fff';
+  warningPopup.style.border = '1px solid #ccc';
+  warningPopup.style.padding = '20px';
+  warningPopup.style.zIndex = '1000';
+  warningPopup.style.display = 'none';
+  warningPopup.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)';
   document.body.appendChild(warningPopup);
 
   // Reset the inactivity timer
@@ -317,7 +332,7 @@ function setupInactivityTracker() {
 
     // Start the warning timer
     warningHandle = setTimeout(() => {
-      showWarningPopup(30); // Show popup with a 30-second countdown
+      showWarningPopup(60); // Show popup with a 60-second countdown
     }, inactivityTimeout - warningTime);
 
     // Start the inactivity timeout
@@ -338,14 +353,14 @@ function setupInactivityTracker() {
     isPopupVisible = true; // Mark popup as visible
     warningPopup.style.display = 'block'; // Make the popup visible
     warningPopup.innerHTML = `
-      <p><strong>You have been inactive for ${inactivityTimeout / 1000 - warningTime / 1000} seconds.</strong></p>
+      <p><strong>You have been inactive for 29 minutes.</strong></p>
       <p>You will be logged out in <span id="countdown">${secondsRemaining}</span> seconds.</p>
       <p id="click-anywhere-warning">Click anywhere to dismiss</p>
     `;
 
     // Start the countdown
     const countdownElement = document.getElementById('countdown');
-    const countdownInterval = setInterval(() => {
+    countdownInterval = setInterval(() => {
       secondsRemaining--;
       countdownElement.textContent = secondsRemaining;
       if (secondsRemaining <= 0) {
@@ -365,6 +380,7 @@ function setupInactivityTracker() {
       if (event.target.id === 'warningPopup' || !warningPopup.contains(event.target)) {
         isPopupVisible = false; // Mark popup as not visible
         hideWarningPopup();
+        clearInterval(countdownInterval);
         document.removeEventListener('click', closePopupOnClick); // Remove the click listener
       }
     }
@@ -372,7 +388,10 @@ function setupInactivityTracker() {
 
   // Hide the warning popup
   function hideWarningPopup() {
-    warningPopup.style.display = 'none';
+    const warningPopup = document.getElementById('warningPopup');
+    if (warningPopup) {
+      warningPopup.style.display = 'none';
+    }
   }
 
   // Attach activity listeners to reset the inactivity timer
@@ -384,10 +403,21 @@ function setupInactivityTracker() {
   resetInactivityTimer();
 }
 
+// Function to remove inactivity tracker (e.g., on logout)
+function removeInactivityTracker() {
+  ['click', 'keypress', 'scroll', 'touchstart'].forEach((event) => {
+    window.removeEventListener(event, resetInactivityTimer);
+  });
+  clearTimeout(timeoutHandle);
+  clearTimeout(warningHandle);
+  clearInterval(countdownInterval);
+  hideWarningPopup();
+}
+
 // Disable logout button upon form submission to prevent multiple submissions
 function setupLogoutButtonDisable() {
   const logoutForm = document.getElementById('logoutForm');
-  const logoutButton = document.getElementById('logoutButton');
+  const logoutButton = document.getElementById('logoutButton'); // This button has been removed from main.ejs
 
   if (logoutForm && logoutButton) {
     logoutForm.addEventListener('submit', function (e) {
@@ -438,7 +468,12 @@ document.addEventListener('DOMContentLoaded', () => {
   setupSaveButtonToggle();
   setupActiveLinkHighlighting();
   setupLogoutButtonDisable();
-  setupInactivityTracker();
+
+  // Conditionally initialize inactivity tracker only if user is logged in
+  const userId = document.body.getAttribute('data-user-id');
+  if (userId) {
+    setupInactivityTracker();
+  }
 
   const passwordField = document.getElementById("register_password");
   const confirmPasswordField = document.getElementById("confirm_password");

@@ -12,30 +12,27 @@ const helmet = require('helmet');
 const csurf = require('csurf');
 const cookieParser = require('cookie-parser');
 const path = require('path');
-const expressLayouts = require('express-ejs-layouts'); // Import express-ejs-layouts
+const expressLayouts = require('express-ejs-layouts');
 const { enforceRoleAccess, attachPermissions } = require('./middleware/authMiddleware');
 const { setCache, getCache } = require('./cache');
 const flash = require('connect-flash');
 const contentRoutes = require('./routes/contentRoutes');
-const db = require('./db'); // Ensure this points to your db.js
-
-// Import connect-redis version 6.1.3 correctly
+const db = require('./db');
 const RedisStore = require('connect-redis')(session);
 const redis = require('redis');
+const socketIo = require('socket.io'); // Import Socket.IO
 
 // Create Redis client
 const redisClient = redis.createClient({
-  legacyMode: true, // Required for compatibility with connect-redis v6
+  legacyMode: true,
 });
 
-// Connect to Redis
 redisClient.connect().catch(console.error);
 
 // Logs directory and CSP log file
 const logsDir = path.join(__dirname, 'logs');
 const cspLogFile = path.join(logsDir, 'csp-violations.log');
 
-// Ensure logs directory exists
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir);
 }
@@ -61,18 +58,13 @@ const httpsOptions = {
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Serve static files from 'public' (development) or 'dist' (production)
+// Serve static files
 app.use(express.static(isProduction ? 'dist' : 'public'));
 
 // Additional static routes for development
 if (!isProduction) {
-  // Serve custom scripts
   app.use('/scripts', express.static(path.join(__dirname, 'public', 'scripts')));
-
-  // Serve third-party scripts like Gridstack
   app.use('/scripts/gridstack', express.static(path.join(__dirname, 'node_modules', 'gridstack', 'dist')));
-
-  // Serve styles
   app.use('/styles', express.static(path.join(__dirname, 'public', 'styles')));
 }
 
@@ -86,10 +78,8 @@ app.use((req, res, next) => {
 
 // Set EJS as the view engine
 app.set('view engine', 'ejs');
-
-// Configure express-ejs-layouts
 app.use(expressLayouts);
-app.set('layout', 'layouts/main'); // Set main.ejs as the default layout
+app.set('layout', 'layouts/main');
 
 // Initialize connect-flash
 app.use(flash());
@@ -97,13 +87,13 @@ app.use(flash());
 // Configure Session to Use Redis Store
 app.use(
   session({
-    store: new RedisStore({ client: redisClient }), // Use RedisStore
-    secret: process.env.SESSION_SECRET, // Ensure you have SESSION_SECRET in your .env file
+    store: new RedisStore({ client: redisClient }),
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction, // true if in production
+      secure: isProduction,
       sameSite: 'strict',
     },
   })
@@ -114,30 +104,37 @@ app.use(passport.session());
 
 // Session Timeout Middleware
 const STAFF_ROLES = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes staff SESSION TIMEOUT
+const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 app.use((req, res, next) => {
   if (req.session && STAFF_ROLES.includes(req.user?.role)) {
     const currentTime = Date.now();
 
-    // Initialize the lastActivity timestamp if it doesn't exist
     if (!req.session.lastActivity) {
       req.session.lastActivity = currentTime;
+      console.log(`[Session Middleware] Initializing lastActivity for user ID: ${req.user.id}`);
     }
 
-    // Destroy the session if the timeout is exceeded
-    if (currentTime - req.session.lastActivity > SESSION_TIMEOUT) {
+    const elapsedTime = currentTime - req.session.lastActivity;
+    console.log(`[Session Middleware] User ID: ${req.user.id}, Elapsed Time: ${elapsedTime}ms`);
+
+    if (elapsedTime > SESSION_TIMEOUT) {
+      console.log(`[Session Middleware] Session timeout exceeded for user ID: ${req.user.id}. Destroying session.`);
       req.session.destroy((err) => {
-        if (err) console.error('Error destroying session:', err);
-        return res.redirect('/'); // Redirect to login or homepage
+        if (err) {
+          console.error('Error destroying session:', err);
+          return next(err);
+        }
+        return res.redirect('/'); // Redirect to home after session timeout
       });
     } else {
-      // Update the lastActivity timestamp on each request
       req.session.lastActivity = currentTime;
+      console.log(`[Session Middleware] Session active for user ID: ${req.user.id}. Updating lastActivity.`);
     }
   }
   next();
 });
+
 
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
@@ -169,11 +166,9 @@ app.use((req, res, next) => {
   res.locals.flashMessage = req.flash('flashMessage');
   res.locals.flashType = req.flash('flashType');
 
-  // Generate nonces for CSP
   res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
   res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
 
-  // Initialize headExtra and bodyExtra as empty strings
   res.locals.headExtra = '';
   res.locals.bodyExtra = '';
 
@@ -194,14 +189,12 @@ app.get('/', async (req, res) => {
       });
     });
 
-    // Remove position-related properties since CSS handles layout
     blocks = contentBlocks.map(block => ({
       block_id: block.block_id,
       type: block.type,
       content: block.content || '',
       style: block.style || '',
       page_id: block.page_id
-      // Removed: x, y, width, height
     }));
   } catch (error) {
     console.error('Error fetching content blocks:', error);
@@ -210,20 +203,20 @@ app.get('/', async (req, res) => {
   res.render('home', { 
     products: cachedData || [], 
     blocks,
-    title: 'Home Page - Novelty Drop Co.' // Added title for the layout
+    title: 'Home Page - Novelty Drop Co.'
   });
 });
 
 // Admin Routes
 app.get('/admin/superadmin-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/superadmin-dashboard', { 
-    title: 'Super Admin Dashboard' // Added title for the layout
+    title: 'Super Admin Dashboard'
   });
 });
 
 app.get('/admin/staff-dashboard', enforceRoleAccess, (req, res) => {
   res.render('admin/staff-dashboard', { 
-    title: 'Staff Dashboard' // Added title for the layout
+    title: 'Staff Dashboard'
   });
 });
 
@@ -252,7 +245,6 @@ app.get('/api/blocks', async (req, res) => {
       });
     });
 
-    // Remove position-related properties
     const sanitizedBlocks = blocks.map(block => ({
       block_id: block.block_id,
       type: block.type,
@@ -272,20 +264,15 @@ app.get('/api/blocks', async (req, res) => {
 app.post('/api/blocks', async (req, res) => {
   const { type, content } = req.body;
 
-  // Validate the block type
-  const validBlockTypes = ['text-block', 'image-block', 'block-spacer']; // Add other valid types if necessary
+  const validBlockTypes = ['text-block', 'image-block', 'block-spacer'];
   if (!type || !validBlockTypes.includes(type)) {
     return res.status(400).json({ error: 'Invalid or missing block type.' });
   }
 
-  // Generate a unique block ID
   const blockId = crypto.randomUUID();
+  const defaultContent = content || '';
+  const pageId = 'home';
 
-  // Use the provided content or default to an empty string
-  const defaultContent = content || ''; // Default to empty content if not provided
-  const pageId = 'home'; // Assign a default page ID or determine dynamically if needed
-
-  // Insert the new block into the database
   try {
     await new Promise((resolve, reject) => {
       const stmt = db.prepare(`INSERT INTO content_blocks 
@@ -301,8 +288,8 @@ app.post('/api/blocks', async (req, res) => {
     const newBlock = {
       block_id: blockId,
       type,
-      content: defaultContent, // Send back the default content if no content was provided
-      style: '', // Initialize with empty style or allow customization later
+      content: defaultContent,
+      style: '',
       page_id: pageId
     };
 
@@ -321,7 +308,7 @@ app.use('/api/*', (req, res) => {
 // Handle all other 404 routes
 app.use((req, res) => {
   res.status(404).render('404', { 
-    title: '404 - Page Not Found' // Added title for the layout
+    title: '404 - Page Not Found'
   });
 });
 
@@ -332,16 +319,64 @@ app.use((err, req, res, next) => {
     req.flash('flashType', 'error');
     return res.redirect('back');
   }
-  // For other types of errors, render the 500 error page
   console.error("[DEBUG] Unhandled error:", err);
   res.status(500).render('500', { 
-    title: '500 - Server Error', // Added title for the layout
+    title: '500 - Server Error',
     error: isProduction ? null : err, 
     isProduction: isProduction 
   });
 });
 
-// Start the HTTPS server
-https.createServer(httpsOptions, app).listen(PORT, '0.0.0.0', () => {
+// Initialize Socket.IO
+const server = https.createServer(httpsOptions, app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
+
+// Handle Socket.IO connections
+io.on('connection', (socket) => {
+  console.log(`Client connected: ${socket.id}`);
+
+  socket.on('disconnect', (reason) => {
+    console.log(`Client disconnected: ${socket.id} | Reason: ${reason}`);
+  });
+});
+
+// Graceful Shutdown Handler
+const gracefulShutdown = () => {
+  console.log('Initiating graceful shutdown...');
+
+  // Notify all connected clients about the shutdown
+  io.emit('serverShutdown', {
+    message: 'Server is shutting down. You will be logged out.',
+  });
+
+  // Close Socket.IO connections
+  io.close(() => {
+    console.log('Socket.IO connections closed.');
+  });
+
+  // Close the HTTPS server
+  server.close(() => {
+    console.log('HTTPS server closed.');
+    process.exit(0);
+  });
+
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Forced shutdown.');
+    process.exit(1);
+  }, 10000);
+};
+
+// Listen for termination signals
+process.on('SIGTERM', gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+
+// Start the server
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
 });
