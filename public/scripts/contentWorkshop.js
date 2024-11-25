@@ -9,7 +9,6 @@ document.addEventListener("DOMContentLoaded", () => {
      * *******************************
      */
     const gridPreviewContainer = document.getElementById("contentPreview");
-    const gridDisplayContainer = document.getElementById("contentDisplay");
     const blockTypeControl = document.getElementById("blockTypeControl");
     const addBlockButton = document.getElementById("addBlockButton");
     const saveDraftButton = document.getElementById("saveDraftButton");
@@ -67,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let isUndoing = false;
     let isRedoing = false;
     let isTogglingDeleteMode = false;
-    let isTogglingView = false;
     let isSortLocked = false;
     let toolbarTab;
     let currentlyUnlockedBlock = null; // Track the currently unlocked block
@@ -159,6 +157,17 @@ document.addEventListener("DOMContentLoaded", () => {
             toolbar.classList.remove('scrolled');
         }
     });
+
+    const updateSecondRowButtonStates = () => {
+        const secondRowButtons = document.querySelectorAll('.toolbar-row.second-row button');
+        const isAnyBlockUnlocked = currentlyUnlockedBlock !== null;
+    
+        secondRowButtons.forEach((button) => {
+            button.disabled = !isAnyBlockUnlocked;
+        });
+    
+        console.log(`[DEBUG] Second row buttons ${isAnyBlockUnlocked ? 'enabled' : 'disabled'}.`);
+    };
 
     // **Toolbar Tab Functionality**
     const createToolbarTab = () => {
@@ -322,6 +331,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 sortableInstance = null;
                 console.log("[DEBUG] Sortable.js instance destroyed due to unlocked block.");
             }
+    
+            // Open the secondary toolbar
+            if (secondToolbarRow) {
+                secondToolbarRow.style.display = "flex"; // Show the secondary toolbar
+                if (toolbarTab) {
+                    toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update the toolbar tab arrow
+                    toolbarTab.classList.add('expanded'); // Add expanded styling
+                }
+                console.log("[DEBUG] Secondary toolbar opened due to block unlocking.");
+            }
         } else {
             // Lock the block
             lockOverlay.dataset.locked = "true";
@@ -352,6 +371,16 @@ document.addEventListener("DOMContentLoaded", () => {
                 initializeSortable();
                 console.log("[DEBUG] Sortable.js re-initialized after locking block.");
             }
+    
+            // Close the secondary toolbar if no blocks are unlocked
+            if (!document.querySelector('[data-unlocked="true"]')) {
+                secondToolbarRow.style.display = "none"; // Hide the secondary toolbar
+                if (toolbarTab) {
+                    toolbarTab.innerHTML = '<span>&#x25B2;</span>'; // Update the toolbar tab arrow
+                    toolbarTab.classList.remove('expanded'); // Remove expanded styling
+                }
+                console.log("[DEBUG] Secondary toolbar closed because all blocks are locked.");
+            }
         }
     
         // Dispatch Custom Event for Lock State Change
@@ -363,9 +392,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         window.dispatchEvent(lockStateChangedEvent);
     
-        // Update secondary button states
-        updateSecondaryButtonStates();
+        updateButtonStates();
     };
+    
 
     // **Ensure Only One Block is Unlocked at a Time**
     const enforceSingleUnlock = (blockElement) => {
@@ -1773,9 +1802,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 gridOverlayActive = false; 
             }
         }
-    
-        // Update both top-row and second-row button states
-        updateTopRowButtonStates();
         updateSecondRowButtonStates();
     });
     

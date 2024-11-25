@@ -35,7 +35,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const animationEffectsButton = document.getElementById("animationEffectsButton");
     const alignmentToolsButton = document.getElementById("alignmentToolsButton");
     const fontStylingButton = document.getElementById("fontStylingButton");
-    const clearContentButtonSecondRow = document.getElementById("clearContentButton"); // Assuming same ID as in first row
 
     // **List of Buttons for Iteration**
     const secondRowButtons = [
@@ -56,8 +55,24 @@ document.addEventListener("DOMContentLoaded", () => {
         animationEffectsButton,
         alignmentToolsButton,
         fontStylingButton,
-        clearContentButtonSecondRow
     ];
+
+    // Disable all second row buttons initially
+    secondRowButtons.forEach((button) => {
+        if (button) button.disabled = true;
+    });
+    console.log("[DEBUG] Second toolbar buttons disabled on page load.");
+
+    const topRowButtons = {
+        liveViewButton: document.getElementById('viewToggleButton'),
+        copyLiveButton: document.getElementById('copyLiveButton'),
+        clearContentButton: document.getElementById('clearContentButton'),
+        blockTypeDropdown: document.getElementById('blockTypeControl'),
+        addBlockButton: document.getElementById('addBlockButton'),
+        deleteModeButton: document.getElementById('deleteModeButton'),
+        pushLiveButton : document.getElementById("pushLiveButton")
+    };
+    
 
     /**
      * *******************************
@@ -89,11 +104,6 @@ document.addEventListener("DOMContentLoaded", () => {
      * **State Variables**
      * *******************************
      */
-    // State variables will be received from the 'appStateChanged' event
-
-    let currentViewMode = 'draft'; // Default initial state
-    let currentDeleteMode = false;
-    let currentIsSaving = false;
 
     // Track if grid overlay is active on the currently unlocked block
     let gridOverlayActive = false;
@@ -111,7 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock();
         try {
             console.log("[DEBUG] Toggle Grid Overlay button clicked.");
-
+    
             // Find the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (!unlockedBlock) {
@@ -119,9 +129,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("No unlocked block found to toggle the grid overlay.");
                 return;
             }
-
-            // Toggle grid overlay state
-            if (gridOverlayActive) {
+    
+            // Synchronize gridOverlayActive with the DOM state of the unlocked block
+            const isOverlayActive = unlockedBlock.classList.contains('grid-overlay-active');
+            console.log(`[DEBUG] Current grid overlay DOM state: ${isOverlayActive}`);
+    
+            if (isOverlayActive) {
                 // Remove grid overlay
                 unlockedBlock.classList.remove('grid-overlay-active');
                 gridOverlayActive = false;
@@ -137,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } finally {
             mutex.unlock();
         }
-    });
+    });    
 
     /**
      * **Add Image Button**
@@ -386,77 +399,44 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /**
-     * **Clear Content Button (Second Row)**
-     */
-    clearContentButtonSecondRow.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            console.log("[DEBUG] Clear Content (Second Row) button clicked.");
-            // TODO: Implement clear content functionality specific to the second row
-        } catch (error) {
-            console.error("[DEBUG] Error in Clear Content (Second Row) button:", error);
-        } finally {
-            mutex.unlock();
-        }
-    });
-
-    /**
      * *******************************
      * **Universal Logic for Button States**
      * *******************************
      */
 
     /**
-     * **Function to Update Button States Based on Global States**
-     * This function ensures that buttons in the second toolbar row are enabled or disabled
-     * based on the application's current state (e.g., live view, delete mode, saving).
-     * 
-     * @param {Object} state - The current application state.
-     * @param {string} state.viewMode - Current view mode ('draft' or 'live').
-     * @param {boolean} state.deleteMode - Whether delete mode is active.
-     * @param {boolean} state.isSaving - Whether a save operation is in progress.
+     * **Function to Update Button States Based on Current State**
+     * This function dynamically enables or disables buttons in the second toolbar row
+     * based on the presence of an unlocked block and other global conditions.
      */
-    const updateSecondRowButtonStates = (state) => {
-        const { viewMode, deleteMode, isSaving } = state;
-
-        // Determine if any block is unlocked
+    const updateButtonStates = () => {
+        // Check if any block is unlocked
         const isAnyBlockUnlocked = document.querySelector('.grid-item.unlocked-border') !== null;
-
-        // Determine overall disabling condition
-        const shouldEnable = isAnyBlockUnlocked && viewMode === 'draft' && !deleteMode && !isSaving;
-
-        // Iterate over each button and set its disabled state accordingly
-        secondRowButtons.forEach(button => {
-            button.disabled = !shouldEnable;
+    
+        // Update second row button states
+        secondRowButtons.forEach((button) => {
+            button.disabled = !isAnyBlockUnlocked;
         });
-
-        console.log(`[DEBUG] Second row button states updated. Enabled: ${shouldEnable}`);
+    
+        // Update top row button states
+        Object.values(topRowButtons).forEach((button) => {
+            button.disabled = isAnyBlockUnlocked; // Disable when any block is unlocked
+        });
+    
+        console.log(`[DEBUG] Buttons updated. Second row: ${isAnyBlockUnlocked ? 'enabled' : 'disabled'}, Top row: ${isAnyBlockUnlocked ? 'disabled' : 'enabled'}.`);
     };
-
+    
     /**
-     * **Event Listener for 'appStateChanged'**
-     * Listens for the custom 'appStateChanged' event dispatched from contentWorkshop.js
-     * and updates the second toolbar's button states based on the received state.
+     * **Event Listener for 'blockLockChanged'**
+     * Listens for custom events dispatched from contentWorkshop.js
+     * and updates the button states dynamically.
      */
     window.addEventListener('blockLockChanged', (e) => {
         const { blockId, isLocked } = e.detail;
-        console.log(`[DEBUG] 'blockLockChanged' event received for block ID: ${blockId}, Locked: ${isLocked}`);
-    
-        const block = document.querySelector(`.grid-item[data-block-id="${blockId}"]`);
-    
-        if (block) {
-            if (isLocked) {
-                block.classList.remove('grid-overlay-active');
-                gridOverlayActive = false;
-                console.log("[DEBUG] Grid overlay removed from locked block.");
-            }
-        }
-    
-        // Update button states
-        updateTopRowButtonStates();
-        updateSecondRowButtonStates();
+        console.log(`[DEBUG] 'blockLockChanged' event triggered for blockId: ${blockId}, isLocked: ${isLocked}`);
+        updateButtonStates(); // Ensure button states update
     });
     
-
-    console.log("[DEBUG] secondToolbar.js setup complete.");
+    
+    console.log("[DEBUG] Button state management setup complete.");
 });
