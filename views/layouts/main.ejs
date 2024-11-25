@@ -1,4 +1,40 @@
 <!-- views/layouts/main.ejs -->
+
+<% if (isProduction) { %>
+  <!-- Production: Load Bundled Files -->
+  <link rel="stylesheet" href="/styles/styles.css">
+  <link rel="stylesheet" href="/styles/grid-styles.css">
+  <link rel="stylesheet" href="/styles/admin-styles.css">
+
+  <!-- JavaScript Bundles -->
+  <script nonce="<%= scriptNonce %>" src="/main.bundle.js"></script>
+
+  <% if (showStaffHeader) { %>
+    <!-- Admin-specific JavaScript -->
+    <script nonce="<%= scriptNonce %>" src="/admin.bundle.js"></script>
+    <script src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
+  <% } %>
+<% } else { %>
+  <!-- Development: Load Unbundled Files -->
+  <link rel="stylesheet" href="/styles/styles.css">
+  <link rel="stylesheet" href="/styles/grid-styles.css">
+  <link rel="stylesheet" href="/styles/admin-styles.css">
+
+  <!-- Client-facing JavaScript -->
+  <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/homeContent.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/socket-handler.js"></script>
+
+  <% if (showStaffHeader) { %>
+    <!-- Admin-specific JavaScript -->
+    <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
+    <script nonce="<%= scriptNonce %>" src="/scripts/secondToolbar.js"></script>
+    <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable directly -->
+  <% } %>
+<% } %>
+
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>

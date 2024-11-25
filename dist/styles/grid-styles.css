@@ -1,0 +1,385 @@
+/* Existing CSS */
+
+/* Main preview container */
+#contentPreview, #contentDisplay {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(75px, 1fr));
+    grid-auto-rows: 92px;
+    margin: 0 auto;
+    overflow-x: hidden;
+    gap: 18px;
+}
+
+/* Add padding-right to prevent overlap with scrollbar */
+#contentPreview {
+    padding-top: 15px;
+    padding-bottom: var(--dynamic-bottom-padding, 20px); /* Base + viewport height padding */
+    padding-right: 10px;
+    max-width: 1650px;
+    max-height: calc(82.5vh - var(--secondary-toolbar-height, 0px)); /* Adjust for toolbar height */
+    overflow-y: auto;
+    scrollbar-width: thin; /* For Firefox: thin scrollbar */
+    scrollbar-color: var(--scrollbar-thumb, #b0b0b0) var(--scrollbar-track, #f5f5f5);
+}
+
+/* Specific styles for contentDisplay */
+#contentDisplay {
+    padding-top: 245px;
+    max-width: 1475px;
+    padding-bottom: calc(10px + 2vh);
+}
+
+/* Stop at 1515px and lock padding */
+@media (max-width: 1515px) {
+    #contentDisplay {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}
+
+/* For Webkit-based browsers (Chrome, Edge, Safari) */
+#contentPreview::-webkit-scrollbar {
+    width: 8px; /* Narrower scrollbar */
+}
+
+#contentPreview::-webkit-scrollbar-thumb {
+    background: var(--scrollbar-thumb, #b0b0b0); /* Thumb color */
+    border-radius: 5px; /* Rounded edges for thumb */
+}
+
+#contentPreview::-webkit-scrollbar-thumb:hover {
+    background: #909090; /* Darker on hover for better feedback */
+}
+
+#contentPreview::-webkit-scrollbar-track {
+    background: var(--scrollbar-track, #f5f5f5); /* Track color */
+    border-radius: 5px; /* Rounded edges for track */
+}
+
+/* Optional: Adjust scrollbar track edges for extra polish */
+#contentPreview::-webkit-scrollbar-corner {
+    background: transparent; /* Corner where vertical and horizontal scrollbars meet */
+}
+
+
+/* General grid item styling */
+.grid-item {
+    display: flex;
+    position: relative; /* Enable positioning for absolute children */
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    border: 1px solid var(--border-color, #EAEAEA);
+    background-color: #fff;
+    overflow: hidden; /* Prevent lock overlay from escaping the block */
+    border: 2px solid transparent; /* Initialize with transparent border */
+}
+
+/* Default Border */
+.grid-item.default-border {
+    border: 2px solid transparent;
+}
+
+/* Delete Mode Border */
+.grid-item.delete-border {
+    border: 3px solid red !important; /* Use !important to ensure it takes precedence */
+}
+
+/* Unlocked State Border */
+.grid-item.unlocked-border {
+    border: 2px dashed rgba(255, 165, 0, 0.6);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
+    border-radius: 4px;
+}
+
+/* Hover Effects */
+.grid-item.default-border:hover {
+    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border */
+    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2); /* Subtle glow effect */
+    border-radius: 4px; /* Slightly rounded corners */
+}
+
+.grid-item.unlocked-border:hover {
+    box-shadow: 0 0 12px rgba(255, 165, 0, 0.4); /* Slightly more pronounced glow */
+    /* You can add more hover-specific styles for unlocked blocks if desired */
+}
+
+.disable-hover .grid-item.default-border:hover {
+    border: none; /* Disable border hover effect */
+    cursor: default; /* Disable hover cursor */
+}
+
+.disable-hover .grid-item.default-border:hover {
+    border: none; /* Disable border hover effect */
+    box-shadow: none;
+    cursor: default; /* Disable hover cursor */
+}
+
+/* Persistent "editing" style when unlocked */
+.grid-item[data-unlocked="true"] {
+    border: 2px dashed rgba(255, 165, 0, 0.8); /* Light orange dashed border */
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.1); /* Slight glow for active editing */
+    border-radius: 4px;
+}
+
+
+/* MINI SQUARE - Proper size and tighter spacing */
+.grid-item.block-grid-small,
+.grid-item.block-spacer-small {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    justify-self: center;
+    align-self: start;
+}
+
+/* Specific adjustment for medium blocks (slightly reduced height) */
+.grid-item.block-grid-medium,
+.grid-item.block-spacer-medium {
+    grid-column: span 3;
+    grid-row: span 2; /* Reduce row span */
+    height: auto; /* Let the grid-row determine height */
+}
+
+.grid-item.block-grid-large,
+.grid-item.block-spacer-large {
+    grid-column: span 3;
+    grid-row: span 4;
+}
+
+/* CENTERPIECE BLOCK - Centered across its 8-column span */
+.grid-item.block-centerpiece,
+.grid-item.block-spacer-centerpiece {
+    grid-column: 3 / span 8;
+    grid-row: span 2;
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
+}
+
+.grid-item.block-banner,
+.grid-item.block-spacer-banner {
+    grid-column: 1 / -1; /* Full width */
+    grid-row: span 2; /* Automatically adjusts row placement */
+    margin: 0; /* Removes any margin that might break layout */
+}
+
+
+/* Group block styling */
+.group-wrapper {
+    grid-column: span 3;
+    grid-row: span 4;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    grid-auto-rows: auto;
+    gap: 18px;
+}
+
+/* Ensure inner blocks within group-wrapper span their original grid-row */
+.group-wrapper .grid-item.block-grid-small,
+.group-wrapper .grid-item.block-spacer-small {
+    grid-column: span 3;
+    grid-row: span 2;
+    width: 75%;
+    height: 100%;
+    justify-self: center;
+    align-self: start;
+}
+
+.group-wrapper .grid-item.block-grid-medium,
+.group-wrapper .grid-item.block-spacer-medium {
+    grid-column: span 3;
+    grid-row: span 2;
+}
+
+/* Spacer versions of blocks */
+.grid-item.block-spacer-centerpiece,
+.grid-item.block-spacer-medium,
+.grid-item.block-spacer-large,
+.grid-item.block-spacer-banner,
+.grid-item.block-spacer-small {
+    background-color: transparent; /* Make it invisible */
+    border: 1px dashed #ccc; /* Dashed border for visibility during development */
+}
+
+/* Specific adjustments for contentDisplay to hide spacers */
+#contentDisplay .grid-item.block-spacer-centerpiece,
+#contentDisplay .grid-item.block-spacer-medium,
+#contentDisplay .grid-item.block-spacer-large,
+#contentDisplay .grid-item.block-spacer-banner,
+#contentDisplay .grid-item.block-spacer-small {
+    border: none !important; /* Remove dashed borders */
+}
+
+#contentDisplay .grid-item.block-spacer-centerpiece .block-content,
+#contentDisplay .grid-item.block-spacer-medium .block-content,
+#contentDisplay .grid-item.block-spacer-large .block-content,
+#contentDisplay .grid-item.block-spacer-banner .block-content,
+#contentDisplay .grid-item.block-spacer-small .block-content {
+    visibility: hidden !important; /* Hide the content while retaining grid space */
+}
+
+/* Block Content Styling */
+.block-content {
+    flex: 1; /* Allow content to fill the block */
+    display: flex;
+    align-items: center; /* Center text vertically */
+    justify-content: center; /* Center text horizontally */
+    padding: 5px; /* Optional: Add padding for readability */
+    z-index: 1; /* Keep content below the lock */
+}
+
+.lock-overlay {
+    position: absolute; /* Place it over the block */
+    top: 1px; /* Adjust to the top-right corner */
+    right: 1px;
+    width: 24px; /* Lock container size */
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: auto; /* Allow interaction */
+    z-index: 10; /* Ensure visibility above block content */
+    background-color: transparent; /* No visible background */
+}
+
+.lock-icon {
+    width: 16px; /* Icon size */
+    height: 16px; /* Icon size */
+    object-fit: contain;
+    opacity: 0.08; /* Make the lock faint */
+    filter: brightness(70%); /* Optional: Further darken the icon */
+    transition: opacity 0.08s ease, filter 0.08s ease; /* Add a smooth transition */
+}
+
+.lock-icon:hover {
+    cursor: pointer;
+    opacity: 0.3; /* Increase visibility on hover */
+    filter: brightness(100%); /* Optional: Brighten the icon on hover */
+}
+
+/* Style for the actively dragged block */
+.active-dragged {
+    border: 2px dashed #007BFF; /* Example color */
+    /* You can adjust the color and thickness as needed */
+}
+
+/* Style for the placeholder during dragging */
+.ghost {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important; /* Optional: make ghost transparent */
+}
+
+/* Ensure that the 'default-border' and 'unlocked-border' do not interfere with dragging styles */
+.grid-item.active-dragged.default-border,
+.grid-item.active-dragged.unlocked-border {
+    border: 2px dashed #007BFF !important; /* Override with dragging border */
+    box-shadow: none !important; /* Remove any existing box-shadow */
+}
+
+/* Optional: Reset borders for blocks not being dragged */
+.grid-item:not(.active-dragged) {
+    border: 2px solid transparent; /* Your default border */
+}
+
+/* Unlocked State Border */
+.grid-item.unlocked-border {
+    border: 2px dashed rgba(255, 165, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+    border-radius: 4px;
+}
+
+/* Hover Effects */
+.grid-item.default-border:hover {
+    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border */
+    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2); /* Subtle glow effect */
+    border-radius: 4px; /* Slightly rounded corners */
+}
+
+.grid-item.unlocked-border:hover {
+    box-shadow: 0 0 12px rgba(255, 165, 0, 0.2); /* Slightly more pronounced glow */
+    /* You can add more hover-specific styles for unlocked blocks if desired */
+}
+
+
+
+/*
+*====================
+* SECONDARY TOOLBAR ROW GRID EDITING
+*====================
+*/
+
+/* BUTTON Grid Overlay */
+.grid-overlay-active {
+    position: relative;
+}
+
+.grid-overlay-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 10; /* Ensure overlay is above content but below toolbar */
+    background-position: center; /* Center the grid */
+}
+
+/* Small Grid Overlay */
+.grid-overlay-active.grid-overlay-small::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 10px 10px; /* Small grid size */
+    background-position: center; /* Center the grid */
+}
+
+/* Medium Grid Overlay */
+.grid-overlay-active.grid-overlay-medium::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 20px 20px; /* Medium grid size */
+    background-position: center; /* Center the grid */
+}
+
+/* Large Grid Overlay */
+.grid-overlay-active.grid-overlay-large::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 40px 40px; /* Large grid size */
+    background-position: center; /* Center the grid */
+}
+
+
+
+
+
+
+
+
+
+/*
+*====================
+* END SECONDARY TOOLBAR ROW GRID EDITING
+*====================
+*/
+
+
+
+
+@media (max-width: 1240px) {
+    #contentDisplay {
+        grid-template-columns: repeat(9, minmax(90px, 1fr));
+        grid-auto-rows: 75px;
+        padding-bottom: calc(60px + 2vh);
+    }
+
+    .grid-item.block-centerpiece,
+    .grid-item.block-spacer-centerpiece {
+        grid-column: 2 / span 7; /* Adjust grid position */
+        justify-self: center; /* Ensure it remains centered horizontally */
+    }
+}
+

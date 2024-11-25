@@ -1,0 +1,736 @@
+/* 3. Header and Navigation */
+.staff-header {
+    background-color: #00008B;
+    color: #f1f1f1;
+    padding: 10px;
+    font-size: 0.9em;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+/* Left-aligned role text */
+.staff-role {
+    position: absolute;
+    left: 10px;
+}
+
+/* Center-align the header content independently */
+.staff-header-content {
+    margin: 0 auto;
+    display: flex;
+    gap: 20px;
+}
+
+/* Staff Header Links Styling */
+.staff-header-content a {
+    color: #fff;
+    text-decoration: none;
+    padding: 8px 12px;
+    border: 1px solid transparent;
+    display: inline-block;
+    position: relative;
+}
+
+/* Separator line between links */
+.staff-header-content a:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    right: -12px;
+    top: 5px;
+    bottom: 5px;
+    width: 1px;
+    background-color: #fff;
+    opacity: 0.6;
+}
+
+/* Hover effect for links in staff header */
+.staff-header-content a:hover {
+    border-color: #fff;
+}
+
+/* .active-border */
+.sign-in-button.active-border,
+.profile.active-border {
+    border: 2px solid #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.staff-header-content a.active-border {
+    border-color: #fff;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+.timeoutpopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 30px;
+    width: 550px;
+    height: 400px;
+    font-size: 1.2rem;
+    background-color: #fff;
+    border: 2px solid #333;
+    border-radius: 10px;
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.7);
+    z-index: 1000;
+    color: #000;
+    text-align: center;
+    display: flex;
+    flex-direction: column; /* Stack content vertically */
+    justify-content: center; /* Center content as a group vertically */
+    align-items: center; /* Center content horizontally */
+}
+
+#warningPopup p,
+.timeoutpopup p {
+    padding: 25px 0;
+}
+
+#main-timeout-warning-line,
+#timed-out-logout {
+    font-size: 24px;
+}
+
+#click-anywhere-warning {
+    font-size: 14px;
+}
+ 
+
+/* 4. Conditional Scrollbar Styles */
+/* Hide main scrollbar and enable internal scrolling on pages with 'no-main-scroll' class */
+body.no-main-scroll, html.no-main-scroll {
+    overflow: hidden; /* Prevent main page scrolling */
+    width: none;
+}
+
+/* Enable internal scrolling within .main-content on 'no-main-scroll' pages */
+body.no-main-scroll .main-content,
+html.no-main-scroll .main-content {
+    overflow-y: scroll;
+    overflow-x: hidden;
+    scrollbar-width: none;
+}
+
+/* Hide scrollbar in WebKit-based browsers for main content on 'no-main-scroll' pages */
+body.no-main-scroll .main-content::-webkit-scrollbar,
+html.no-main-scroll .main-content::-webkit-scrollbar {
+    width: none;
+}
+
+/* Ensure that on 'no-main-scroll' pages, the .content-workshop-container occupies full height */
+body.no-main-scroll .content-workshop-container,
+html.no-main-scroll .content-workshop-container {
+    height: 100vh; /* Full viewport height */
+    overflow: hidden; /* Prevent internal container from causing overflow */
+}
+
+/* Create-Staff Form Styling */
+.create-staff-container {
+    max-width: 800px;
+    margin: 50px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.create-staff-container h1 {
+    font-size: 1.8em;
+    text-align: center;
+    margin-bottom: 20px;
+    color: #333;
+}
+
+#createStaffForm {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 15px 20px;
+    align-items: center;
+}
+
+/* Label Styling */
+#createStaffForm label {
+    font-weight: bold;
+    color: #333;
+    font-size: 1em;
+    text-align: right;
+    padding-right: 10px;
+}
+
+/* Input and Select Styling */
+#createStaffForm input[type="text"],
+#createStaffForm input[type="email"],
+#createStaffForm input[type="password"],
+#createStaffForm select {
+    width: 100%;
+    padding: 12px;
+    font-size: 1em;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+#createStaffForm input[type="text"]:focus,
+#createStaffForm input[type="email"]:focus,
+#createStaffForm input[type="password"]:focus,
+#createStaffForm select:focus {
+    background-color: #ffffff;
+    border-color: #007BFF;
+    outline: none;
+}
+
+/* Submit Button Styling */
+#createStaffForm button {
+    grid-column: 2 / 3;
+    padding: 12px 20px;
+    font-size: 1em;
+    color: #fff;
+    background-color: #007BFF;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#createStaffForm button:hover {
+    background-color: #0056b3;
+}
+
+/* Manage-Access.ejs Styling */
+/* Permissions Table Container */
+.hidden-role {
+    visibility: hidden;
+    width: 100px; /* Set a fixed width that matches other columns */
+}
+
+.permissions-container {
+    max-width: 90%;
+    margin: 0 auto; /* Centers the container horizontally */
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Permissions Table Styling */
+.permissions-table {
+    display: grid;
+    grid-template-columns: 1fr repeat(4, minmax(100px, 1fr));
+    gap: 10px;
+    margin: 20px 0;
+}
+
+/* Header Styling */
+.permissions-header {
+    display: contents;
+    font-weight: bold;
+    text-align: center;
+    border-bottom: 2px solid #ccc;
+}
+
+.permissions-header span {
+    background-color: #007BFF;
+    color: #fff;
+    padding: 6px 0; /* Keeps padding minimal for consistent height */
+    border-radius: 4px;
+    font-size: clamp(0.9em, 1.5vw, 1.1em); /* Responsive font size */
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centers the text vertically and horizontally */
+    min-height: 40px; /* Minimum height to prevent shrinking */
+    height: auto; /* Allows height to adjust based on content */
+}
+
+/* Row Styling */
+.permissions-row {
+    display: contents;
+    align-items: center;
+}
+
+/* Permission Label Styling with Responsive Font */
+.permission-label {
+    padding: 10px;
+    text-align: center;
+    font-weight: bold;
+    font-size: clamp(0.85em, 1.2vw, 1em); /* Responsive font size */
+}
+
+/* Checkbox Container with Vertical Centering */
+.checkbox-container {
+    display: flex;
+    justify-content: center;
+    align-items: center; /* Centers the checkbox vertically */
+}
+
+/* Checkbox Styling with Responsive Size */
+.checkbox-container input[type="checkbox"] {
+    width: clamp(20px, 2vw, 24px);
+    height: clamp(20px, 2vw, 24px);
+    cursor: pointer;
+    accent-color: #007BFF;
+    border-radius: 4px;
+}
+
+/* Content Workshop */
+.content-workshop-container {
+    display: flex;
+    height: 100vh;
+}
+
+.side-panel {
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    padding: 20px;
+    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+    overflow-y: auto;
+}
+
+.side-panel h2 {
+    font-size: 1.2em;
+    margin-bottom: 1em;
+    color: #f1f1f1;
+}
+
+.side-panel ul {
+    list-style: none;
+    padding: 0;
+}
+
+.side-panel ul li {
+    margin-bottom: 1em;
+}
+
+.side-panel ul li a {
+    color: #f1f1f1;
+    text-decoration: none;
+    font-size: 1em;
+    padding: 8px;
+    display: block;
+    border-radius: 5px;
+}
+
+.side-panel ul li a:hover,
+.side-panel ul li a.active {
+    background-color: #555;
+}
+
+.main-content {
+    position: relative; /* Added to position .no-saved-draft-container correctly */
+    flex: 1;
+    padding: 15px;
+    overflow-y: scroll; /* Ensures vertical scrolling is always enabled */
+    overflow-x: hidden; /* Prevent horizontal scrolling */
+    scrollbar-width: none; /* Hide scrollbar in Firefox */
+    height: calc(100vh); /* Ensures it takes up the full viewport height */
+    box-sizing: border-box; /* Includes padding in height calculation */
+    background-color: #f4f4f4;
+}
+
+.no-saved-draft-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute; /* Overlay on top of gridContainer */
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 10; /* Ensure it sits above other elements */
+    pointer-events: none; /* Allow interactions with underlying elements if necessary */
+}
+
+/* Updated Style for the "NO SAVED DRAFT" message */
+.no-saved-draft {
+    background-color: #565656;
+    font: bold 42px 'Futura', sans-serif;
+    color: transparent;
+    text-shadow: 0px 2px 3px rgba(255, 255, 255, 0.8);
+    -webkit-background-clip: text;
+    -moz-background-clip: text;
+    background-clip: text;
+}
+
+/* Enhanced Floating Toolbar */
+#sharedToolbar {
+    position: sticky;
+    top: 0;
+    background-color: #ffffff; /* Clean white background */
+    padding: 12px; /* Slightly increased padding for a more spacious look */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1); /* Subtle shadow for a floating effect */
+    display: flex;
+    align-items: left;
+    gap: 12px; /* Unified spacing */
+    transition: background-color 0.3s, box-shadow 0.3s;
+    border-bottom: 1px solid #dcdcdc; /* Softer border */
+    flex-direction: column;
+    z-index: 100;
+}
+
+/* Scrolled State */
+#sharedToolbar.scrolled {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Stronger shadow for scrolled effect */
+    background-color: #f7f7f7; /* Slightly lighter gray for contrast */
+}
+
+/* Toolbar Label */
+#sharedToolbar label {
+    font-size: 14px; /* Maintain readability */
+    color: #222222; /* Dark gray for contrast against white */
+    white-space: nowrap;
+    font-weight: 500; /* Slightly bold for emphasis */
+}
+
+/* Toolbar Tab Styling */
+.toolbar-tab {
+    position: absolute;
+    bottom: -22px;
+    left: 49.5%;
+    transform: translateX(-50%) rotate(180deg); /* Flip the half-circle */
+    width: 30px;
+    height: 22px;
+    background-color: rgba(0, 0, 0, 0.4);
+    border-top-left-radius: 15px;
+    border-top-right-radius: 15px;
+    text-align: center;
+    color: #ffffff;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 20;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    padding-bottom: 2px;
+}
+
+/* Toolbar Tab Hover Effect */
+.toolbar-tab:hover,
+.toolbar-tab.expanded { /* Apply the same styles when the tab is expanded */
+    background-color: rgba(0, 0, 0, 0.9);
+    color: #ffffff;
+}
+
+.toolbar-tab.no-hover {
+    cursor: default;
+    background-color: rgba(0, 0, 0, 0.2);
+}
+
+/* Toolbar Row - First Row Styling */
+.toolbar-row.first-row {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Consistent spacing */
+    flex-wrap: wrap;
+}
+
+.toolbar-group {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Adjust spacing as needed */
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+/* Block Type Dropdown Styling */
+.block-type-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.block-type-group .dropdown {
+    position: relative;
+    display: inline-block;
+}
+
+#customBlockTypeDropdown {
+    background-color: #ffffff;
+    color: #333333;
+    padding: 6px 10px; /* Reduced padding */
+    font-size: 14px;
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Set a fixed width to match the View Toggle Button */
+    width: 155px; /* Adjust as needed */
+    white-space: nowrap; /* Prevent text from wrapping */
+}
+
+#customBlockTypeDropdown:hover {
+    background-color: #f1f1f1;
+}
+
+#customBlockTypeDropdown:focus {
+    border-color: #007BFF;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+    outline: none;
+}
+
+/* Dropdown Menu */
+.dropdown-add-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Slightly reduced for uniformity */
+    background-color: rgba(34, 34, 34, 0.9); /* Dark gray with a slight opacity */
+    padding: 12px 15px; /* Balanced padding */
+    border-radius: 6px; /* Consistent with overall theme */
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2); /* Clean shadow for depth */
+    margin: 0; /* Remove unnecessary margin */
+}
+
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    background-color: #ffffff;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    border: 1px solid #cccccc;
+    border-radius: 4px;
+    z-index: 1050;
+    margin-top: 5px;
+    list-style: none;
+    padding: 0;
+}
+
+.block-dropdown-arrow {
+    margin-left: 10px;
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 12px;
+}
+
+/* Hidden Select Element */
+#blockTypeControl {
+    display: none;
+}
+
+.dropdown.show .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu li {
+    padding: 8px 12px;
+    cursor: pointer;
+    position: relative;
+}
+
+.dropdown-menu li:hover {
+    background-color: #f1f1f1;
+}
+
+.dropdown-menu li.submenu-hover {
+    background-color: #f1f1f1; /* Match your hover background color */
+    color: #333333; /* Match your hover text color */
+}
+
+.dropdown-submenu::after {
+    content: '▶'; /* Right Chevron */
+    position: absolute;
+    right: 10px;
+    font-size: 0.8em;
+}
+
+.dropdown-submenu .dropdown-menu {
+    top: 0;
+    left: 100%;
+    margin-left: 1px;
+}
+
+.dropdown-submenu:hover > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-submenu.submenu-open > .dropdown-menu {
+    display: block;
+}
+
+.dropdown-menu, .dropdown-submenu .dropdown-menu {
+    user-select: none;
+}
+
+.dropdown-menu li.selected {
+    background-color: #e0e0e0;
+}
+
+.add-block-icon {
+    font-size: 16px;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+/* Wrapper for View Toggle Button */
+.view-toggle-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto; /* Prevent growing or shrinking */
+}
+
+.view-toggle-wrapper button {
+    /* Set a fixed width to prevent shifting */
+    width: 100px; /* Fixed width to accommodate the longest text ("View Draft") */
+    box-sizing: border-box; /* Include padding and border in the width */
+    white-space: nowrap; /* Prevent text from wrapping */
+    justify-content: center;
+    padding: 6px 10px; /* Adjusted padding */
+    font-size: 14px; /* Consistent font size */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Ensure text is centered */
+}
+
+/* Toolbar Buttons */
+#sharedToolbar button {
+    background-color: #0066cc; /* Slightly darker blue for modern aesthetics */
+    color: #ffffff;
+    border: none;
+    padding: 8px 14px; /* Comfortable size for all button interactions */
+    border-radius: 5px; /* Slightly rounded corners */
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Center text horizontally */
+    text-align: center;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+}
+
+#sharedToolbar button:hover {
+    background-color: #005bb5; /* Medium-dark blue for hover effect */
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Slightly deeper shadow */
+}
+
+#sharedToolbar button:active {
+    background-color: #004a99; /* Even darker blue for click */
+    transform: scale(0.96); /* Slightly smaller scale for visual feedback */
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.2); /* Inset shadow for pressed effect */
+}
+
+#sharedToolbar button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+    pointer-events: none;
+    transform: none;
+    box-shadow: none;
+}
+
+/* Updated Specific Styles for #deleteModeButton with Increased Specificity */
+#sharedToolbar #deleteModeButton {
+    border: 2px solid transparent;
+    padding: 6px 12px;
+}
+
+/* Red border applied when Delete Mode is active */
+#sharedToolbar #deleteModeButton.delete-mode-active {
+    border: 2px solid red; /* Set the entire border */
+}
+
+/* Save Changes Button with Responsive Font and Padding */
+#saveChangesButton {
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    padding: clamp(8px, 1vw, 12px) clamp(16px, 1.5vw, 20px);
+    font-size: clamp(0.9em, 1.2vw, 1em); /* Responsive font size */
+    cursor: pointer;
+    border-radius: 5px;
+    margin-top: 20px;
+    align-self: flex-start;
+    width: auto;
+}
+
+#saveChangesButton:hover {
+    background-color: #0056b3;
+}
+
+#saveChangesButton:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+
+/* Toolbar Divider Styling */
+.toolbar-divider {
+    width: 100%;
+    height: 1px;
+    background-color: #ccc;
+}
+
+/* Second Toolbar Row Styling */
+.toolbar-row.second-row {
+    display: flex;
+    align-items: center;
+    gap: 15px; /* Consistent spacing with the first row */
+    flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
+}
+
+/* Push Live Button Alignment */
+.toolbar-row.first-row #pushLiveButton {
+    margin-left: auto; /* Pushes the button to the far right */
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #sharedToolbar {
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 10px 15px;
+    }
+
+    /* Adjust toolbar-group for responsiveness */
+    .toolbar-group {
+        flex: 1 1 100%;
+        gap: 10px;
+    }
+
+    /* Ensure all toolbar elements take full width */
+    #sharedToolbar label,
+    #sharedToolbar select,
+    #sharedToolbar button,
+    .dropdown {
+        flex: 1 1 100%;
+    }
+
+    #sharedToolbar button {
+        justify-content: left;
+        min-width: 100%;
+    }
+
+    /* Adjust View Toggle Container on small screens */
+    .view-toggle-wrapper {
+        flex: 1 1 100%; /* Make it full width on small screens */
+    }
+
+    .view-toggle-wrapper button {
+        width: 100%; /* Ensure button spans full width */
+    }
+
+    /* Adjust Dropdown Menu for Mobile */
+    .dropdown-menu {
+        min-width: 150px;
+    }
+
+    /* Adjust the toolbar rows for better stacking on small screens */
+    .toolbar-row.second-row {
+        gap: 10px; /* Reduce gap on smaller screens */
+    }
+
+    .toolbar-divider {
+        margin: 8px 0; /* Adjust margin for smaller screens */
+    }
+
+    .no-saved-draft {
+        font-size: 28px; /* Further reduce font size on smaller screens */
+    }
+}

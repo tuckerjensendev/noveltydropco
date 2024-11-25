@@ -1,0 +1,353 @@
+/* 1. Reset Styles */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+/* 2. Global Styles */
+body, html {
+    height: 100%;
+    overflow: auto; /* Enable scrolling by default */
+    font-family: Arial, sans-serif;
+    background-color: #DCE0E2;
+}
+
+.main-content-wrapper {
+    padding: 20px;
+}
+
+/* Loading Spinner Overlay */
+.loading-spinner {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    z-index: 9999;
+    display: none; /* Hidden by default */
+}
+
+.loading-spinner .spinner {
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #3498db;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Flash Message Styling */
+.flash-message {
+    position: fixed;
+    top: 140px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 20px 20px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+    font-size: 1.2em;
+    text-align: center;
+    z-index: 10000;
+}
+
+.flash-message.error {
+    background-color: #f44336;
+}
+
+.flash-message.info {
+    background-color: #2196F3;
+}
+
+/* Reuse positioning logic */
+.secure-logout {
+    position: absolute;
+    right: 10px;
+    top: 12px;
+}
+
+/* Existing button styles remain intact */
+.staff-logout-button {
+    padding: 5px 7px;
+}
+
+.staff-logout-button:hover {
+    cursor: pointer;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1em 2em;
+    position: relative;
+    z-index: 5;
+}
+
+/* Logo */
+.logo {
+    font-size: 1.5em;
+    color: #fff;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+}
+
+/* Profile container */
+.profile {
+    display: flex;
+    align-items: center;
+    position: relative;
+    height: 50px;
+}
+
+/* Welcome Message */
+.welcome-message {
+    font-size: 1em;
+    color: #fff;
+    margin-right: 10px;
+}
+
+/* Sign-In Button */
+.sign-in-button {
+    padding: 8px 15px;
+    color: #fff;
+    font-size: 1em;
+    cursor: pointer;
+    text-align: center;
+    border: 2px solid transparent;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.sign-in-button:hover,
+.profile.active-border .sign-in-button {
+    border-color: #fff;
+    color: #fff;
+    background: transparent;
+}
+
+/* Profile Pic */
+.profile-pic {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    border: 2px solid transparent;
+    object-fit: cover;
+    cursor: pointer;
+}
+
+.profile-pic:hover,
+.profile.active-border .profile-pic {
+    border-color: #999;
+}
+
+/* 4. Login Dropdown Menu (Login/Register) */
+.dropdown-content {
+    display: none;
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background-color: #ffffff;
+    width: 320px;
+    padding: 25px 15px;
+    border-radius: 12px;
+    box-shadow: 0px 10px 20px rgba(0, 0, 0, 0.15);
+    transform-origin: top right;
+    z-index: 9999; /* Set a high z-index */
+}
+
+/* Moves Login form into Register form position */
+.dropdown-content.register-mode {
+    width: 500px;
+    padding: 40px;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #fafafa;
+    z-index: 10;
+    box-shadow: 0px 12px 24px rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+}
+
+/* Shows dropdown after click event */
+.dropdown-content.show {
+    display: block;
+}
+
+/* Login/Register Form Header Styling */
+.form-content h2 {
+    font-size: 1.6em;
+    color: #333;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+
+/* Input vertical spacing */
+.form-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1em;
+    padding: 0 10px; /* Add padding for spacing on the left and right */
+}
+
+/* Consistent styling for all inputs for both login and registration forms */
+#login-form input,
+#register-form input,
+.form-content input {
+    width: 100%; /* Full width to match container */
+    padding: 12px;
+    margin: 10px 0; /* Spacing between inputs */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1em;
+    background-color: #f5f5f5;
+    box-shadow: inset 0px 2px 4px rgba(0, 0, 0, 0.1);
+    transition: background-color 0.3s;
+    text-align: left;
+}
+
+#login-form input:focus,
+#register-form input:focus,
+.form-content input:focus {
+    background-color: #ffffff;
+    border-color: #007bff;
+    outline: none;
+}
+
+/* Form Button Styling */
+.form-content button {
+    width: 50%; /* Half the width of the form */
+    padding: 12px;
+    font-size: 1em;
+    margin: 15px 0;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+    font-weight: bold;
+}
+
+/* Center the register button specifically */
+#register-form button {
+    margin: 20px auto 0;
+    display: block;
+    width: 50%; /* Half size and centered */
+}
+
+#login-form button:hover,
+#register-form button:hover {
+    background-color: #0056b3;
+}
+
+/* Logout Button */
+#user-menu button {
+    width: 100%;
+    padding: 12px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 1em;
+    text-align: center;
+}
+
+#user-menu button:hover {
+    background-color: #555;
+}
+
+/* Create Account button/link styling */
+.left-link {
+    width: 100%;
+    display: flex;
+    justify-content: flex-start;
+}
+
+.form-content p {
+    font-size: 0.95em;
+    color: #333;
+}
+
+.form-content p a.create-account,
+.form-content p a.back-to-login {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 10px;
+    background-color: #f4f4f4;
+    color: #007bff;
+    font-size: 0.9em;
+    text-decoration: none;
+}
+
+.form-content p a.create-account:hover,
+.form-content p a.back-to-login:hover {
+    color: #0056b3;
+    background-color: #e0e0e0;
+}
+
+/* Placeholder Color */
+.form-content input::placeholder {
+    color: #888;
+    opacity: 1;
+}
+
+/* Password Requirements Container */
+#password-requirements-container {
+    width: 100%;
+    height: 100px;
+    padding-top: 10px;
+    text-align: center;
+    background-color: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 10px 15px;
+    font-size: 1.02rem;
+    font-weight: 700;
+    box-shadow: inset 0px 1px 3px rgba(0, 0, 0, 0.1);
+    visibility: hidden;
+    opacity: 0;
+    transition: visibility 0s, opacity 0.3s ease;
+}
+
+/* Show password requirements container */
+#password-requirements-container.show {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Password Requirements Styling */
+#password-requirements {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 0.85em;
+}
+
+.requirement.met {
+    color: #5cb85c;
+}
+
+.hidden {
+    display: none;
+}

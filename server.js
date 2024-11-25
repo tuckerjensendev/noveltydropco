@@ -57,16 +57,8 @@ const httpsOptions = {
 
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
+app.use(express.static(path.join(__dirname, isProduction ? 'dist' : 'public')));
 
-// Serve static files
-app.use(express.static(isProduction ? 'dist' : 'public'));
-
-// Additional static routes for development
-if (!isProduction) {
-  app.use('/scripts', express.static(path.join(__dirname, 'public', 'scripts')));
-  app.use('/scripts/gridstack', express.static(path.join(__dirname, 'node_modules', 'gridstack', 'dist')));
-  app.use('/styles', express.static(path.join(__dirname, 'public', 'styles')));
-}
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

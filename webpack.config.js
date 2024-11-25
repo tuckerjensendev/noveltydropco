@@ -3,13 +3,23 @@ const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 
 module.exports = {
-    entry: './public/scripts/main.js',
-    output: {
-        filename: 'bundle.js',
-        path: path.resolve(__dirname, 'dist'),
-        clean: true,
+    entry: {
+        main: [
+            './public/scripts/main.js',
+            './public/scripts/homeContent.js',
+            './public/scripts/socket-handler.js', // Client-facing scripts
+        ],
+        admin: [
+            './public/scripts/contentWorkshop.js',
+            './public/scripts/secondToolbar.js', // Admin-specific scripts
+        ],
     },
-    mode: 'production',
+    output: {
+        filename: '[name].bundle.js', // e.g., main.bundle.js, admin.bundle.js
+        path: path.resolve(__dirname, 'dist'), // Output to /dist
+        clean: true, // Clean the /dist directory on every build
+    },
+    mode: process.env.NODE_ENV === 'production' ? 'production' : 'development',
     module: {
         rules: [
             {
@@ -48,10 +58,14 @@ module.exports = {
         }),
         new CopyWebpackPlugin({
             patterns: [
-                { 
-                    from: 'public', 
-                    to: '.', 
-                    globOptions: { 
+                {
+                    from: 'public/scripts/Sortable.min.js',
+                    to: 'scripts/Sortable.min.js',
+                },
+                {
+                    from: 'public',
+                    to: '.',
+                    globOptions: {
                         ignore: ['**/index.html', '**/scripts/**'],
                     },
                 },
