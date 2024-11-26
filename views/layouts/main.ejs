@@ -8,10 +8,10 @@
   <title><%= title || 'Novelty Drop Co.' %></title>
 
   <!-- Socket.IO Client Library -->
-  <script src="/socket.io/socket.io.js"></script>
+  <script nonce="<%= scriptNonce %>" src="/socket.io/socket.io.js"></script>
 
   <!-- Custom Socket Handler Script -->
-  <script src="/scripts/socket-handler.js" defer></script>
+  <script nonce="<%= scriptNonce %>" src="/scripts/socket-handler.js" defer></script>
 
   <!-- Page-Specific Head Content -->
   <%- headExtra || '' %>
@@ -28,7 +28,7 @@
     <% if (showStaffHeader) { %>
       <!-- Admin-specific JavaScript -->
       <script nonce="<%= scriptNonce %>" src="/admin.bundle.js"></script>
-      <script src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
+      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
     <% } %>
   <% } else { %>
     <!-- Development: Load Unbundled Files -->
