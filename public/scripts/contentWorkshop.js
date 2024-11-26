@@ -187,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
             Clear Content: ${clearContentButton.disabled ? 'disabled' : 'enabled'}.`);
     };
 
+
     // **Utility Functions to Control Body Scroll**
     const disableBodyScroll = () => {
         document.body.style.overflow = "hidden";
@@ -251,7 +252,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     block.classList.remove("delete-border");
                 });
                 // Add 'delete-border' to content inside the unlocked block
-                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content, .block-content *");
+                const contentElements = blockElement.querySelectorAll(".block-content *");
                 contentElements.forEach((element) => {
                     element.classList.add("delete-border");
                 });
@@ -290,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // Adjust delete mode visuals if active
             if (deleteMode) {
                 // Remove 'delete-border' from content inside the block
-                const contentElements = blockElement.querySelectorAll(".block-content, .block-content *");
+                const contentElements = blockElement.querySelectorAll(".block-content *");
                 contentElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
@@ -504,7 +505,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     block.classList.remove("delete-border");
                 });
                 // Add 'delete-border' to content inside the unlocked block
-                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content, .block-content *");
+                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content *");
                 contentElements.forEach((element) => {
                     element.classList.add("delete-border");
                 });
@@ -523,7 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             if (currentlyUnlockedBlock) {
                 // Remove 'delete-border' from content inside the unlocked block
-                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content, .block-content *");
+                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content *");
                 contentElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
@@ -616,48 +617,25 @@ document.addEventListener("DOMContentLoaded", () => {
             // Check if click is inside the 'block-content' of the unlocked block
             const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
             if (blockContent.contains(event.target)) {
-                // Ensure we are not deleting the lock overlay
-                if (event.target.closest(".lock-overlay")) {
+                // Ensure we are not deleting the 'block-content' div itself or lock overlay
+                if (event.target === blockContent || event.target.closest(".lock-overlay")) {
                     // Do nothing
                     return;
                 }
+                console.log("[DEBUG] Deleting content inside unlocked block.");
 
-                let targetNode = event.target;
+                // Save the content state before deletion for undo purposes
+                deleteHistory.push({
+                    blockElement: currentlyUnlockedBlock.cloneNode(true),
+                    contentDeleted: event.target.outerHTML, // Save the HTML of the element being deleted
+                    elementPath: getElementPath(event.target, blockContent), // Path to the element
+                    type: 'content',
+                });
+                // Clear redo history for delete mode
+                deleteRedoHistory = [];
+                updateHistoryButtonsState(); // Update buttons
 
-                // **Handle text nodes and elements**
-                if (targetNode.nodeType === Node.TEXT_NODE) {
-                    // Delete the text node
-                    const parent = targetNode.parentNode;
-
-                    // Save the content state before deletion for undo purposes
-                    deleteHistory.push({
-                        blockElement: currentlyUnlockedBlock.cloneNode(true),
-                        contentDeleted: targetNode.textContent,
-                        elementPath: getElementPath(targetNode, blockContent),
-                        type: 'text',
-                    });
-
-                    // Remove the text node
-                    parent.removeChild(targetNode);
-
-                } else {
-                    // Allow deleting the block-content itself if desired
-                    // Remove the check if you want to prevent deleting block-content
-                    console.log("[DEBUG] Deleting content inside unlocked block.");
-
-                    // Save the content state before deletion for undo purposes
-                    deleteHistory.push({
-                        blockElement: currentlyUnlockedBlock.cloneNode(true),
-                        contentDeleted: targetNode.outerHTML, // Save the HTML of the element being deleted
-                        elementPath: getElementPath(targetNode, blockContent), // Path to the element
-                        type: 'content',
-                    });
-                    // Clear redo history for delete mode
-                    deleteRedoHistory = [];
-                    updateHistoryButtonsState(); // Update buttons
-
-                    targetNode.remove(); // Remove the clicked element inside block-content
-                }
+                event.target.remove(); // Remove the clicked element inside block-content
 
                 // Update local layout
                 updateLocalLayoutFromDOM();
@@ -794,38 +772,25 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Update local layout and sortable
                 updateLocalLayoutFromDOM();
                 initializeSortable();
-            } else if (lastDeleted.type === 'content' || lastDeleted.type === 'text') {
+            } else if (lastDeleted.type === 'content') {
                 // Undo content deletion inside a block
                 const blockElement = gridContainer.querySelector(`[data-block-id="${lastDeleted.blockElement.dataset.blockId}"]`);
                 if (blockElement) {
                     const blockContent = blockElement.querySelector(".block-content");
-                    if (lastDeleted.type === 'text') {
-                        const parentElement = getElementByPath(lastDeleted.elementPath.slice(0, -1), blockContent);
-                        if (parentElement) {
-                            const index = lastDeleted.elementPath[lastDeleted.elementPath.length -1];
-                            const textNode = document.createTextNode(lastDeleted.contentDeleted);
-                            if (index >= parentElement.childNodes.length) {
-                                parentElement.appendChild(textNode);
-                            } else {
-                                parentElement.insertBefore(textNode, parentElement.childNodes[index]);
-                            }
-                            updateLocalLayoutFromDOM();
+                    const parentElement = getElementByPath(lastDeleted.elementPath.slice(0, -1), blockContent);
+                    if (parentElement) {
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = lastDeleted.contentDeleted;
+                        const restoredElement = tempDiv.firstChild;
+                        const index = lastDeleted.elementPath[lastDeleted.elementPath.length -1];
+                        if (index >= parentElement.childNodes.length) {
+                            parentElement.appendChild(restoredElement);
+                        } else {
+                            parentElement.insertBefore(restoredElement, parentElement.childNodes[index]);
                         }
-                    } else {
-                        const parentElement = getElementByPath(lastDeleted.elementPath.slice(0, -1), blockContent);
-                        if (parentElement) {
-                            const tempDiv = document.createElement('div');
-                            tempDiv.innerHTML = lastDeleted.contentDeleted;
-                            const restoredElement = tempDiv.firstChild;
-                            const index = lastDeleted.elementPath[lastDeleted.elementPath.length -1];
-                            if (index >= parentElement.childNodes.length) {
-                                parentElement.appendChild(restoredElement);
-                            } else {
-                                parentElement.insertBefore(restoredElement, parentElement.childNodes[index]);
-                            }
 
-                            updateLocalLayoutFromDOM();
-                        }
+                        updateLocalLayoutFromDOM();
+                        // Note: We don't initialize sortable here since it's content inside a block
                     }
                 }
             }
@@ -880,7 +845,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateLocalLayoutFromDOM();
                 initializeSortable();
                 // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
-            } else if (lastRedo.type === 'content' || lastRedo.type === 'text') {
+            } else if (lastRedo.type === 'content') {
                 // Redo content deletion inside a block
                 const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
                 if (blockElement) {
@@ -889,6 +854,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     if (elementToRemove) {
                         elementToRemove.remove();
                         updateLocalLayoutFromDOM();
+                        // Note: We don't initialize sortable here since it's content inside a block
                     }
                 }
             }
@@ -1115,7 +1081,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     blockElement.classList.remove('delete-border');
                     // Add 'delete-border' to content inside the unlocked block
                     if (blockElement === currentlyUnlockedBlock) {
-                        const contentElements = blockElement.querySelectorAll(".block-content, .block-content *");
+                        const contentElements = blockElement.querySelectorAll(".block-content *");
                         contentElements.forEach((element) => {
                             element.classList.add("delete-border");
                         });
