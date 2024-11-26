@@ -1,74 +1,71 @@
 <!-- views/layouts/main.ejs -->
-
-<% if (isProduction) { %>
-  <!-- Production: Load Bundled Files -->
-  <link rel="stylesheet" href="/styles/styles.css">
-  <link rel="stylesheet" href="/styles/grid-styles.css">
-  <link rel="stylesheet" href="/styles/admin-styles.css">
-
-  <!-- JavaScript Bundles -->
-  <script nonce="<%= scriptNonce %>" src="/main.bundle.js"></script>
-
-  <% if (showStaffHeader) { %>
-    <!-- Admin-specific JavaScript -->
-    <script nonce="<%= scriptNonce %>" src="/admin.bundle.js"></script>
-    <script src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
-  <% } %>
-<% } else { %>
-  <!-- Development: Load Unbundled Files -->
-  <link rel="stylesheet" href="/styles/styles.css">
-  <link rel="stylesheet" href="/styles/grid-styles.css">
-  <link rel="stylesheet" href="/styles/admin-styles.css">
-
-  <!-- Client-facing JavaScript -->
-  <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
-  <script nonce="<%= scriptNonce %>" src="/scripts/homeContent.js"></script>
-  <script nonce="<%= scriptNonce %>" src="/scripts/socket-handler.js"></script>
-
-  <% if (showStaffHeader) { %>
-    <!-- Admin-specific JavaScript -->
-    <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
-    <script nonce="<%= scriptNonce %>" src="/scripts/secondToolbar.js"></script>
-    <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable directly -->
-  <% } %>
-<% } %>
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <!-- Meta Tags and Title -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title><%= title || 'Novelty Drop Co.' %></title>
-  
-  <!-- Include Header Partial for CSS and JS -->
-  <%- include('../partials/header') %>
 
   <!-- Socket.IO Client Library -->
   <script src="/socket.io/socket.io.js"></script>
-  
+
   <!-- Custom Socket Handler Script -->
   <script src="/scripts/socket-handler.js" defer></script>
 
   <!-- Page-Specific Head Content -->
   <%- headExtra || '' %>
+
+  <% if (isProduction) { %>
+    <!-- Production: Load Bundled Files -->
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/grid-styles.css">
+    <link rel="stylesheet" href="/styles/admin-styles.css">
+
+    <!-- JavaScript Bundles -->
+    <script nonce="<%= scriptNonce %>" src="/main.bundle.js"></script>
+
+    <% if (showStaffHeader) { %>
+      <!-- Admin-specific JavaScript -->
+      <script nonce="<%= scriptNonce %>" src="/admin.bundle.js"></script>
+      <script src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
+    <% } %>
+  <% } else { %>
+    <!-- Development: Load Unbundled Files -->
+    <link rel="stylesheet" href="/styles/styles.css">
+    <link rel="stylesheet" href="/styles/grid-styles.css">
+    <link rel="stylesheet" href="/styles/admin-styles.css">
+
+    <!-- Client-facing JavaScript -->
+    <script nonce="<%= scriptNonce %>" src="/scripts/main.js"></script>
+    <script nonce="<%= scriptNonce %>" src="/scripts/homeContent.js"></script>
+
+    <% if (showStaffHeader) { %>
+      <!-- Admin-specific JavaScript -->
+      <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
+      <script nonce="<%= scriptNonce %>" src="/scripts/secondToolbar.js"></script>
+      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable directly -->
+    <% } %>
+  <% } %>    
 </head>
 <body 
   data-user-id="<%= user ? user.id : '' %>" 
   data-role="<%= user ? user.role : '' %>"
   data-ip="<%= user ? user.ip : '' %>"
 >
+  <!-- Include Header Partial for Navigation -->
+  <%- include('../partials/header') %>
+
   <!-- Main Content -->
   <%- body %>
-  
+
   <!-- Flash Messages (if any) -->
   <% if (flashMessage && flashMessage.length > 0) { %>
     <div id="flashMessage" class="flash-message <%= flashType %>">
       <%= flashMessage %>
     </div>
   <% } %>
-  
+
   <!-- Logout Form -->
   <form id="logoutForm" action="/logout" method="POST" style="display: none;">
     <input type="hidden" name="_csrf" value="<%= csrfToken %>">
@@ -78,7 +75,7 @@
   <div class="loading-spinner" id="loadingSpinner">
     <div class="spinner"></div>
   </div>
-  
+
   <!-- Additional Body Content -->
   <%- bodyExtra || '' %>
 </body>

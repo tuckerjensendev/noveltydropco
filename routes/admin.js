@@ -155,7 +155,12 @@ router.get('/content-workshop', ensurePermission('can_edit_content'), csrfProtec
     res.render('admin/content-workshop', {
       user: req.user,
       csrfToken: req.csrfToken(),
-      blocks
+      blocks,
+      scripts: [
+        '/scripts/contentWorkshop.js',
+        '/scripts/secondToolbar.js',
+        '/scripts/Sortable.min.js'
+      ]
     });
   } catch (error) {
     console.error("Error loading content workshop:", error);

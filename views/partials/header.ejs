@@ -1,11 +1,10 @@
 <!-- views/partials/header.ejs -->
- 
+
 <% if (showStaffHeader) { %>
   <!-- Show only the staff header for staff roles -->
   <div class="staff-header-wrapper">
     <%- include('staff-header') %>
   </div>
-
 <% } else { %>
   <!-- Show the main header only for non-staff roles -->
   <header>

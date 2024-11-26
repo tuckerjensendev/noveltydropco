@@ -59,7 +59,6 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(express.static(path.join(__dirname, isProduction ? 'dist' : 'public')));
 
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -127,7 +126,6 @@ app.use((req, res, next) => {
   next();
 });
 
-
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -164,6 +162,9 @@ app.use((req, res, next) => {
   res.locals.headExtra = '';
   res.locals.bodyExtra = '';
 
+  // Initialize scripts array
+  res.locals.scripts = res.locals.scripts || [];
+
   next();
 });
 
@@ -195,7 +196,8 @@ app.get('/', async (req, res) => {
   res.render('home', { 
     products: cachedData || [], 
     blocks,
-    title: 'Home Page - Novelty Drop Co.'
+    title: 'Home Page - Novelty Drop Co.',
+    scripts: ['/scripts/homeContent.js']
   });
 });
 

@@ -211,8 +211,7 @@ function closeDropdown() {
   sessionStorage.removeItem("registerLastName");
   sessionStorage.removeItem("registerEmail");
 
-  // Additionally, remove inactivity tracker if implemented
-  removeInactivityTracker();
+  // Removed the call to removeInactivityTracker()
 }
 
 // For client login & registration - save input values as user types to ensure persistence across sessions
@@ -329,13 +328,8 @@ function setupInactivityTracker() {
     // Start the inactivity timeout
     timeoutHandle = setTimeout(() => {
       logTimeoutToServer(); // Log timeout to the server
-      const logoutForm = document.getElementById('logoutForm');
-      if (logoutForm) {
-        showSpinner();
-        logoutForm.submit();
-      } else {
-        console.error('Logout form not found.');
-      }
+      showSpinner();
+      window.location.href = '/'; // Redirect to home page
     }, inactivityTimeout);
   }
 
