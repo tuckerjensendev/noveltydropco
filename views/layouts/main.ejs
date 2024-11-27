@@ -28,7 +28,8 @@
     <% if (showStaffHeader) { %>
       <!-- Admin-specific JavaScript -->
       <script nonce="<%= scriptNonce %>" src="/admin.bundle.js"></script>
-      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable as standalone -->
+      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script>
+      <script nonce="<%= scriptNonce %>" src="/scripts/interact.min.js"></script>
     <% } %>
   <% } else { %>
     <!-- Development: Load Unbundled Files -->
@@ -44,7 +45,8 @@
       <!-- Admin-specific JavaScript -->
       <script nonce="<%= scriptNonce %>" src="/scripts/contentWorkshop.js"></script>
       <script nonce="<%= scriptNonce %>" src="/scripts/secondToolbar.js"></script>
-      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script> <!-- Serve Sortable directly -->
+      <script nonce="<%= scriptNonce %>" src="/scripts/Sortable.min.js"></script>
+      <script nonce="<%= scriptNonce %>" src="/scripts/interact.min.js"></script>
     <% } %>
   <% } %>    
 </head>

@@ -343,7 +343,6 @@ html.no-main-scroll .content-workshop-container {
     left: 0;
     height: 100%;
     width: 100%;
-    z-index: 10; /* Ensure it sits above other elements */
     pointer-events: none; /* Allow interactions with underlying elements if necessary */
 }
 

@@ -1,7 +1,7 @@
-// secondaryToolbar.js
+// secondToolbar.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[DEBUG] secondToolbar.js loaded and DOMContentLoaded triggered.");
+    console.log("[DEBUG] secondaryToolbar.js loaded and DOMContentLoaded triggered.");
 
     /**
      * *******************************
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         clearContentButton: document.getElementById('clearContentButton'),
         blockTypeDropdown: document.getElementById('blockTypeControl'),
         addBlockButton: document.getElementById('addBlockButton'),
-        deleteModeButton: document.getElementById('deleteModeButton'),
+        deleteModeButton: document.getElementById('deleteModeButton'), // Delete Toggle Button
         pushLiveButton : document.getElementById("pushLiveButton")
     };
 
@@ -72,14 +72,14 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     // Validate the presence of the second toolbar row
     if (!secondToolbarRow) {
-        console.error("[DEBUG] Second toolbar row not found. secondToolbar.js aborted.");
+        console.error("[DEBUG] Second toolbar row not found. secondaryToolbar.js aborted.");
         return;
     }
     console.log("[DEBUG] Second toolbar row found.");
 
     const missingButtons = secondRowButtons.filter(button => !button);
     if (missingButtons.length > 0) {
-        console.error(`[DEBUG] Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondToolbar.js aborted.`);
+        console.error(`[DEBUG] Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondaryToolbar.js aborted.`);
         return;
     }
     console.log("[DEBUG] All second row toolbar buttons are present.");
@@ -102,10 +102,8 @@ document.addEventListener("DOMContentLoaded", () => {
      * **State Variables**
      * *******************************
      */
-
-    // Track if grid overlay is active on the currently unlocked block
-    let gridOverlayActive = false;
-    let gridOverlaySizeIndex = 0; // 0: small, 1: medium, 2: large
+    let deleteMode = false; // Track delete mode state
+    let isAnyBlockUnlocked = false; // Track if any block is unlocked
 
     /**
      * *******************************
@@ -116,24 +114,35 @@ document.addEventListener("DOMContentLoaded", () => {
     /**
      * **Function to Update Button States Based on Current State**
      * This function dynamically enables or disables buttons in the second toolbar row
-     * based on the presence of an unlocked block and other global conditions.
+     * based on the presence of an unlocked block and delete mode state.
      */
+    // secondaryToolbar.js
+
     const updateButtonStates = () => {
-        // Check if any block is unlocked
-        const isAnyBlockUnlocked = document.querySelector('.grid-item.unlocked-border') !== null;
+        const shouldDisableSecondRow = deleteMode && isAnyBlockUnlocked;
 
-        // Update second row button states
+        // Disable Second Row Buttons Only if Both deleteMode and isAnyBlockUnlocked are True
         secondRowButtons.forEach((button) => {
-            button.disabled = !isAnyBlockUnlocked;
+            button.disabled = shouldDisableSecondRow;
         });
 
-        // Update top row button states
-        Object.values(topRowButtons).forEach((button) => {
-            button.disabled = isAnyBlockUnlocked; // Disable when any block is unlocked
+        // Disable Top Row Buttons Based on isAnyBlockUnlocked, Excluding deleteModeButton
+        Object.entries(topRowButtons).forEach(([key, button]) => {
+            if (key !== 'deleteModeButton') { // Exclude Delete Toggle Button
+                button.disabled = isAnyBlockUnlocked;
+            }
+            // Else: Do not modify the disabled state of deleteModeButton
         });
 
-        console.log(`[DEBUG] Buttons updated. Second row: ${isAnyBlockUnlocked ? 'enabled' : 'disabled'}, Top row: ${isAnyBlockUnlocked ? 'disabled' : 'enabled'}.`);
+        console.log(
+            `[DEBUG] Button states updated. Second row buttons ${
+                shouldDisableSecondRow ? "disabled" : "enabled"
+            }, Top row buttons ${
+                isAnyBlockUnlocked ? "disabled (excluding Delete Toggle)" : "enabled"
+            }.`
+        );
     };
+
 
     /**
      * *******************************
@@ -160,41 +169,55 @@ document.addEventListener("DOMContentLoaded", () => {
         item.addEventListener("click", async (e) => {
             e.stopPropagation(); // Prevent click from propagating
             const selectedValue = item.getAttribute("data-value"); // e.g., "p", "h1", "h2"
-
+    
             if (!selectedValue) {
                 console.warn("[DEBUG] No data-value attribute found on selected dropdown item.");
                 return;
             }
-
+    
             console.log(`[DEBUG] Selected text type: ${selectedValue}`);
-
+    
             // Insert the selected element into the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (!unlockedBlock) {
                 alert("No unlocked block found to add text.");
                 return;
             }
-
+    
             const blockContent = unlockedBlock.querySelector('.block-content');
             if (!blockContent) {
                 console.error("[DEBUG] block-content div not found in the unlocked block.");
                 return;
             }
-
+    
             // Create the new element
             const newElement = document.createElement(selectedValue);
             newElement.textContent = "New Text"; // Placeholder text; can be edited later
             newElement.classList.add("deletable", "editable-text"); // Add deletable and styling classes
-
+    
             // Set contentEditable to true before appending
             newElement.contentEditable = "true";
-
-            // Append the new element to the block-content
-            blockContent.appendChild(newElement);
-
+    
+            // Create a draggable container for the new element
+            const draggableContainer = document.createElement('div');
+            draggableContainer.classList.add('draggable-element');
+            draggableContainer.style.position = 'absolute'; // Position absolutely within the block
+            draggableContainer.style.top = '0px'; // Initial position
+            draggableContainer.style.left = '0px'; // Initial position
+    
+            // **Add Initial Position Attributes and Styles**
+            draggableContainer.setAttribute('data-x', '0');
+            draggableContainer.setAttribute('data-y', '0');
+            draggableContainer.style.transform = 'translate(0px, 0px)';
+    
+            draggableContainer.appendChild(newElement);
+    
+            // Append the draggable container to the block-content
+            blockContent.appendChild(draggableContainer);
+    
             // Automatically focus the new element for immediate editing
             newElement.focus();
-
+    
             // Dispatch a custom event to notify contentWorkshop.js about the change
             const textAddedEvent = new CustomEvent('textAdded', {
                 detail: {
@@ -203,14 +226,15 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             window.dispatchEvent(textAddedEvent);
-
+    
             // Close the dropdown
             addTextDropdown.style.display = "none";
             addTextDropdownButton.setAttribute("aria-expanded", "false");
-
+    
             console.log(`[DEBUG] Inserted new <${selectedValue}> element into the unlocked block.`);
         });
     });
+    
 
     // Close the dropdown when clicking outside
     document.addEventListener("click", () => {
@@ -308,7 +332,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock();
         try {
             console.log("[DEBUG] Add Text button clicked.");
-            // TODO: Implement add text functionality
+            // This button now only toggles the dropdown, actual functionality is handled by the dropdown items
         } catch (error) {
             console.error("[DEBUG] Error in Add Text button:", error);
         } finally {
@@ -443,12 +467,13 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock();
         try {
             console.log("[DEBUG] Lock Element button clicked.");
-            // TODO: Implement lock element functionality
             // This should toggle the lock state of the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (unlockedBlock) {
                 // Assuming there's a function to toggle lock, e.g., toggleBlockLock
                 toggleBlockLock(unlockedBlock);
+            } else {
+                alert("No unlocked block found to lock.");
             }
         } catch (error) {
             console.error("[DEBUG] Error in Lock Element button:", error);
@@ -518,14 +543,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /**
-     * **Event Listener for 'blockLockChanged'**
+     * **Event Listener for 'deleteModeChanged' and 'blockLockChanged'**
      * Listens for custom events dispatched from contentWorkshop.js
      * and updates the button states dynamically.
      */
+    // Listen for deleteModeChanged event
+    window.addEventListener('deleteModeChanged', (e) => {
+        deleteMode = e.detail.deleteMode;
+        console.log(`[DEBUG] 'deleteModeChanged' event triggered. Delete Mode is now: ${deleteMode}`);
+        updateButtonStates();
+    });
+
+    // Listen for blockLockChanged event
     window.addEventListener('blockLockChanged', (e) => {
         const { blockId, isLocked } = e.detail;
         console.log(`[DEBUG] 'blockLockChanged' event triggered for blockId: ${blockId}, isLocked: ${isLocked}`);
-        updateButtonStates(); // Ensure button states update
+
+        // Update isAnyBlockUnlocked based on current DOM state
+        isAnyBlockUnlocked = document.querySelector(".grid-item.unlocked-border") !== null;
+
+        updateButtonStates();
     });
 
     /**
@@ -534,11 +571,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * *******************************
      */
 
-    // Disable all second row buttons initially
-    secondRowButtons.forEach((button) => {
-        if (button) button.disabled = true;
-    });
-    console.log("[DEBUG] Second toolbar buttons disabled on page load.");
-
+    // Disable all second row buttons initially if deleteMode is active and a block is unlocked
+    updateButtonStates();
     console.log("[DEBUG] Button state management setup complete.");
 });

@@ -87,9 +87,16 @@
 
 /* Unlocked State Border */
 .grid-item.unlocked-border {
-    border: 2px dashed rgba(255, 165, 0, 0.6);
+    border: 4px dashed rgba(255, 165, 0, 0.6);
     box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
     border-radius: 4px;
+}
+
+/* Prevent interaction with user-added elements in locked blocks */
+.grid-item:not(.unlocked-border) .user-added {
+    pointer-events: none; /* Disable mouse interactions */
+    user-select: none; /* Prevent text selection */
+    cursor: default; /* Default cursor */
 }
 
 /* Hover Effects */
@@ -114,14 +121,6 @@
     box-shadow: none;
     cursor: default; /* Disable hover cursor */
 }
-
-/* Persistent "editing" style when unlocked */
-.grid-item[data-unlocked="true"] {
-    border: 2px dashed rgba(255, 165, 0, 0.8); /* Light orange dashed border */
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.1); /* Slight glow for active editing */
-    border-radius: 4px;
-}
-
 
 /* MINI SQUARE - Proper size and tighter spacing */
 .grid-item.block-grid-small,
@@ -222,15 +221,17 @@
 
 /* Block Content Styling */
 .block-content {
-    flex: 1; /* Allow content to fill the block */
-    display: flex;
-    flex-direction: column; /* Stack content vertically */
-    z-index: 1; /* Keep content below the lock */
-    word-wrap: break-word; /* Corrected from 'text-wrap' */
-    overflow: hidden; /* Prevent text overflow */
-    /* Optional: Add padding for better text spacing */
-    padding: 5px;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* Prevent overflow entirely */
+    white-space: normal; /* Allow text wrapping */
+    word-wrap: break-word; /* Legacy: Break long words */
+    overflow-wrap: break-word; /* Modern equivalent: Break long words */
+    word-break: break-all; /* Forces breaking anywhere if necessary */
 }
+
+
 
 /* Lock Overlay Styling */
 .lock-overlay {
@@ -262,6 +263,18 @@
     filter: brightness(100%); /* Optional: Brighten the icon on hover */
 }
 
+.centered-draggable {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+/* Force cursor to default when block is locked */
+.grid-item:not(.unlocked-border) .draggable-element {
+    cursor: default !important;
+}
+
 /* Style for the actively dragged block */
 .active-dragged {
     border: 2px dashed #007BFF; /* Example color */
@@ -287,74 +300,38 @@
     border: 2px solid transparent; /* Your default border */
 }
 
-/* Unlocked State Border */
-.grid-item.unlocked-border {
-    border: 2px dashed rgba(255, 165, 0, 0.5);
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
-    border-radius: 4px;
+/* Prevent interaction with user-added elements in locked blocks */
+.grid-item:not(.unlocked-border) .user-added {
+    pointer-events: none; /* Disable mouse interactions */
+    user-select: none; /* Prevent text selection */
+    cursor: default; /* Default cursor */
 }
 
-/* Hover Effects */
-.grid-item.default-border:hover {
-    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border */
-    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2); /* Subtle glow effect */
-    border-radius: 4px; /* Slightly rounded corners */
+/* Delete Mode Border */
+.delete-mode .grid-item .editable-text,
+.delete-mode .grid-item .add-text,
+.delete-mode .grid-item .image,
+.delete-mode .grid-item .link,
+.delete-mode .grid-item .some-other-user-added-class {
+    outline: 1px solid red;
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
-.grid-item.unlocked-border:hover {
-    box-shadow: 0 0 12px rgba(255, 165, 0, 0.2); /* Slightly more pronounced glow */
-    /* You can add more hover-specific styles for unlocked blocks if desired */
+/* Optionally, if all user-added elements share a common class, e.g., .user-added */
+.delete-mode .grid-item .user-added {
+    outline: 1px solid red;
+    outline-offset: 2px;
+    border-radius: 2px;
 }
 
-
-/*
-*====================
-* SECONDARY TOOLBAR ROW GRID EDITING
-*====================
-*/
-
-/* BUTTON Grid Overlay */
-.grid-overlay-active {
-    position: relative;
+/* Solid red border for delete mode */
+.delete-mode .user-added {
+    outline: 2px solid red; /* Solid border for delete mode */
+    outline-offset: 2px;
+    border-radius: 2px;
+    transition: outline 0.2s ease; /* Smooth transition */
 }
-
-.grid-overlay-active::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    pointer-events: none; /* Allow clicks to pass through */
-    z-index: 10; /* Ensure overlay is above content but below toolbar */
-    background-position: center; /* Center the grid */
-}
-
-/* Small Grid Overlay */
-.grid-overlay-active.grid-overlay-small::before {
-    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
-    background-size: 10px 10px; /* Small grid size */
-    background-position: center; /* Center the grid */
-}
-
-/* Medium Grid Overlay */
-.grid-overlay-active.grid-overlay-medium::before {
-    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
-    background-size: 20px 20px; /* Medium grid size */
-    background-position: center; /* Center the grid */
-}
-
-/* Large Grid Overlay */
-.grid-overlay-active.grid-overlay-large::before {
-    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
-                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
-    background-size: 40px 40px; /* Large grid size */
-    background-position: center; /* Center the grid */
-}
-
-
 
 /** Add Text Button **/ 
 .dropdown {
@@ -362,67 +339,35 @@
     display: inline-block;
 }
 
-/* Dropdown Menu */
-.dropdown-menu {
+/* Horizontal Dropdown */
+.horizontal-dropdown .dropdown-menu {
     display: none; /* Hidden by default */
     position: absolute;
     background-color: #f9f9f9;
-    min-width: 160px;
-    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
     z-index: 1;
     top: 100%; /* Position below the button */
     left: 0;
-    right: 0;
-    /* For horizontal layout */
-    display: flex;
-    flex-direction: row;
+    flex-direction: row; /* Horizontal layout */
+    gap: 10px; /* Space between buttons */
     padding: 5px;
+    white-space: nowrap; /* Prevent items from wrapping */
+    width: max-content; /* Dynamically adjusts to the content width */
+    min-width: unset; /* Remove any inherited or conflicting min-width */
 }
 
-/* Dropdown Items */
-.dropdown-item {
+.horizontal-dropdown .dropdown-item {
+    display: inline-block !important; /* Ensure horizontal alignment */
     padding: 8px 12px;
     cursor: pointer;
-    white-space: nowrap;
-    background-color: #fff;
+    white-space: nowrap; /* Prevent wrapping */
+    background-color: #007BFF;
+    color: white;
     border: none;
-    outline: none;
+    border-radius: 4px;
+    text-align: center;
 }
 
-.dropdown-item:hover {
-    background-color: #ddd;
+.horizontal-dropdown .dropdown-item:hover {
+    background-color: #0056b3;
 }
-
-/* Dropdown Arrow */
-.dropdown-arrow {
-    margin-left: 5px;
-    font-size: 0.8em;
-}
-
-
-
-
-
-/*
-*====================
-* END SECONDARY TOOLBAR ROW GRID EDITING
-*====================
-*/
-
-
-
-
-@media (max-width: 1240px) {
-    #contentDisplay {
-        grid-template-columns: repeat(9, minmax(90px, 1fr));
-        grid-auto-rows: 75px;
-        padding-bottom: calc(60px + 2vh);
-    }
-
-    .grid-item.block-centerpiece,
-    .grid-item.block-spacer-centerpiece {
-        grid-column: 2 / span 7; /* Adjust grid position */
-        justify-self: center; /* Ensure it remains centered horizontally */
-    }
-}
-

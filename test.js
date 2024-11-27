@@ -170,34 +170,34 @@ document.addEventListener("DOMContentLoaded", () => {
         console.log(`[DEBUG] Redo button is now ${redoButton.disabled ? "disabled" : "enabled"}.`);
     };
 
-    // Function to update the state of all buttons dynamically
+    // **Modified Function to update the state of all buttons dynamically**
     const updateButtonStates = () => {
         // Save Draft Button
         saveDraftButton.disabled = !unsavedChanges || isSaving || viewMode === 'live';
 
-        // Push Live Button: Disabled if unsaved changes, saving, already pushed live, live view, a block is unlocked, or delete mode is active
-        pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive || viewMode === 'live' || currentlyUnlockedBlock !== null || deleteMode;
+        // Push Live Button: Disabled if unsaved changes, saving, already pushed live, live view, or a block is unlocked
+        pushLiveButton.disabled = unsavedChanges || isSaving || hasPushedLive || viewMode === 'live' || currentlyUnlockedBlock !== null;
 
-        // Copy Live Button: Disabled if a block is unlocked, delete mode is active, or not in draft mode
-        copyLiveButton.disabled = currentlyUnlockedBlock !== null || viewMode !== 'draft' || deleteMode;
+        // Copy Live Button: Disabled if a block is unlocked or not in draft mode
+        copyLiveButton.disabled = currentlyUnlockedBlock !== null || viewMode !== 'draft';
 
         // Main Toolbar Buttons
-        viewToggleButton.disabled = isSaving || deleteMode; // Disable during saving or delete mode
-        blockTypeControl.disabled = currentlyUnlockedBlock !== null || isSaving || viewMode === 'live' || deleteMode;
+        viewToggleButton.disabled = isSaving; // Keep View Toggle button active even when a block is unlocked
+        blockTypeControl.disabled = currentlyUnlockedBlock !== null || isSaving || viewMode === 'live';
         addBlockButton.disabled = currentlyUnlockedBlock !== null || deleteMode || isSaving || viewMode === 'live';
 
-        // Delete Mode Button: Disabled if saving or not in draft mode
-        deleteModeButton.disabled = isSaving || viewMode !== 'draft';
+        // **Delete Mode Button: Now remains enabled when a block is unlocked**
+        deleteModeButton.disabled = isSaving || viewMode !== 'draft'; // Modified line
 
         // Select Block Type Dropdown
         if (customDropdownToggle) {
-            customDropdownToggle.disabled = currentlyUnlockedBlock !== null || isSaving || viewMode === 'live' || deleteMode;
+            customDropdownToggle.disabled = currentlyUnlockedBlock !== null || isSaving || viewMode === 'live';
         }
 
-        // Clear Content Button: Enabled if there is content to clear, not saving, in draft mode, no padlocks unlocked, and delete mode is not active
-        clearContentButton.disabled = localLayout.length === 0 || isSaving || viewMode === 'live' || currentlyUnlockedBlock !== null || deleteMode;
+        // Clear Content Button: Enabled if there is content to clear, not saving, in draft mode, and no padlocks unlocked
+        clearContentButton.disabled = localLayout.length === 0 || isSaving || viewMode === 'live' || currentlyUnlockedBlock !== null;
 
-        // Undo and Redo buttons are handled separately
+        // **Undo and Redo buttons are handled separately**
         updateHistoryButtonsState();
         updateSecondRowButtonStates(); // Update the secondary toolbar buttons
 
@@ -205,11 +205,9 @@ document.addEventListener("DOMContentLoaded", () => {
             Save Draft: ${saveDraftButton.disabled ? 'disabled' : 'enabled'},
             Push Live: ${pushLiveButton.disabled ? 'disabled' : 'enabled'},
             Copy Live: ${copyLiveButton.disabled ? 'disabled' : 'enabled'},
-            View Toggle: ${viewToggleButton.disabled ? 'disabled' : 'enabled'},
-            Block Type Control: ${blockTypeControl.disabled ? 'disabled' : 'enabled'},
-            Add Block: ${addBlockButton.disabled ? 'disabled' : 'enabled'},
             Clear Content: ${clearContentButton.disabled ? 'disabled' : 'enabled'}.`);
     };
+
 
     // **Utility Functions to Control Body Scroll**
     const disableBodyScroll = () => {
@@ -231,47 +229,43 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Padlock Functionality for Blocks**
     const toggleBlockLock = (blockElement) => {
         const lockOverlay = blockElement.querySelector(".lock-overlay");
-        const contentEditableElements = blockElement.querySelectorAll(".block-content, .block-content *");
-    
+        const contentEditableElement = blockElement.querySelector(".block-content");
+
         if (!lockOverlay) {
             console.error("[DEBUG] Lock overlay element not found.");
             return;
         }
-    
-        const isLocked = lockOverlay.dataset.locked === "false" ? false : true;
-    
+
+        const isLocked = lockOverlay.dataset.locked === "true";
+
         if (isLocked) {
             // Unlock the block
             lockOverlay.dataset.locked = "false";
+            blockElement.setAttribute("data-unlocked", "true"); // Set persistent editing state
             lockOverlay.innerHTML = `<img src="${unlockSVGPath}" alt="Unlocked" class="lock-icon" />`;
-    
-            // Enable content editing for all child elements
-            contentEditableElements.forEach((element) => {
-                element.contentEditable = "true";
-            });
-    
+            contentEditableElement.contentEditable = "true";
             blockElement.classList.remove('default-border');
             blockElement.classList.add('unlocked-border'); // Add unlocked border
             currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
             console.log("[DEBUG] Block unlocked.");
-    
+
             // Disable Sortable.js when a block is unlocked
             if (sortableInstance) {
                 sortableInstance.destroy();
                 sortableInstance = null;
                 console.log("[DEBUG] Sortable.js instance destroyed due to unlocked block.");
             }
-    
-            // Open the secondary toolbar
-            if (secondToolbarRow) {
-                secondToolbarRow.style.display = "flex"; // Show the secondary toolbar
-                if (toolbarTab) {
-                    toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update the toolbar tab arrow
-                    toolbarTab.classList.add('expanded'); // Add expanded styling
-                }
-                console.log("[DEBUG] Secondary toolbar opened due to block unlocking.");
-            }
-    
+
+            // **Remove logic that hides the second toolbar row**
+            // if (secondToolbarRow) {
+            //     secondToolbarRow.style.display = "flex"; // Show the secondary toolbar
+            //     if (toolbarTab) {
+            //         toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update the toolbar tab arrow
+            //         toolbarTab.classList.add('expanded'); // Add expanded styling
+            //     }
+            //     console.log("[DEBUG] Secondary toolbar opened due to block unlocking.");
+            // }
+
             // Adjust delete mode visuals if active
             if (deleteMode) {
                 // Remove 'delete-border' from all blocks
@@ -282,52 +276,49 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
             // Lock the block
             lockOverlay.dataset.locked = "true";
+            blockElement.removeAttribute("data-unlocked"); // Remove persistent editing state
             lockOverlay.innerHTML = `<img src="${lockSVGPath}" alt="Locked" class="lock-icon" />`;
-    
-            // Disable content editing for all child elements
-            contentEditableElements.forEach((element) => {
-                element.contentEditable = "false";
-            });
-    
+            contentEditableElement.contentEditable = "false";
+
             // Remove grid overlay if active
             if (blockElement.classList.contains('grid-overlay-active')) {
                 blockElement.classList.remove('grid-overlay-active', ...gridSizeClasses);
                 gridOverlayActive = false; // Reset the global grid overlay state
                 console.log("[DEBUG] Grid overlay removed due to block being locked.");
             }
-    
+
             // Reset currentlyUnlockedBlock if this block was previously unlocked
             if (currentlyUnlockedBlock === blockElement) {
                 currentlyUnlockedBlock = null;
                 console.log("[DEBUG] Locked previously unlocked block. Reset currentlyUnlockedBlock.");
             }
-    
+
             blockElement.classList.remove('unlocked-border');
             blockElement.classList.add('default-border'); // Re-add default border
-    
+
             console.log("[DEBUG] Block locked.");
-    
+
             // Re-enable Sortable.js if no other blocks are unlocked
             if (!currentlyUnlockedBlock && !deleteMode && !isSortLocked && viewMode === 'draft') {
                 initializeSortable();
                 console.log("[DEBUG] Sortable.js re-initialized after locking block.");
             }
-    
+
             // Adjust delete mode visuals if active
             if (deleteMode) {
-                // Remove 'delete-border' from content inside the locked block
+                // Remove 'delete-border' from content inside the unlocked block
                 const deletableElements = blockElement.querySelectorAll(".deletable");
                 deletableElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
-    
+
                 // Add 'delete-border' to all blocks
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.add("delete-border");
                 });
             }
         }
-    
+
         // **Dispatch Custom Event for Lock State Change**
         const lockStateChangedEvent = new CustomEvent('blockLockChanged', {
             detail: {
@@ -336,10 +327,9 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         });
         window.dispatchEvent(lockStateChangedEvent);
-    
+
         updateButtonStates();
     };
-    
 
     // **Ensure Only One Block is Unlocked at a Time**
     const enforceSingleUnlock = (blockElement) => {
@@ -522,35 +512,40 @@ document.addEventListener("DOMContentLoaded", () => {
         return current;
     };
 
+    // **Toggle Delete Mode**
     const toggleDeleteMode = () => {
         if (viewMode !== 'draft') return; // Prevent delete mode in live mode
-    
-        // Toggle the deleteMode flag
         deleteMode = !deleteMode;
         console.log(`[DEBUG] Delete mode ${deleteMode ? "enabled" : "disabled"}.`);
-        
-        // Toggle the 'delete-mode' class on the gridContainer
         gridContainer.classList.toggle("delete-mode", deleteMode);
-    
-        /**
-         * **Adjust delete-border classes based on unlocked block**
-         */
+
+        // **Remove disabling of main toolbar buttons**
+        // Commented out to allow main toolbar buttons to remain active
+        // addBlockButton.disabled = deleteMode;
+        // saveDraftButton.disabled = deleteMode;
+        // pushLiveButton.disabled = deleteMode;
+        // copyLiveButton.disabled = deleteMode;
+        // clearContentButton.disabled = deleteMode;
+        // blockTypeControl.disabled = deleteMode;
+        // if (customDropdownToggle) {
+        //     customDropdownToggle.disabled = deleteMode || (viewMode === 'live'); // Ensure dropdown is disabled if deleteMode or live view
+        // }
+        // viewToggleButton.disabled = deleteMode; // Disable "View Live" button
+
+        // **Manage delete-border classes based on unlocked block**
         if (deleteMode) {
             if (currentlyUnlockedBlock) {
                 // Remove 'delete-border' from all blocks
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.remove("delete-border");
                 });
-    
                 // Add 'delete-border' to deletable internal elements within the unlocked block
                 const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
                 deletableElements.forEach((element) => {
                     element.classList.add("delete-border");
                 });
-    
-                /**
-                 * **Disable Editing in Delete Mode**
-                 */
+
+                // **Disable Editing in Delete Mode**
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
                     blockContent.contentEditable = "false";
@@ -564,94 +559,53 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         } else {
             // Delete mode is off
-    
             // Remove 'delete-border' from all blocks
             Array.from(gridContainer.children).forEach((block) => {
                 block.classList.remove("delete-border");
             });
-    
             if (currentlyUnlockedBlock) {
                 // Remove 'delete-border' from content inside the unlocked block
                 const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
                 deletableElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
-    
-                /**
-                 * **Re-enable Editing Based on Lock State**
-                 */
+
+                // **Re-enable Editing Based on Lock State**
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
                     blockContent.contentEditable = "true"; // Assuming the block is still unlocked
                     console.log("[DEBUG] Re-enabled contentEditable after exiting delete mode.");
                 }
             }
-        }
-    
-        /**
-         * **Add/Remove Red Border on Delete Mode Button**
-         */
-        if (deleteMode) {
-            deleteModeButton.classList.add('delete-mode-active');
-        } else {
-            deleteModeButton.classList.remove('delete-mode-active');
-        }
-    
-        /**
-         * **Manage Button States**
-         * Instead of directly disabling buttons here,
-         * we'll dispatch a custom event to let secondaryToolbar.js handle it.
-         */
-        // Dispatch a custom event indicating the deleteMode state has changed
-        const deleteModeChangedEvent = new CustomEvent('deleteModeChanged', {
-            detail: {
-                deleteMode: deleteMode
+
+            // **Add/Remove Red Border on Delete Mode Button**
+            if (deleteMode) {
+                deleteModeButton.classList.add('delete-mode-active');
+            } else {
+                deleteModeButton.classList.remove('delete-mode-active');
             }
-        });
-        window.dispatchEvent(deleteModeChangedEvent);
-    
-        /**
-         * **Handle Delete Mode Activation**
-         */
-        if (deleteMode) {
-            gridContainer.addEventListener("click", deleteBlock);
-    
-            // Destroy the sortable instance to disable sorting
-            if (sortableInstance) {
-                sortableInstance.destroy();
-                sortableInstance = null;
-                console.log("[DEBUG] Sortable.js instance destroyed for delete mode.");
-            }
-        } else {
-            gridContainer.removeEventListener("click", deleteBlock);
-    
-            // Reset button states via the custom event listener in secondaryToolbar.js
-            // No need to manually enable/disable here
-            // Other state changes are handled by the custom event
+
+            // **Note:** Main toolbar buttons remain enabled
         }
-    
-        /**
-         * **Highlight Blocks in Delete Mode**
-         */
+
+        // **Highlight blocks in delete mode**
         Array.from(gridContainer.children).forEach((block) => {
+            // Borders are managed via CSS classes; no need to set inline styles
+            // Optionally, you can add/remove a class for cursor changes
             if (deleteMode) {
                 block.style.cursor = "pointer";
             } else {
                 block.style.cursor = "default";
             }
         });
-    
-        /**
-         * **Update Undo and Redo Buttons**
-         * Assume that updateHistoryButtonsState() is responsible for this.
-         * It should be called within secondaryToolbar.js based on the application's state.
-         */
+
+        // **Update undo and redo buttons**
         updateHistoryButtonsState();
-    
-        // **Call updateButtonStates to refresh button states**
-        updateButtonStates();
+
+        // **Update second row button states based on new conditions**
+        updateSecondRowButtonStates();
     };
-    
+
     // **Delete a Block or Content When in Delete Mode**
     const deleteBlock = (event) => {
         if (!deleteMode) return;
@@ -704,13 +658,6 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Update local layout
                     updateLocalLayoutFromDOM();
                     deletionsDuringDeleteMode = true; // Mark that deletions have occurred
-
-                    // **Set unsavedChanges to true and update button states**
-                    unsavedChanges = true;
-                    hasPushedLive = false;
-                    updateButtonStates();
-
-                    console.log("[DEBUG] unsavedChanges set to true after deleting an element.");
                 }
             }
         } else {
@@ -751,17 +698,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 blockElement.remove();
                 updateLocalLayoutFromDOM(); // Update the layout after removing the block
                 deletionsDuringDeleteMode = true; // Mark that deletions have occurred
-
-                // **Set unsavedChanges to true and update button states**
-                unsavedChanges = true;
-                hasPushedLive = false;
-                updateButtonStates();
-
-                console.log("[DEBUG] unsavedChanges set to true after deleting a block.");
             }
         }
     };
-
 
     /**
      * *******************************
@@ -792,7 +731,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const computedStyle = window.getComputedStyle(block);
             const rowSpan = parseInt(computedStyle.getPropertyValue("grid-row").split("span")[1]?.trim() || 1);
             const colSpan = parseInt(computedStyle.getPropertyValue("grid-column").split("span")[1]?.trim() || 1);
-    
+
             const gridOverlayActive = block.classList.contains('grid-overlay-active');
             let gridOverlaySizeIndex = -1;
             if (gridOverlayActive) {
@@ -803,15 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
             }
-    
-            // Capture draggable positions
-            const draggableElements = Array.from(block.querySelectorAll('.draggable-element'));
-            const draggablePositions = draggableElements.map(draggable => ({
-                id: draggable.dataset.id,
-                x: parseFloat(draggable.getAttribute('data-x')) || 0,
-                y: parseFloat(draggable.getAttribute('data-y')) || 0
-            }));
-    
+
             return {
                 block_id: block.dataset.blockId || null,
                 type: block.classList[1],
@@ -824,12 +755,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 page_id: document.querySelector(".side-panel .active")?.dataset.page,
                 locked: block.querySelector(".lock-overlay").dataset.locked === "false" ? false : true,
                 gridOverlayActive: gridOverlayActive,
-                gridOverlaySizeIndex: gridOverlaySizeIndex,
-                draggablePositions // Include draggable positions in the layout
+                gridOverlaySizeIndex: gridOverlaySizeIndex
             };
         });
         console.log("[DEBUG] Updated local layout:", JSON.stringify(localLayout, null, 2));
-    };    
+    };
 
     // **Undo the Last Action (Add, Delete, Move, Edit)**
     const undoLayoutChange = () => {
@@ -891,7 +821,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 });
 
                 // Insert the block back at its original index
-                const blocks = Array.from(gridContainer.children);
+                const blocks = Array.from(gridContainer.children).filter(child => !child.classList.contains('no-saved-draft'));
                 if (lastDeleted.index >= blocks.length) {
                     gridContainer.appendChild(restoredBlock);
                     console.log(`[DEBUG] Inserted block at the end (index ${lastDeleted.index}).`);
@@ -1079,6 +1009,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Function to Handle Rendering Blocks to the DOM**
     const renderBlocksToDOM = (blocks) => {
+        // **Collect Current Lock States Before Clearing**
+        const currentLockStates = {};
+        gridContainer.querySelectorAll(".grid-item").forEach((blockElement) => {
+            const blockId = blockElement.dataset.blockId || null;
+            const lockOverlay = blockElement.querySelector(".lock-overlay");
+            const isLocked = lockOverlay.dataset.locked === "false" ? false : true;
+            currentLockStates[blockId] = isLocked;
+        });
+
         // **Hide "NO DRAFT SAVED" Message Initially**
         const existingNoDraftMessage = gridContainer.querySelector(".no-saved-draft-container");
         if (existingNoDraftMessage) {
@@ -1184,7 +1123,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
                 console.log("[DEBUG] 'delete-border' class applied to block during rendering.");
             }
-
         });
 
         // **Initialize Sortable.js Only If No Blocks Are Unlocked and Blocks Exist**
@@ -1318,9 +1256,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const addBlock = () => {
         if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
         console.log("[DEBUG] Add Block button clicked.");
-    
+
         const blockType = blockTypeControl.value;
-    
+
         const newBlock = {
             block_id: nextBlockId++, // Assign a unique block ID
             type: blockType,
@@ -1332,24 +1270,20 @@ document.addEventListener("DOMContentLoaded", () => {
             gridOverlaySizeIndex: -1,
             locked: true // New blocks are locked by default
         };
-    
+
         // Add the block to the local layout
         localLayout.push(newBlock);
-    
+
         // Add the block to the DOM
         const blockElement = document.createElement("div");
         blockElement.className = `grid-item ${newBlock.type} default-border`;
         blockElement.dataset.blockId = newBlock.block_id; // Use the unique block_id
         blockElement.innerHTML = `
-        <div class="block-content" contenteditable="false" style="width: 100%; height: 100%; position: relative;">
-            <div class="draggable-element centered-draggable">
-                <p class="user-added deletable editable-text" tabindex="0">${newBlock.content}</p>
+            <div class="block-content" contenteditable="false" style="width: 100%; height: 100%;"><p class="user-added" tabindex="0">${newBlock.content}</p></div>
+            <div class="lock-overlay" data-locked="true">
+                <img src="${lockSVGPath}" alt="Locked" class="lock-icon" />
             </div>
-        </div>
-        <div class="lock-overlay" data-locked="true">
-            <img src="${lockSVGPath}" alt="Locked" class="lock-icon" />
-        </div>
-    `;  
+        `;
         gridContainer.appendChild(blockElement);
 
         // Add 'deletable' class to internal elements
@@ -1449,7 +1383,8 @@ document.addEventListener("DOMContentLoaded", () => {
                     toolbarTab.enabled = (viewMode === 'draft');
                     if (!toolbarTab.enabled) {
                         toolbarTab.classList.add('no-hover');
-                        secondToolbarRow.style.display = 'none'; // Hide the second toolbar row
+                        // Remove logic that hides the second toolbar row
+                        // secondToolbarRow.style.display = 'none'; // Hide the second toolbar row
                         toolbarTab.innerHTML = '<span>&#x25B2;</span>'; // Reset to upward arrow
                         toolbarTab.classList.remove('expanded'); // Remove expanded class if any
                     } else {
@@ -2072,16 +2007,20 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
+    // **Modified Function to Update Second Row Button States**
     const updateSecondRowButtonStates = () => {
         const secondRowButtons = document.querySelectorAll('.toolbar-row.second-row button');
-    
+        const isAnyBlockUnlocked = currentlyUnlockedBlock !== null;
+
+        // Disable second row buttons only when a block is unlocked AND delete mode is active
+        const shouldDisable = isAnyBlockUnlocked && deleteMode;
+
         secondRowButtons.forEach((button) => {
-            // Disable buttons if delete mode is on, or no block is unlocked, or not in draft mode
-            button.disabled = deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft';
+            button.disabled = shouldDisable;
         });
-    
-        console.log(`[DEBUG] Second row buttons are now ${deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft' ? 'disabled' : 'enabled'}.`);
-    };    
+
+        console.log(`[DEBUG] Second row buttons ${shouldDisable ? "disabled" : "enabled"}.`);
+    };
 
     // **Toolbar Tab Functionality**
     const createToolbarTab = () => {
@@ -2116,9 +2055,9 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     };
 
-    // Initialize toolbar tab and ensure the second row is hidden initially
+    // Initialize toolbar tab and ensure the second row is visible initially
     if (toolbar && secondToolbarRow) {
-        secondToolbarRow.style.display = 'none'; // Hide second row initially
+        secondToolbarRow.style.display = 'flex'; // Ensure second row is visible initially
         createToolbarTab(); // Create and attach the tab
     } else {
         console.error("[DEBUG] Toolbar or second toolbar row is missing.");
@@ -2145,7 +2084,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize clearContentButton state
     clearContentButton.disabled = localLayout.length === 0 || isSaving || viewMode === 'live' || currentlyUnlockedBlock !== null;
- 
+
 
     /**
      * *******************************
@@ -2196,168 +2135,9 @@ document.addEventListener("DOMContentLoaded", () => {
                         event.preventDefault(); // Prevent dragging
                         return;
                     }
-        
+
                     event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                    console.log("[DEBUG] Dragging started on:", event.target);
                 },
                 move(event) {
                     // Allow movement only if the parent block is unlocked
-                    const blockElement = event.target.closest('.grid-item');
-                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                    if (lockOverlay?.dataset.locked === "true") {
-                        return; // Prevent dragging when locked
-                    }
-        
-                    const target = event.target;
-        
-                    // Keep the dragged position in the data-x/data-y attributes
-                    const dataX = parseFloat(target.getAttribute('data-x')) || 0;
-                    const dataY = parseFloat(target.getAttribute('data-y')) || 0;
-        
-                    // Calculate the new position
-                    const deltaX = event.dx;
-                    const deltaY = event.dy;
-        
-                    const newX = dataX + deltaX;
-                    const newY = dataY + deltaY;
-        
-                    // Translate the element
-                    target.style.transform = `translate(${newX}px, ${newY}px)`;
-        
-                    // Update the position attributes
-                    target.setAttribute('data-x', newX);
-                    target.setAttribute('data-y', newY);
-        
-                    console.log(`[DEBUG] Moving element to x: ${newX}, y: ${newY}`);
-                },
-                end(event) {
-                    event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                    console.log('[DEBUG] Drag ended for element:', event.target);
-        
-                    // Update layout state to capture the final position
-                    updateLocalLayoutFromDOM();
-                    saveLayoutState(); // Save the updated layout to the history stack
-                    unsavedChanges = true; // Mark changes as unsaved
-                    hasPushedLive = false; // Reset live state
-                    updateButtonStates(); // Update button states
-                }
-            }
-        });        
-    };
-
-    // **Call the initialization function after rendering blocks**
-    window.addEventListener('blockLockChanged', (e) => {
-        // Re-initialize draggable elements when a block's lock state changes
-        initializeInternalDraggable();
-    });
-
-    // **Initialize draggable elements after initial fetch**
-    if (viewMode === 'draft' && gridContainer) {
-        fetchLayout(true).then(() => {
-            initializeInternalDraggable();
-        });
-    } else {
-        // For live view or other modes, draggable elements are not initialized
-        console.log('[DEBUG] Skipping draggable initialization for non-draft mode.');
-    }
-
-    // **Ensure draggable elements are initialized whenever new elements are added dynamically**
-    // Use MutationObserver to watch for new draggable elements
-    const draggableObserver = new MutationObserver((mutationsList) => {
-        for (let mutation of mutationsList) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                    if (node.classList && node.classList.contains('draggable-element') && !node.hasAttribute('data-interact-initialized')) {
-                        interact(node).draggable({
-                            inertia: true,
-                            modifiers: [
-                                interact.modifiers.restrictRect({
-                                    restriction: 'parent',
-                                    endOnly: true
-                                })
-                            ],
-                            autoScroll: true,
-                            listeners: {
-                                start(event) {
-                                    // Check if the parent block is locked
-                                    const blockElement = event.target.closest('.grid-item');
-                                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                                    if (lockOverlay?.dataset.locked === "true") {
-                                        console.log("[DEBUG] Dragging prevented: Block is locked.");
-                                        event.preventDefault(); // Prevent dragging
-                                        return;
-                                    }
-    
-                                    event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                                    console.log("[DEBUG] Dragging started on:", event.target);
-                                },
-                                move(event) {
-                                    // Allow movement only if the parent block is unlocked
-                                    const blockElement = event.target.closest('.grid-item');
-                                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                                    if (lockOverlay?.dataset.locked === "true") {
-                                        return; // Prevent dragging when locked
-                                    }
-    
-                                    const target = event.target;
-    
-                                    // Keep the dragged position in the data-x/data-y attributes
-                                    const dataX = parseFloat(target.getAttribute('data-x')) || 0;
-                                    const dataY = parseFloat(target.getAttribute('data-y')) || 0;
-    
-                                    // Calculate the new position
-                                    const deltaX = event.dx;
-                                    const deltaY = event.dy;
-    
-                                    const newX = dataX + deltaX;
-                                    const newY = dataY + deltaY;
-    
-                                    // Translate the element
-                                    target.style.transform = `translate(${newX}px, ${newY}px)`;
-    
-                                    // Update the position attributes
-                                    target.setAttribute('data-x', newX);
-                                    target.setAttribute('data-y', newY);
-    
-                                    console.log(`[DEBUG] Moving element to x: ${newX}, y: ${newY}`);
-                                },
-                                end(event) {
-                                    event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                                    console.log('[DEBUG] Drag ended for element:', event.target);
-                                }
-                            }
-                        });
-    
-                        // Mark as initialized to prevent re-initialization
-                        node.setAttribute('data-interact-initialized', 'true');
-                    }
-                });
-            }
-        }
-    });
-    
-    // Start observing the block-content containers for new draggable elements
-    const blockContents = document.querySelectorAll('.block-content');
-    blockContents.forEach(blockContent => {
-        draggableObserver.observe(blockContent, { childList: true, subtree: true });
-    });
-    
-
-    /**
-     * *******************************
-     * **Custom Event Listener for Grid Overlay Changes**
-     * *******************************
-     */
-
-    // **Listen for 'gridOverlayChanged' Events**
-    window.addEventListener('gridOverlayChanged', (e) => {
-        const { blockId, gridOverlayActive, gridOverlaySizeIndex } = e.detail;
-        console.log(`[DEBUG] 'gridOverlayChanged' event received for block ID: ${blockId}, Active: ${gridOverlayActive}, Size Index: ${gridOverlaySizeIndex}`);
-
-        const blockData = localLayout.find(block => block.block_id === blockId);
-        if (blockData) {
-            blockData.gridOverlayActive = gridOverlayActive;
-            blockData.gridOverlaySizeIndex = gridOverlaySizeIndex;
-        }
-    });
-});
+                    const blockElement = event.target.

@@ -85,16 +85,15 @@
             <!-- Second Toolbar Row -->
             <div class="toolbar-row second-row">
                 <button id="toggleGridOverlayButton" class="toolbar-button" title="Toggle Grid Overlay">Grid Overlay</button>
-                <button id="addImageButton" class="toolbar-button" title="Add Image">Add Image</button>
-                <button id="imageLinkButton" class="toolbar-button" title="Image Link">Image Link</button>
-                <div class="dropdown">
-                    <button id="addTextButton" class="toolbar-button">Add Text</button>
+                <div class="dropdown horizontal-dropdown">
+                    <button id="addTextButton" class="dropdown-toggle">Add Text</Add></button>
                     <div id="addTextDropdown" class="dropdown-menu">
-                        <button class="dropdown-item" data-value="p">Paragraph</button>
-                        <button class="dropdown-item" data-value="h1">Heading 1</button>
-                        <button class="dropdown-item" data-value="h2">Heading 2</button>
+                        <button class="dropdown-item" data-value="h1">&lt;H1&gt;</button>
+                        <button class="dropdown-item" data-value="p">&lt;p&gt;</button>
                     </div>
                 </div>
+                <button id="addImageButton" class="toolbar-button" title="Add Image">Add Image</button>
+                <button id="imageLinkButton" class="toolbar-button" title="Image Link">Image Link</button>
                 <button id="textLinkButton" class="toolbar-button" title="Text Link">Text Link</button>
                 <button id="resizeImageButton" class="toolbar-button" title="Resize Image">Resize Image</button>
                 <button id="cropImageButton" class="toolbar-button" title="Crop Image">Crop Image</button>
