@@ -1,4 +1,4 @@
-// secondToolbar.js
+// secondaryToolbar.js
 
 document.addEventListener("DOMContentLoaded", () => {
     console.log("[DEBUG] secondToolbar.js loaded and DOMContentLoaded triggered.");
@@ -28,6 +28,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const animationEffectsButton = document.getElementById("animationEffectsButton");
     const alignmentToolsButton = document.getElementById("alignmentToolsButton");
     const fontStylingButton = document.getElementById("fontStylingButton");
+    const addTextDropdown = document.getElementById("addTextDropdown"); // Dropdown menu
+    const addTextDropdownButton = document.getElementById("addTextButton"); // Add Text button
 
     // **List of Buttons for Iteration**
     const secondRowButtons = [
@@ -140,6 +142,83 @@ document.addEventListener("DOMContentLoaded", () => {
      */
 
     /**
+     * **Add Text Button Dropdown Functionality**
+     */
+    // Ensure the dropdown menu is hidden initially
+    addTextDropdown.style.display = "none";
+
+    // Toggle dropdown visibility when the Add Text button is clicked
+    addTextDropdownButton.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent click from propagating
+        const isVisible = addTextDropdown.style.display === "block";
+        addTextDropdown.style.display = isVisible ? "none" : "block";
+        addTextDropdownButton.setAttribute("aria-expanded", !isVisible);
+    });
+
+    // Handle selection of dropdown items
+    addTextDropdown.querySelectorAll(".dropdown-item").forEach(item => {
+        item.addEventListener("click", async (e) => {
+            e.stopPropagation(); // Prevent click from propagating
+            const selectedValue = item.getAttribute("data-value"); // e.g., "p", "h1", "h2"
+
+            if (!selectedValue) {
+                console.warn("[DEBUG] No data-value attribute found on selected dropdown item.");
+                return;
+            }
+
+            console.log(`[DEBUG] Selected text type: ${selectedValue}`);
+
+            // Insert the selected element into the currently unlocked block
+            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
+            if (!unlockedBlock) {
+                alert("No unlocked block found to add text.");
+                return;
+            }
+
+            const blockContent = unlockedBlock.querySelector('.block-content');
+            if (!blockContent) {
+                console.error("[DEBUG] block-content div not found in the unlocked block.");
+                return;
+            }
+
+            // Create the new element
+            const newElement = document.createElement(selectedValue);
+            newElement.textContent = "New Text"; // Placeholder text; can be edited later
+            newElement.classList.add("deletable", "editable-text"); // Add deletable and styling classes
+
+            // Set contentEditable to true before appending
+            newElement.contentEditable = "true";
+
+            // Append the new element to the block-content
+            blockContent.appendChild(newElement);
+
+            // Automatically focus the new element for immediate editing
+            newElement.focus();
+
+            // Dispatch a custom event to notify contentWorkshop.js about the change
+            const textAddedEvent = new CustomEvent('textAdded', {
+                detail: {
+                    blockId: unlockedBlock.dataset.blockId || null,
+                    element: newElement.outerHTML
+                }
+            });
+            window.dispatchEvent(textAddedEvent);
+
+            // Close the dropdown
+            addTextDropdown.style.display = "none";
+            addTextDropdownButton.setAttribute("aria-expanded", "false");
+
+            console.log(`[DEBUG] Inserted new <${selectedValue}> element into the unlocked block.`);
+        });
+    });
+
+    // Close the dropdown when clicking outside
+    document.addEventListener("click", () => {
+        addTextDropdown.style.display = "none";
+        addTextDropdownButton.setAttribute("aria-expanded", "false");
+    });
+
+    /**
      * **Toggle Grid Overlay Button**
      */
     toggleGridOverlayButton.addEventListener("click", async () => {
@@ -189,8 +268,12 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /**
-     * **Add Image Button**
+     * **Other Toolbar Buttons Event Listeners**
+     * (Add Image, Image Link, etc.)
+     * Ensure these do not interfere with the Add Text functionality
      */
+
+    // Example for Add Image Button
     addImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {

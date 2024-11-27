@@ -224,12 +224,15 @@
 .block-content {
     flex: 1; /* Allow content to fill the block */
     display: flex;
-    align-items: center; /* Center text vertically */
-    justify-content: center; /* Center text horizontally */
-    padding: 5px; /* Optional: Add padding for readability */
+    flex-direction: column; /* Stack content vertically */
     z-index: 1; /* Keep content below the lock */
+    word-wrap: break-word; /* Corrected from 'text-wrap' */
+    overflow: hidden; /* Prevent text overflow */
+    /* Optional: Add padding for better text spacing */
+    padding: 5px;
 }
 
+/* Lock Overlay Styling */
 .lock-overlay {
     position: absolute; /* Place it over the block */
     top: 1px; /* Adjust to the top-right corner */
@@ -304,7 +307,6 @@
 }
 
 
-
 /*
 *====================
 * SECONDARY TOOLBAR ROW GRID EDITING
@@ -354,7 +356,48 @@
 
 
 
+/** Add Text Button **/ 
+.dropdown {
+    position: relative;
+    display: inline-block;
+}
 
+/* Dropdown Menu */
+.dropdown-menu {
+    display: none; /* Hidden by default */
+    position: absolute;
+    background-color: #f9f9f9;
+    min-width: 160px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 1;
+    top: 100%; /* Position below the button */
+    left: 0;
+    right: 0;
+    /* For horizontal layout */
+    display: flex;
+    flex-direction: row;
+    padding: 5px;
+}
+
+/* Dropdown Items */
+.dropdown-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    white-space: nowrap;
+    background-color: #fff;
+    border: none;
+    outline: none;
+}
+
+.dropdown-item:hover {
+    background-color: #ddd;
+}
+
+/* Dropdown Arrow */
+.dropdown-arrow {
+    margin-left: 5px;
+    font-size: 0.8em;
+}
 
 
 

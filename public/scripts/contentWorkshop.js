@@ -74,6 +74,9 @@ document.addEventListener("DOMContentLoaded", () => {
     let currentlyUnlockedBlock = null; // Track the currently unlocked block
     let wasSecondaryToolbarOpen = false; // Track if the secondary toolbar was open before toggling view
 
+    // **Unique Block ID Counter**
+    let nextBlockId = Date.now(); // Initialize a unique counter for block IDs
+
     /**
      * *******************************
      * **Enhanced Mutex Implementation**
@@ -176,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Clear Content Button: Enabled if there is content to clear, not saving, in draft mode, and no padlocks unlocked
         clearContentButton.disabled = localLayout.length === 0 || isSaving || viewMode === 'live' || currentlyUnlockedBlock !== null;
 
-        // Undo and Redo buttons are handled separately
+        // **Undo and Redo buttons are handled separately**
         updateHistoryButtonsState();
         updateSecondRowButtonStates(); // Update the secondary toolbar buttons
 
@@ -251,11 +254,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.remove("delete-border");
                 });
-                // Add 'delete-border' to content inside the unlocked block
-                const contentElements = blockElement.querySelectorAll(".block-content *");
-                contentElements.forEach((element) => {
-                    element.classList.add("delete-border");
-                });
             }
         } else {
             // Lock the block
@@ -290,9 +288,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Adjust delete mode visuals if active
             if (deleteMode) {
-                // Remove 'delete-border' from content inside the block
-                const contentElements = blockElement.querySelectorAll(".block-content *");
-                contentElements.forEach((element) => {
+                // Remove 'delete-border' from content inside the unlocked block
+                const deletableElements = blockElement.querySelectorAll(".deletable");
+                deletableElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
 
@@ -303,7 +301,7 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
 
-        // Dispatch Custom Event for Lock State Change
+        // **Dispatch Custom Event for Lock State Change**
         const lockStateChangedEvent = new CustomEvent('blockLockChanged', {
             detail: {
                 blockId: blockElement.dataset.blockId || null,
@@ -504,13 +502,19 @@ document.addEventListener("DOMContentLoaded", () => {
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.remove("delete-border");
                 });
-                // Add 'delete-border' to content inside the unlocked block
-                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content *");
-                contentElements.forEach((element) => {
+                // Add 'delete-border' to deletable internal elements within the unlocked block
+                const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
+                deletableElements.forEach((element) => {
                     element.classList.add("delete-border");
                 });
+
+                // **Disable Editing in Delete Mode**
+                const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
+                if (blockContent) {
+                    blockContent.contentEditable = "false";
+                    console.log("[DEBUG] Disabled contentEditable in delete mode.");
+                }
             } else {
-                // Normal delete mode behavior
                 // Add 'delete-border' class to all blocks
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.add("delete-border");
@@ -524,10 +528,17 @@ document.addEventListener("DOMContentLoaded", () => {
             });
             if (currentlyUnlockedBlock) {
                 // Remove 'delete-border' from content inside the unlocked block
-                const contentElements = currentlyUnlockedBlock.querySelectorAll(".block-content *");
-                contentElements.forEach((element) => {
+                const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
+                deletableElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
+
+                // **Re-enable Editing Based on Lock State**
+                const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
+                if (blockContent) {
+                    blockContent.contentEditable = "true"; // Assuming the block is still unlocked
+                    console.log("[DEBUG] Re-enabled contentEditable after exiting delete mode.");
+                }
             }
         }
 
@@ -622,24 +633,49 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Do nothing
                     return;
                 }
-                console.log("[DEBUG] Deleting content inside unlocked block.");
 
-                // Save the content state before deletion for undo purposes
-                deleteHistory.push({
-                    blockElement: currentlyUnlockedBlock.cloneNode(true),
-                    contentDeleted: event.target.outerHTML, // Save the HTML of the element being deleted
-                    elementPath: getElementPath(event.target, blockContent), // Path to the element
-                    type: 'content',
-                });
-                // Clear redo history for delete mode
-                deleteRedoHistory = [];
-                updateHistoryButtonsState(); // Update buttons
+                // Traverse up to find the closest deletable element within block-content
+                let targetElement = event.target;
+                while (targetElement && targetElement !== blockContent) {
+                    if (targetElement.classList.contains("deletable")) {
+                        break;
+                    }
+                    targetElement = targetElement.parentElement;
+                }
 
-                event.target.remove(); // Remove the clicked element inside block-content
+                // If a deletable element is found and it's not the block-content itself
+                if (targetElement && targetElement !== blockContent) {
+                    console.log("[DEBUG] Deleting internal element:", targetElement);
 
-                // Update local layout
-                updateLocalLayoutFromDOM();
-                deletionsDuringDeleteMode = true; // Mark that deletions have occurred
+                    // Confirmation before deletion
+                    const userConfirmed = confirm("Are you sure you want to delete this element?");
+                    if (!userConfirmed) {
+                        console.log("[DEBUG] Element deletion canceled by the user.");
+                        return;
+                    }
+
+                    // **Save the content state before deletion for undo purposes**
+                    // **Fix: Save elementIndex**
+                    const index = Array.from(targetElement.parentElement.childNodes).indexOf(targetElement);
+
+                    deleteHistory.push({
+                        blockId: currentlyUnlockedBlock.dataset.blockId || null,
+                        elementHTML: targetElement.outerHTML, // Save the HTML of the element being deleted
+                        parentPath: getElementPath(targetElement.parentElement, blockContent), // Path to the parent
+                        elementIndex: index, // Save the index of the element within the parent
+                        type: 'content',
+                    });
+                    // Clear redo history for delete mode
+                    deleteRedoHistory = [];
+                    updateHistoryButtonsState(); // Update buttons
+
+                    // Remove the element
+                    targetElement.remove();
+
+                    // Update local layout
+                    updateLocalLayoutFromDOM();
+                    deletionsDuringDeleteMode = true; // Mark that deletions have occurred
+                }
             }
         } else {
             // Normal delete mode
@@ -659,7 +695,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Save the block state before deletion to delete history for undo purposes
                 deleteHistory.push({
-                    blockElement: blockElement.cloneNode(true),
+                    blockId: blockElement.dataset.blockId || null,
+                    blockHTML: blockElement.outerHTML, // Save the entire block's HTML
                     index: blockIndex, // Store the original index
                     type: 'block',
                 });
@@ -667,7 +704,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 deleteRedoHistory = [];
                 updateHistoryButtonsState(); // Update buttons
 
-                blockElement.remove(); // Remove the block from the DOM
+                // Remove the block from the DOM
+                blockElement.remove();
                 updateLocalLayoutFromDOM(); // Update the layout after removing the block
                 deletionsDuringDeleteMode = true; // Mark that deletions have occurred
             }
@@ -746,51 +784,107 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (lastDeleted.type === 'block') {
                 // Undo block deletion
-                const newBlock = lastDeleted.blockElement.cloneNode(true);
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = lastDeleted.blockHTML;
+                const restoredBlock = tempDiv.firstChild;
 
-                // Ensure the new block has the necessary classes
-                newBlock.classList.add('default-border');
+                // Assign a unique block_id if it's missing
+                if (!restoredBlock.dataset.blockId) {
+                    restoredBlock.dataset.blockId = nextBlockId++;
+                }
 
-                // **Insert the block back at its original index**
-                if (lastDeleted.index >= gridContainer.children.length) {
-                    gridContainer.appendChild(newBlock);
-                    console.log(`[DEBUG] Inserted block at the end (index ${lastDeleted.index}).`);
-                } else {
-                    gridContainer.insertBefore(newBlock, gridContainer.children[lastDeleted.index]);
-                    console.log(`[DEBUG] Inserted block at index ${lastDeleted.index}.`);
+                // Add 'deletable' class to internal elements
+                const deletableElements = restoredBlock.querySelectorAll(".block-content *");
+                deletableElements.forEach(element => {
+                    element.classList.add("deletable"); // Mark as deletable
+                });
+
+                // Add 'deletable' class to the child paragraph if it exists
+                const blockContent = restoredBlock.querySelector(".block-content");
+                const childParagraph = blockContent.querySelector("p");
+                if (childParagraph) {
+                    childParagraph.classList.add("deletable");
+                    console.log("[DEBUG] 'deletable' class added to child paragraph.");
                 }
 
                 // Add click listener for lock toggle
-                const lockOverlay = newBlock.querySelector(".lock-overlay");
+                const lockOverlay = restoredBlock.querySelector(".lock-overlay");
                 lockOverlay.addEventListener("click", (event) => {
                     event.stopPropagation();
-                    if (enforceSingleUnlock(newBlock)) {
-                        toggleBlockLock(newBlock);
+                    if (enforceSingleUnlock(restoredBlock)) {
+                        toggleBlockLock(restoredBlock);
                     }
                 });
+
+                // Insert the block back at its original index
+                if (lastDeleted.index >= gridContainer.children.length) {
+                    gridContainer.appendChild(restoredBlock);
+                    console.log(`[DEBUG] Inserted block at the end (index ${lastDeleted.index}).`);
+                } else {
+                    gridContainer.insertBefore(restoredBlock, gridContainer.children[lastDeleted.index]);
+                    console.log(`[DEBUG] Inserted block at index ${lastDeleted.index}.`);
+                }
 
                 // Update local layout and sortable
                 updateLocalLayoutFromDOM();
                 initializeSortable();
             } else if (lastDeleted.type === 'content') {
-                // Undo content deletion inside a block
-                const blockElement = gridContainer.querySelector(`[data-block-id="${lastDeleted.blockElement.dataset.blockId}"]`);
+                // Undo internal element deletion inside a block
+                const blockElement = gridContainer.querySelector(`[data-block-id="${lastDeleted.blockId}"]`);
                 if (blockElement) {
                     const blockContent = blockElement.querySelector(".block-content");
-                    const parentElement = getElementByPath(lastDeleted.elementPath.slice(0, -1), blockContent);
+                    const parentElement = getElementByPath(lastDeleted.parentPath, blockContent);
                     if (parentElement) {
+                        // Create a temporary container to parse the saved HTML
                         const tempDiv = document.createElement('div');
-                        tempDiv.innerHTML = lastDeleted.contentDeleted;
+                        tempDiv.innerHTML = lastDeleted.elementHTML;
                         const restoredElement = tempDiv.firstChild;
-                        const index = lastDeleted.elementPath[lastDeleted.elementPath.length -1];
+                        const index = lastDeleted.elementIndex;
                         if (index >= parentElement.childNodes.length) {
                             parentElement.appendChild(restoredElement);
                         } else {
                             parentElement.insertBefore(restoredElement, parentElement.childNodes[index]);
                         }
 
+                        // Ensure the restored element has the 'deletable' class
+                        restoredElement.classList.add("deletable");
+
+                        // Add 'delete-border' if delete mode is active
+                        if (deleteMode) {
+                            restoredElement.classList.add("delete-border");
+                        }
+
+                        // Add 'deletable' class to the child paragraph if it exists
+                        const childParagraph = restoredElement.querySelector("p");
+                        if (childParagraph) {
+                            childParagraph.classList.add("deletable");
+                            console.log("[DEBUG] 'deletable' class added to restored child paragraph.");
+                        }
+
+                        // Add click listener for lock toggle if necessary
+                        const lockOverlay = blockElement.querySelector(".lock-overlay");
+                        if (lockOverlay) {
+                            lockOverlay.addEventListener("click", (event) => {
+                                event.stopPropagation();
+                                if (enforceSingleUnlock(blockElement)) {
+                                    toggleBlockLock(blockElement);
+                                }
+                            });
+                        }
+
+                        // Add 'delete-border' if delete mode is active
+                        if (deleteMode) {
+                            restoredElement.classList.add("delete-border");
+                        }
+
+                        // Add 'deletable' class to all nested elements to ensure consistency
+                        const nestedDeletables = restoredElement.querySelectorAll(".deletable");
+                        nestedDeletables.forEach(elem => {
+                            elem.classList.add("deletable");
+                        });
+
+                        // Update local layout
                         updateLocalLayoutFromDOM();
-                        // Note: We don't initialize sortable here since it's content inside a block
                     }
                 }
             }
@@ -832,13 +926,13 @@ document.addEventListener("DOMContentLoaded", () => {
             deleteHistory.push(lastRedo);
 
             if (lastRedo.type === 'block') {
-                // Remove the block from its original index
-                const blockToRemove = gridContainer.children[lastRedo.index];
-                if (blockToRemove) {
-                    blockToRemove.remove();
-                    console.log(`[DEBUG] Removed block from index ${lastRedo.index}.`);
+                // Remove the block by blockId
+                const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockId}"]`);
+                if (blockElement) {
+                    blockElement.remove();
+                    console.log(`[DEBUG] Removed block with ID ${lastRedo.blockId}.`);
                 } else {
-                    console.log(`[DEBUG] No block found at index ${lastRedo.index} to remove.`);
+                    console.log(`[DEBUG] No block found with ID ${lastRedo.blockId} to remove.`);
                 }
 
                 // Update local layout and sortable
@@ -847,14 +941,17 @@ document.addEventListener("DOMContentLoaded", () => {
                 // Note: Do not set unsavedChanges here since deletions during delete mode are handled separately
             } else if (lastRedo.type === 'content') {
                 // Redo content deletion inside a block
-                const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockElement.dataset.blockId}"]`);
+                const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockId}"]`);
                 if (blockElement) {
                     const blockContent = blockElement.querySelector(".block-content");
-                    const elementToRemove = getElementByPath(lastRedo.elementPath, blockContent);
-                    if (elementToRemove) {
-                        elementToRemove.remove();
+                    const parentElement = getElementByPath(lastRedo.parentPath, blockContent);
+                    if (parentElement && parentElement.childNodes[lastRedo.elementIndex]) {
+                        parentElement.childNodes[lastRedo.elementIndex].remove();
                         updateLocalLayoutFromDOM();
+                        console.log(`[DEBUG] Removed content element at index ${lastRedo.elementIndex} within block ID ${lastRedo.blockId}.`);
                         // Note: We don't initialize sortable here since it's content inside a block
+                    } else {
+                        console.log(`[DEBUG] No content element found at index ${lastRedo.elementIndex} within block ID ${lastRedo.blockId}.`);
                     }
                 }
             }
@@ -1041,7 +1138,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // **Include isLocked in the isEditable condition**
             const isEditable = viewMode === "draft" && !deleteMode && !isSpacer && !isLocked;
             blockElement.innerHTML = `
-                <div class="block-content" contenteditable="${isEditable}">${block.content || ""}</div>
+                <div class="block-content" contenteditable="${isEditable}" style="width: 100%; height: 100%;"><p>${block.content || ""}</p></div>
                 <div class="lock-overlay" data-locked="${isLocked ? "true" : "false"}">
                     <img src="${isLocked ? lockSVGPath : unlockSVGPath}" alt="${isLocked ? "Locked" : "Unlocked"}" class="lock-icon" />
                 </div>
@@ -1063,6 +1160,20 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             }
 
+            // **Add 'deletable' class to internal elements**
+            const deletableElements = blockElement.querySelectorAll(".block-content *");
+            deletableElements.forEach(element => {
+                element.classList.add("deletable"); // Mark as deletable
+            });
+
+            // **Add 'deletable' class to the child paragraph if it exists**
+            const blockContent = blockElement.querySelector(".block-content");
+            const childParagraph = blockContent.querySelector("p");
+            if (childParagraph) {
+                childParagraph.classList.add("deletable");
+                console.log("[DEBUG] 'deletable' class added to child paragraph.");
+            }
+
             gridContainer.appendChild(blockElement);
 
             // Add click listener for lock toggle
@@ -1079,10 +1190,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (currentlyUnlockedBlock) {
                     // Remove 'delete-border' from all blocks
                     blockElement.classList.remove('delete-border');
-                    // Add 'delete-border' to content inside the unlocked block
+                    // Add 'delete-border' to deletable internal elements within the unlocked block
                     if (blockElement === currentlyUnlockedBlock) {
-                        const contentElements = blockElement.querySelectorAll(".block-content *");
-                        contentElements.forEach((element) => {
+                        const deletableElements = blockElement.querySelectorAll(".deletable");
+                        deletableElements.forEach((element) => {
                             element.classList.add("delete-border");
                         });
                     }
@@ -1165,6 +1276,11 @@ document.addEventListener("DOMContentLoaded", () => {
                 block.gridOverlaySizeIndex = -1;
             });
 
+            // **Update nextBlockId to avoid duplicate IDs**
+            const existingIds = blocks.map(block => parseInt(block.block_id)).filter(id => !isNaN(id));
+            const maxId = existingIds.length > 0 ? Math.max(...existingIds) : Date.now();
+            nextBlockId = maxId + 1;
+
             // Render fetched blocks
             renderBlocksToDOM(blocks);
 
@@ -1223,6 +1339,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const blockType = blockTypeControl.value;
 
         const newBlock = {
+            block_id: nextBlockId++, // Assign a unique block ID
             type: blockType,
             content: blockType.replace("-", " ").toUpperCase(),
             row: 1, // Default row positioning
@@ -1239,14 +1356,28 @@ document.addEventListener("DOMContentLoaded", () => {
         // Add the block to the DOM
         const blockElement = document.createElement("div");
         blockElement.className = `grid-item ${newBlock.type} default-border`;
-        blockElement.dataset.blockId = newBlock.block_id || null; // Use null if block_id doesn't exist
+        blockElement.dataset.blockId = newBlock.block_id; // Use the unique block_id
         blockElement.innerHTML = `
-            <div class="block-content">${newBlock.content}</div>
+            <div class="block-content" contenteditable="false" style="width: 100%; height: 100%;"><p>${newBlock.content}</p></div>
             <div class="lock-overlay" data-locked="true">
                 <img src="${lockSVGPath}" alt="Locked" class="lock-icon" />
             </div>
         `;
         gridContainer.appendChild(blockElement);
+
+        // Add 'deletable' class to internal elements
+        const deletableElements = blockElement.querySelectorAll(".block-content *");
+        deletableElements.forEach(element => {
+            element.classList.add("deletable"); // Mark as deletable
+        });
+
+        // **Add 'deletable' class to the child paragraph if it exists**
+        const blockContent = blockElement.querySelector(".block-content");
+        const childParagraph = blockContent.querySelector("p");
+        if (childParagraph) {
+            childParagraph.classList.add("deletable");
+            console.log("[DEBUG] 'deletable' class added to child paragraph.");
+        }
 
         // Remove "NO DRAFT SAVED" message if present
         const noDraftMessageContainer = gridContainer.querySelector(".no-saved-draft-container");
@@ -1709,6 +1840,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     block.gridOverlayActive = false;
                     block.gridOverlaySizeIndex = -1;
                     block.locked = true; // Ensure blocks are locked by default
+                });
+
+                // **Assign unique block IDs to live blocks if necessary**
+                liveBlocks.forEach(block => {
+                    if (!block.block_id) {
+                        block.block_id = nextBlockId++;
+                    }
                 });
 
                 // Update in-memory layout and render to DOM
