@@ -142,7 +142,55 @@ document.addEventListener("DOMContentLoaded", () => {
      * *******************************
      */
 
-    // **Functions to Update Button States**
+    /**
+     * Utility to handle accelerated button actions
+     * @param {Function} action - The action to perform (e.g., undoLayoutChange or redoLayoutChange)
+     * @param {HTMLElement} button - The button element being pressed
+     */
+    function handleAcceleratedAction(action, button) {
+        let interval;
+        let isHolding = false; // Tracks if the button is being held down
+        let speed = 200; // Initial delay in milliseconds
+        const accelerationFactor = 0.9; // Adjust to control acceleration (lower = faster)
+        const minSpeed = 50; // Minimum speed cap
+        const holdThreshold = 200; // Time (ms) to distinguish between click and hold
+        let holdTimeout;
+    
+        const executeAction = () => {
+            if (isHolding) {
+                action();
+                speed = Math.max(minSpeed, speed * accelerationFactor);
+                interval = setTimeout(executeAction, speed);
+            }
+        };
+    
+        const startHold = () => {
+            isHolding = true;
+            speed = 200; // Reset speed on new hold
+            action(); // Perform the initial action immediately
+            interval = setTimeout(executeAction, speed);
+        };
+    
+        const stopHold = () => {
+            isHolding = false;
+            clearTimeout(interval); // Stop any ongoing acceleration
+            clearTimeout(holdTimeout); // Clear the hold timeout
+        };
+    
+        button.addEventListener('mousedown', () => {
+            holdTimeout = setTimeout(startHold, holdThreshold); // Only start accelerating if held long enough
+        });
+    
+        button.addEventListener('mouseup', () => {
+            if (!isHolding) {
+                action(); // Single click action if not holding
+            }
+            stopHold();
+        });
+    
+        button.addEventListener('mouseleave', stopHold); // Stop acceleration if mouse leaves button
+    }
+    
 
     // **Function to update the state of Undo and Redo buttons**
     const updateHistoryButtonsState = () => {
@@ -1120,11 +1168,20 @@ document.addEventListener("DOMContentLoaded", () => {
             // **Include isLocked in the isEditable condition**
             const isEditable = viewMode === "draft" && !deleteMode && !isSpacer && !isLocked;
             blockElement.innerHTML = `
-                <div class="block-content" contenteditable="${isEditable}" style="width: 100%; height: 100%;"><p>${block.content || ""}</p></div>
+                <div class="block-content" style="width: 100%; height: 100%;">
+                    <p>${block.content || ""}</p>
+                </div>
                 <div class="lock-overlay" data-locked="${isLocked ? "true" : "false"}">
                     <img src="${isLocked ? lockSVGPath : unlockSVGPath}" alt="${isLocked ? "Locked" : "Unlocked"}" class="lock-icon" />
                 </div>
             `;
+            
+            // Disable user typing directly into block-content
+            if (isEditable) {
+                const blockContent = blockElement.querySelector('.block-content');
+                blockContent.setAttribute('contenteditable', false); // Prevent typing but preserve logic
+            }
+            
 
             // **Apply 'unlocked-border' if the block is unlocked**
             if (!isLocked) {
@@ -1747,6 +1804,11 @@ document.addEventListener("DOMContentLoaded", () => {
             mutex.unlock(); // Release the mutex
         }
     });
+
+    // **Attach Accelerated Actions**
+    handleAcceleratedAction(undoLayoutChange, undoButton);
+    handleAcceleratedAction(redoLayoutChange, redoButton);
+
 
     // **Delete Mode Button Event Listener**
     deleteModeButton.addEventListener("click", async () => {

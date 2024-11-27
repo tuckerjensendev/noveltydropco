@@ -231,8 +231,6 @@
     word-break: break-all; /* Forces breaking anywhere if necessary */
 }
 
-
-
 /* Lock Overlay Styling */
 .lock-overlay {
     position: absolute; /* Place it over the block */
@@ -331,6 +329,72 @@
     outline-offset: 2px;
     border-radius: 2px;
     transition: outline 0.2s ease; /* Smooth transition */
+}
+
+/* Unlocked State Border
+.grid-item.unlocked-border {
+    border: 2px dashed rgba(255, 165, 0, 0.5);
+    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
+    border-radius: 4px;
+}
+
+
+.grid-item.default-border:hover {
+    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border
+    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2);
+}
+
+.grid-item.unlocked-border:hover {
+    box-shadow: 0 0 12px rgba(255, 165, 0, 0.2);
+} 
+
+
+
+/*
+*====================
+* SECONDARY TOOLBAR ROW GRID EDITING
+*====================
+*/
+
+/* BUTTON Grid Overlay */
+.grid-overlay-active {
+    position: relative;
+}
+
+.grid-overlay-active::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 10; /* Ensure overlay is above content but below toolbar */
+    background-position: center; /* Center the grid */
+}
+
+/* Small Grid Overlay */
+.grid-overlay-active.grid-overlay-small::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 10px 10px; /* Small grid size */
+    background-position: center; /* Center the grid */
+}
+
+/* Medium Grid Overlay */
+.grid-overlay-active.grid-overlay-medium::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 20px 20px; /* Medium grid size */
+    background-position: center; /* Center the grid */
+}
+
+/* Large Grid Overlay */
+.grid-overlay-active.grid-overlay-large::before {
+    background-image: linear-gradient(to right, rgba(0,0,0,0.2) 1px, transparent 1px),
+                      linear-gradient(to bottom, rgba(0,0,0,0.2) 1px, transparent 1px);
+    background-size: 40px 40px; /* Large grid size */
+    background-position: center; /* Center the grid */
 }
 
 /** Add Text Button **/ 
