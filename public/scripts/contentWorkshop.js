@@ -585,57 +585,54 @@ document.addEventListener("DOMContentLoaded", () => {
          */
         if (deleteMode) {
             if (currentlyUnlockedBlock) {
-                // Remove 'delete-border' from all blocks
+                // Remove 'delete-border' from all blocks globally
                 Array.from(gridContainer.children).forEach((block) => {
-                    block.classList.remove("delete-border");
+                    block.classList.remove("delete-border", "unlocked");
                 });
-    
-                // Add 'delete-border' to deletable internal elements within the unlocked block
+        
+                // Mark the currently unlocked block
+                currentlyUnlockedBlock.classList.add("unlocked");
+        
+                // Add 'delete-border' only to deletable elements inside the unlocked block
                 const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
                 deletableElements.forEach((element) => {
                     element.classList.add("delete-border");
                 });
-    
-                /**
-                 * **Disable Editing in Delete Mode**
-                 */
+        
+                // Disable content editing within the unlocked block
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
                     blockContent.contentEditable = "false";
-                    console.log("[DEBUG] Disabled contentEditable in delete mode.");
+                    console.log("[DEBUG] Disabled contentEditable for unlocked block in delete mode.");
                 }
             } else {
-                // Add 'delete-border' class to all blocks
+                // No block is unlocked: apply 'delete-border' to all blocks globally
                 Array.from(gridContainer.children).forEach((block) => {
                     block.classList.add("delete-border");
                 });
             }
         } else {
-            // Delete mode is off
-    
-            // Remove 'delete-border' from all blocks
+            // Delete mode is off: reset everything
             Array.from(gridContainer.children).forEach((block) => {
-                block.classList.remove("delete-border");
+                block.classList.remove("delete-border", "unlocked");
             });
-    
+        
             if (currentlyUnlockedBlock) {
-                // Remove 'delete-border' from content inside the unlocked block
+                // Remove 'delete-border' from deletable elements within the unlocked block
                 const deletableElements = currentlyUnlockedBlock.querySelectorAll(".deletable");
                 deletableElements.forEach((element) => {
                     element.classList.remove("delete-border");
                 });
-    
-                /**
-                 * **Re-enable Editing Based on Lock State**
-                 */
+        
+                // Re-enable content editing for the unlocked block
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
-                    blockContent.contentEditable = "true"; // Assuming the block is still unlocked
+                    blockContent.contentEditable = "true";
                     console.log("[DEBUG] Re-enabled contentEditable after exiting delete mode.");
                 }
             }
         }
-    
+        
         /**
          * **Add/Remove Red Border on Delete Mode Button**
          */

@@ -73,6 +73,7 @@
     background-color: #fff;
     overflow: hidden; /* Prevent lock overlay from escaping the block */
     border: 2px solid transparent; /* Initialize with transparent border */
+    padding: 4px;
 }
 
 /* Default Border */
@@ -80,14 +81,9 @@
     border: 2px solid transparent;
 }
 
-/* Delete Mode Border */
-.grid-item.delete-border {
-    border: 3px solid red !important; /* Use !important to ensure it takes precedence */
-}
-
 /* Unlocked State Border */
 .grid-item.unlocked-border {
-    border: 4px dashed rgba(255, 165, 0, 0.6);
+    border: 1px dashed rgba(255, 165, 0, 0.8) !important;
     box-shadow: 0 0 10px rgba(255, 165, 0, 0.3);
     border-radius: 4px;
 }
@@ -234,15 +230,15 @@
 /* Lock Overlay Styling */
 .lock-overlay {
     position: absolute; /* Place it over the block */
-    top: 1px; /* Adjust to the top-right corner */
-    right: 1px;
+    top: 0px; /* Adjust to the top-right corner */
+    right: 0px;
     width: 24px; /* Lock container size */
     height: 24px;
     display: flex;
     justify-content: center;
     align-items: center;
     pointer-events: auto; /* Allow interaction */
-    z-index: 10; /* Ensure visibility above block content */
+    z-index: 20; /* Ensure visibility above block content */
     background-color: transparent; /* No visible background */
 }
 
@@ -305,49 +301,30 @@
     cursor: default; /* Default cursor */
 }
 
-/* Delete Mode Border */
-.delete-mode .grid-item .editable-text,
-.delete-mode .grid-item .add-text,
-.delete-mode .grid-item .image,
-.delete-mode .grid-item .link,
-.delete-mode .grid-item .some-other-user-added-class {
+/* Global Delete Mode Border for Blocks */
+.grid-item.delete-border {
+    border: 3px solid red !important;
+}
+
+/* Delete Mode Border for Elements in Unlocked Block */
+.delete-mode .grid-item.unlocked .editable-text,
+.delete-mode .grid-item.unlocked .add-text,
+.delete-mode .grid-item.unlocked .image,
+.delete-mode .grid-item.unlocked .link,
+.delete-mode .grid-item.unlocked .some-other-user-added-class {
     outline: 1px solid red;
-    outline-offset: 2px;
     border-radius: 2px;
 }
 
-/* Optionally, if all user-added elements share a common class, e.g., .user-added */
-.delete-mode .grid-item .user-added {
-    outline: 1px solid red;
-    outline-offset: 2px;
-    border-radius: 2px;
+[contenteditable]:focus {
+    outline: none; /* Removes the default blue border */
+    border: none;  /* Removes any border, if applied */
 }
 
-/* Solid red border for delete mode */
-.delete-mode .user-added {
-    outline: 2px solid red; /* Solid border for delete mode */
-    outline-offset: 2px;
-    border-radius: 2px;
-    transition: outline 0.2s ease; /* Smooth transition */
+/* Optional: Apply custom styles to indicate focus */
+[contenteditable]:focus {
+    box-shadow: none; /* Remove any default shadows */
 }
-
-/* Unlocked State Border
-.grid-item.unlocked-border {
-    border: 2px dashed rgba(255, 165, 0, 0.5);
-    box-shadow: 0 0 10px rgba(255, 165, 0, 0.2);
-    border-radius: 4px;
-}
-
-
-.grid-item.default-border:hover {
-    border: 2px dashed rgba(100, 149, 237, 0.5); /* Light blue, faint dashed border
-    box-shadow: 0 0 8px rgba(100, 149, 237, 0.2);
-}
-
-.grid-item.unlocked-border:hover {
-    box-shadow: 0 0 12px rgba(255, 165, 0, 0.2);
-} 
-
 
 
 /*
