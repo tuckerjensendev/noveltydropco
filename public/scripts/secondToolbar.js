@@ -1,7 +1,7 @@
 // secondToolbar.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[DEBUG] secondaryToolbar.js loaded and DOMContentLoaded triggered.");
+    logDebug("secondaryToolbar.js loaded and DOMContentLoaded triggered.");
 
     /**
      * *******************************
@@ -72,17 +72,17 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     // Validate the presence of the second toolbar row
     if (!secondToolbarRow) {
-        console.error("[DEBUG] Second toolbar row not found. secondaryToolbar.js aborted.");
+        console.error("Second toolbar row not found. secondaryToolbar.js aborted.");
         return;
     }
-    console.log("[DEBUG] Second toolbar row found.");
+    logDebug("Second toolbar row found.");
 
     const missingButtons = secondRowButtons.filter(button => !button);
     if (missingButtons.length > 0) {
-        console.error(`[DEBUG] Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondaryToolbar.js aborted.`);
+        console.error(`Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondaryToolbar.js aborted.`);
         return;
     }
-    console.log("[DEBUG] All second row toolbar buttons are present.");
+    logDebug("All second row toolbar buttons are present.");
 
     /**
      * *******************************
@@ -92,10 +92,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Access the shared mutex from contentWorkshop.js
     const mutex = window.sharedMutex;
     if (!mutex) {
-        console.error("[DEBUG] Shared mutex not found on window. Ensure contentWorkshop.js exposes the mutex.");
+        console.error("Shared mutex not found on window. Ensure contentWorkshop.js exposes the mutex.");
         return;
     }
-    console.log("[DEBUG] Shared mutex accessed successfully.");
+    logDebug("Shared mutex accessed successfully.");
 
     /**
      * *******************************
@@ -134,8 +134,8 @@ document.addEventListener("DOMContentLoaded", () => {
             // Else: Do not modify the disabled state of deleteModeButton
         });
 
-        console.log(
-            `[DEBUG] Button states updated. Second row buttons ${
+        logDebug(
+            `Button states updated. Second row buttons ${
                 shouldDisableSecondRow ? "disabled" : "enabled"
             }, Top row buttons ${
                 isAnyBlockUnlocked ? "disabled (excluding Delete Toggle)" : "enabled"
@@ -171,11 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
             const selectedValue = item.getAttribute("data-value"); // e.g., "p", "h1", "h2"
     
             if (!selectedValue) {
-                console.warn("[DEBUG] No data-value attribute found on selected dropdown item.");
+                console.warn("No data-value attribute found on selected dropdown item.");
                 return;
             }
     
-            console.log(`[DEBUG] Selected text type: ${selectedValue}`);
+            logDebug(`Selected text type: ${selectedValue}`);
     
             // Insert the selected element into the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
@@ -186,7 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
             const blockContent = unlockedBlock.querySelector('.block-content');
             if (!blockContent) {
-                console.error("[DEBUG] block-content div not found in the unlocked block.");
+                console.error("block-content div not found in the unlocked block.");
                 return;
             }
     
@@ -231,7 +231,7 @@ document.addEventListener("DOMContentLoaded", () => {
             addTextDropdown.style.display = "none";
             addTextDropdownButton.setAttribute("aria-expanded", "false");
     
-            console.log(`[DEBUG] Inserted new <${selectedValue}> element into the unlocked block.`);
+            logDebug(`Inserted new <${selectedValue}> element into the unlocked block.`);
         });
     });
     
@@ -248,12 +248,12 @@ document.addEventListener("DOMContentLoaded", () => {
     toggleGridOverlayButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Toggle Grid Overlay button clicked.");
+            logDebug("Toggle Grid Overlay button clicked.");
 
             // Find the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (!unlockedBlock) {
-                console.warn("[DEBUG] No unlocked block found. Grid Overlay toggle aborted.");
+                console.warn("No unlocked block found. Grid Overlay toggle aborted.");
                 alert("No unlocked block found to toggle the grid overlay.");
                 return;
             }
@@ -266,7 +266,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 gridOverlaySizeIndex = 0; // Reset to the first grid size
                 unlockedBlock.classList.add('grid-overlay-active', gridSizeClasses[gridOverlaySizeIndex]);
                 gridOverlayActive = true;
-                console.log(`[DEBUG] Grid overlay added to the unlocked block with size: ${gridSizeClasses[gridOverlaySizeIndex]}`);
+                logDebug(`Grid overlay added to the unlocked block with size: ${gridSizeClasses[gridOverlaySizeIndex]}`);
             } else {
                 // Cycle grid size or turn off if at the last size
                 unlockedBlock.classList.remove(...gridSizeClasses);
@@ -277,15 +277,15 @@ document.addEventListener("DOMContentLoaded", () => {
                     // Turn off the grid overlay
                     unlockedBlock.classList.remove('grid-overlay-active');
                     gridOverlayActive = false;
-                    console.log("[DEBUG] Grid overlay turned off.");
+                    logDebug("Grid overlay turned off.");
                 } else {
                     // Apply the next grid size
                     unlockedBlock.classList.add(gridSizeClasses[gridOverlaySizeIndex]);
-                    console.log(`[DEBUG] Grid overlay size updated to: ${gridSizeClasses[gridOverlaySizeIndex]}`);
+                    logDebug(`Grid overlay size updated to: ${gridSizeClasses[gridOverlaySizeIndex]}`);
                 }
             }
         } catch (error) {
-            console.error("[DEBUG] Error in Toggle Grid Overlay button:", error);
+            console.error("Error in Toggle Grid Overlay button:", error);
         } finally {
             mutex.unlock();
         }
@@ -301,10 +301,10 @@ document.addEventListener("DOMContentLoaded", () => {
     addImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Add Image button clicked.");
+            logDebug("Add Image button clicked.");
             // TODO: Implement add image functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Add Image button:", error);
+            console.error("Error in Add Image button:", error);
         } finally {
             mutex.unlock();
         }
@@ -316,10 +316,10 @@ document.addEventListener("DOMContentLoaded", () => {
     imageLinkButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Image Link button clicked.");
+            logDebug("Image Link button clicked.");
             // TODO: Implement image link functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Image Link button:", error);
+            console.error("Error in Image Link button:", error);
         } finally {
             mutex.unlock();
         }
@@ -331,10 +331,10 @@ document.addEventListener("DOMContentLoaded", () => {
     addTextButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Add Text button clicked.");
+            logDebug("Add Text button clicked.");
             // This button now only toggles the dropdown, actual functionality is handled by the dropdown items
         } catch (error) {
-            console.error("[DEBUG] Error in Add Text button:", error);
+            console.error("Error in Add Text button:", error);
         } finally {
             mutex.unlock();
         }
@@ -346,10 +346,10 @@ document.addEventListener("DOMContentLoaded", () => {
     textLinkButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Text Link button clicked.");
+            logDebug("Text Link button clicked.");
             // TODO: Implement text link functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Text Link button:", error);
+            console.error("Error in Text Link button:", error);
         } finally {
             mutex.unlock();
         }
@@ -361,10 +361,10 @@ document.addEventListener("DOMContentLoaded", () => {
     resizeImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Resize Image button clicked.");
+            logDebug("Resize Image button clicked.");
             // TODO: Implement resize image functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Resize Image button:", error);
+            console.error("Error in Resize Image button:", error);
         } finally {
             mutex.unlock();
         }
@@ -376,10 +376,10 @@ document.addEventListener("DOMContentLoaded", () => {
     cropImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Crop Image button clicked.");
+            logDebug("Crop Image button clicked.");
             // TODO: Implement crop image functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Crop Image button:", error);
+            console.error("Error in Crop Image button:", error);
         } finally {
             mutex.unlock();
         }
@@ -391,10 +391,10 @@ document.addEventListener("DOMContentLoaded", () => {
     addGalleryButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Add Gallery button clicked.");
+            logDebug("Add Gallery button clicked.");
             // TODO: Implement add gallery functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Add Gallery button:", error);
+            console.error("Error in Add Gallery button:", error);
         } finally {
             mutex.unlock();
         }
@@ -406,10 +406,10 @@ document.addEventListener("DOMContentLoaded", () => {
     addSponsoredAdButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Add Sponsored Ad button clicked.");
+            logDebug("Add Sponsored Ad button clicked.");
             // TODO: Implement add sponsored ad functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Add Sponsored Ad button:", error);
+            console.error("Error in Add Sponsored Ad button:", error);
         } finally {
             mutex.unlock();
         }
@@ -421,10 +421,10 @@ document.addEventListener("DOMContentLoaded", () => {
     colorPickerButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Color Picker button clicked.");
+            logDebug("Color Picker button clicked.");
             // TODO: Implement color picker functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Color Picker button:", error);
+            console.error("Error in Color Picker button:", error);
         } finally {
             mutex.unlock();
         }
@@ -436,10 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
     layerControlButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Layer Control button clicked.");
+            logDebug("Layer Control button clicked.");
             // TODO: Implement layer control functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Layer Control button:", error);
+            console.error("Error in Layer Control button:", error);
         } finally {
             mutex.unlock();
         }
@@ -451,10 +451,10 @@ document.addEventListener("DOMContentLoaded", () => {
     duplicateContentButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Duplicate Content button clicked.");
+            logDebug("Duplicate Content button clicked.");
             // TODO: Implement duplicate content functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Duplicate Content button:", error);
+            console.error("Error in Duplicate Content button:", error);
         } finally {
             mutex.unlock();
         }
@@ -466,7 +466,7 @@ document.addEventListener("DOMContentLoaded", () => {
     lockElementButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Lock Element button clicked.");
+            logDebug("Lock Element button clicked.");
             // This should toggle the lock state of the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (unlockedBlock) {
@@ -476,7 +476,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 alert("No unlocked block found to lock.");
             }
         } catch (error) {
-            console.error("[DEBUG] Error in Lock Element button:", error);
+            console.error("Error in Lock Element button:", error);
         } finally {
             mutex.unlock();
         }
@@ -488,10 +488,10 @@ document.addEventListener("DOMContentLoaded", () => {
     embedHTMLButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Embed HTML button clicked.");
+            logDebug("Embed HTML button clicked.");
             // TODO: Implement embed HTML functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Embed HTML button:", error);
+            console.error("Error in Embed HTML button:", error);
         } finally {
             mutex.unlock();
         }
@@ -503,10 +503,10 @@ document.addEventListener("DOMContentLoaded", () => {
     animationEffectsButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Animation Effects button clicked.");
+            logDebug("Animation Effects button clicked.");
             // TODO: Implement animation effects functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Animation Effects button:", error);
+            console.error("Error in Animation Effects button:", error);
         } finally {
             mutex.unlock();
         }
@@ -518,10 +518,10 @@ document.addEventListener("DOMContentLoaded", () => {
     alignmentToolsButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Alignment Tools button clicked.");
+            logDebug("Alignment Tools button clicked.");
             // TODO: Implement alignment tools functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Alignment Tools button:", error);
+            console.error("Error in Alignment Tools button:", error);
         } finally {
             mutex.unlock();
         }
@@ -533,10 +533,10 @@ document.addEventListener("DOMContentLoaded", () => {
     fontStylingButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
-            console.log("[DEBUG] Font Styling button clicked.");
+            logDebug("Font Styling button clicked.");
             // TODO: Implement font styling functionality
         } catch (error) {
-            console.error("[DEBUG] Error in Font Styling button:", error);
+            console.error("Error in Font Styling button:", error);
         } finally {
             mutex.unlock();
         }
@@ -550,14 +550,14 @@ document.addEventListener("DOMContentLoaded", () => {
     // Listen for deleteModeChanged event
     window.addEventListener('deleteModeChanged', (e) => {
         deleteMode = e.detail.deleteMode;
-        console.log(`[DEBUG] 'deleteModeChanged' event triggered. Delete Mode is now: ${deleteMode}`);
+        logDebug(`'deleteModeChanged' event triggered. Delete Mode is now: ${deleteMode}`);
         updateButtonStates();
     });
 
     // Listen for blockLockChanged event
     window.addEventListener('blockLockChanged', (e) => {
         const { blockId, isLocked } = e.detail;
-        console.log(`[DEBUG] 'blockLockChanged' event triggered for blockId: ${blockId}, isLocked: ${isLocked}`);
+        logDebug(`'blockLockChanged' event triggered for blockId: ${blockId}, isLocked: ${isLocked}`);
 
         // Update isAnyBlockUnlocked based on current DOM state
         isAnyBlockUnlocked = document.querySelector(".grid-item.unlocked-border") !== null;
@@ -573,5 +573,5 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Disable all second row buttons initially if deleteMode is active and a block is unlocked
     updateButtonStates();
-    console.log("[DEBUG] Button state management setup complete.");
+    logDebug("Button state management setup complete.");
 });

@@ -230,8 +230,8 @@
 /* Lock Overlay Styling */
 .lock-overlay {
     position: absolute; /* Place it over the block */
-    top: 0px; /* Adjust to the top-right corner */
-    right: 0px;
+    top: 1px; /* Adjust to the top-right corner */
+    right: 1px;
     width: 24px; /* Lock container size */
     height: 24px;
     display: flex;

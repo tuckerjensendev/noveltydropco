@@ -1,7 +1,7 @@
 // contentWorkshop.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[DEBUG] contentWorkshop.js loaded and DOMContentLoaded triggered.");
+    logDebug("contentWorkshop.js loaded and DOMContentLoaded triggered.");
 
     /**
      * *******************************
@@ -38,10 +38,10 @@ document.addEventListener("DOMContentLoaded", () => {
      * *******************************
      */
     if (!blockTypeControl || !addBlockButton || !saveDraftButton || !pushLiveButton || !undoButton || !redoButton || !clearContentButton || !deleteModeButton || !viewToggleButton || !copyLiveButton || !toolbar || !mainContent) {
-        console.error("[DEBUG] One or more critical DOM elements are missing. Script aborted.");
+        console.error("One or more critical DOM elements are missing. Script aborted.");
         return;
     }
-    console.log("[DEBUG] All critical DOM elements are present.");
+    logDebug("All critical DOM elements are present.");
 
     /**
      * *******************************
@@ -102,11 +102,11 @@ document.addEventListener("DOMContentLoaded", () => {
         lock() {
             return new Promise(resolve => {
                 if (this.locked) {
-                    console.log("[DEBUG] Mutex is currently locked. Adding to queue.");
+                    logDebug("Mutex is currently locked. Adding to queue.");
                     this.queue.push(resolve);
                 } else {
                     this.locked = true;
-                    console.log("[DEBUG] Mutex is now locked.");
+                    logDebug("Mutex is now locked.");
                     resolve();
                 }
             });
@@ -118,17 +118,17 @@ document.addEventListener("DOMContentLoaded", () => {
          */
         unlock() {
             if (!this.locked) {
-                console.warn("[DEBUG] Attempted to unlock a mutex that is not locked.");
+                console.warn("Attempted to unlock a mutex that is not locked.");
                 return;
             }
 
             if (this.queue.length > 0) {
                 const nextResolve = this.queue.shift();
-                console.log("[DEBUG] Passing lock to the next requester in the queue.");
+                logDebug("Passing lock to the next requester in the queue.");
                 nextResolve();
             } else {
                 this.locked = false;
-                console.log("[DEBUG] Mutex is now unlocked.");
+                logDebug("Mutex is now unlocked.");
             }
         }
     }
@@ -214,8 +214,8 @@ document.addEventListener("DOMContentLoaded", () => {
                 redoButton.disabled = redoHistoryStack.length === 0;
             }
         }
-        console.log(`[DEBUG] Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
-        console.log(`[DEBUG] Redo button is now ${redoButton.disabled ? "disabled" : "enabled"}.`);
+        logDebug(`Undo button is now ${undoButton.disabled ? "disabled" : "enabled"}.`);
+        logDebug(`Redo button is now ${redoButton.disabled ? "disabled" : "enabled"}.`);
     };
 
     // Function to update the state of all buttons dynamically
@@ -249,7 +249,7 @@ document.addEventListener("DOMContentLoaded", () => {
         updateHistoryButtonsState();
         updateSecondRowButtonStates(); // Update the secondary toolbar buttons
 
-        console.log(`[DEBUG] Button states updated:
+        logDebug(`Button states updated:
             Save Draft: ${saveDraftButton.disabled ? 'disabled' : 'enabled'},
             Push Live: ${pushLiveButton.disabled ? 'disabled' : 'enabled'},
             Copy Live: ${copyLiveButton.disabled ? 'disabled' : 'enabled'},
@@ -262,12 +262,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Utility Functions to Control Body Scroll**
     const disableBodyScroll = () => {
         document.body.style.overflow = "hidden";
-        console.log("[DEBUG] Body scrolling disabled.");
+        logDebug("Body scrolling disabled.");
     };
 
     const enableBodyScroll = () => {
         document.body.style.overflow = "";
-        console.log("[DEBUG] Body scrolling enabled.");
+        logDebug("Body scrolling enabled.");
     };
 
     /**
@@ -282,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const contentEditableElements = blockElement.querySelectorAll(".block-content, .block-content *");
     
         if (!lockOverlay) {
-            console.error("[DEBUG] Lock overlay element not found.");
+            console.error("Lock overlay element not found.");
             return;
         }
     
@@ -301,13 +301,13 @@ document.addEventListener("DOMContentLoaded", () => {
             blockElement.classList.remove('default-border');
             blockElement.classList.add('unlocked-border'); // Add unlocked border
             currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
-            console.log("[DEBUG] Block unlocked.");
+            logDebug("Block unlocked.");
     
             // Disable Sortable.js when a block is unlocked
             if (sortableInstance) {
                 sortableInstance.destroy();
                 sortableInstance = null;
-                console.log("[DEBUG] Sortable.js instance destroyed due to unlocked block.");
+                logDebug("Sortable.js instance destroyed due to unlocked block.");
             }
     
             // Open the secondary toolbar
@@ -317,7 +317,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update the toolbar tab arrow
                     toolbarTab.classList.add('expanded'); // Add expanded styling
                 }
-                console.log("[DEBUG] Secondary toolbar opened due to block unlocking.");
+                logDebug("Secondary toolbar opened due to block unlocking.");
             }
     
             // Adjust delete mode visuals if active
@@ -341,24 +341,24 @@ document.addEventListener("DOMContentLoaded", () => {
             if (blockElement.classList.contains('grid-overlay-active')) {
                 blockElement.classList.remove('grid-overlay-active', ...gridSizeClasses);
                 gridOverlayActive = false; // Reset the global grid overlay state
-                console.log("[DEBUG] Grid overlay removed due to block being locked.");
+                logDebug("Grid overlay removed due to block being locked.");
             }
     
             // Reset currentlyUnlockedBlock if this block was previously unlocked
             if (currentlyUnlockedBlock === blockElement) {
                 currentlyUnlockedBlock = null;
-                console.log("[DEBUG] Locked previously unlocked block. Reset currentlyUnlockedBlock.");
+                logDebug("Locked previously unlocked block. Reset currentlyUnlockedBlock.");
             }
     
             blockElement.classList.remove('unlocked-border');
             blockElement.classList.add('default-border'); // Re-add default border
     
-            console.log("[DEBUG] Block locked.");
+            logDebug("Block locked.");
     
             // Re-enable Sortable.js if no other blocks are unlocked
             if (!currentlyUnlockedBlock && !deleteMode && !isSortLocked && viewMode === 'draft') {
                 initializeSortable();
-                console.log("[DEBUG] Sortable.js re-initialized after locking block.");
+                logDebug("Sortable.js re-initialized after locking block.");
             }
     
             // Adjust delete mode visuals if active
@@ -392,7 +392,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Ensure Only One Block is Unlocked at a Time**
     const enforceSingleUnlock = (blockElement) => {
         if (currentlyUnlockedBlock && currentlyUnlockedBlock !== blockElement) {
-            console.log("[DEBUG] Another block is already unlocked.");
+            logDebug("Another block is already unlocked.");
 
             // Show the popup and scroll to the unlocked block
             alert("Please lock the currently unlocked block before unlocking another.");
@@ -422,18 +422,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Initialize Sortable.js**
     const initializeSortable = () => {
-        console.log("[DEBUG] Initializing Sortable.js...");
+        logDebug("Initializing Sortable.js...");
     
         // Destroy any existing Sortable.js instance to avoid duplicates
         if (sortableInstance) {
             sortableInstance.destroy();
             sortableInstance = null; // Explicitly reset to null
-            console.log("[DEBUG] Previous Sortable.js instance destroyed.");
+            logDebug("Previous Sortable.js instance destroyed.");
         }
     
         // Skip initialization in 'live' view or delete mode
         if (viewMode === 'live' || deleteMode || isSortLocked || currentlyUnlockedBlock !== null) {
-            console.log("[DEBUG] View mode is 'live', delete mode is active, sort is locked, or a block is unlocked; skipping Sortable.js initialization.");
+            logDebug("View mode is 'live', delete mode is active, sort is locked, or a block is unlocked; skipping Sortable.js initialization.");
             return;
         }
     
@@ -470,13 +470,13 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (lastClientY < currentRect.top + edgeThreshold) {
                     const boost = Math.max(1, (currentRect.top + edgeThreshold - lastClientY) / edgeThreshold);
                     gridContainer.scrollTop -= scrollSpeed * boost; // Scroll up with acceleration
-                    console.log(`[DEBUG] Scrolling gridContainer up. Speed: ${scrollSpeed * boost}`);
+                    logDebug(`Scrolling gridContainer up. Speed: ${scrollSpeed * boost}`);
                 }
                 // Check if cursor is near the bottom
                 else if (lastClientY > currentRect.bottom - upperEdgeThreshold) {
                     const boost = Math.max(1, (lastClientY - (currentRect.bottom - upperEdgeThreshold)) / edgeThreshold);
                     gridContainer.scrollTop += scrollSpeed * boost; // Scroll down with acceleration
-                    console.log(`[DEBUG] Scrolling gridContainer down. Speed: ${scrollSpeed * boost}`);
+                    logDebug(`Scrolling gridContainer down. Speed: ${scrollSpeed * boost}`);
                 } else {
                     stopScrolling(); // Stop if no longer near edges
                 }
@@ -487,7 +487,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const stopScrolling = () => {
             clearInterval(scrollInterval);
             isScrolling = false;
-            console.log("[DEBUG] Scrolling stopped.");
+            logDebug("Scrolling stopped.");
         };
     
         // Initialize Sortable.js
@@ -503,7 +503,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
             onStart: (evt) => {
                 disableBodyScroll();
-                console.log("[DEBUG] Dragging started.");
+                logDebug("Dragging started.");
                 // Add 'active-dragged' class to the dragged element
                 evt.item.classList.add('active-dragged');
                 startScrolling(evt.originalEvent.clientY); // Start scrolling based on initial position
@@ -516,8 +516,8 @@ document.addEventListener("DOMContentLoaded", () => {
             onEnd: (event) => {
                 enableBodyScroll();
                 stopScrolling();
-                console.log("[DEBUG] Drag event ended.");
-                console.log(`[DEBUG] Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
+                logDebug("Drag event ended.");
+                logDebug(`Old Index: ${event.oldIndex}, New Index: ${event.newIndex}`);
     
                 // Remove 'active-dragged' class from the dragged element
                 event.item.classList.remove('active-dragged');
@@ -529,14 +529,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     unsavedChanges = true; // Mark changes as unsaved
                     hasPushedLive = false; // Reset after changes
                     updateButtonStates(); // Update button states
-                    console.log("[DEBUG] Block order changed and layout updated.");
+                    logDebug("Block order changed and layout updated.");
                 } else {
-                    console.log("[DEBUG] Block order unchanged.");
+                    logDebug("Block order unchanged.");
                 }
             },
         });
     
-        console.log("[DEBUG] Sortable.js initialized successfully.");
+        logDebug("Sortable.js initialized successfully.");
     };
     
 
@@ -575,7 +575,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         // Toggle the deleteMode flag
         deleteMode = !deleteMode;
-        console.log(`[DEBUG] Delete mode ${deleteMode ? "enabled" : "disabled"}.`);
+        logDebug(`Delete mode ${deleteMode ? "enabled" : "disabled"}.`);
         
         // Toggle the 'delete-mode' class on the gridContainer
         gridContainer.classList.toggle("delete-mode", deleteMode);
@@ -603,7 +603,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
                     blockContent.contentEditable = "false";
-                    console.log("[DEBUG] Disabled contentEditable for unlocked block in delete mode.");
+                    logDebug("Disabled contentEditable for unlocked block in delete mode.");
                 }
             } else {
                 // No block is unlocked: apply 'delete-border' to all blocks globally
@@ -628,7 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const blockContent = currentlyUnlockedBlock.querySelector(".block-content");
                 if (blockContent) {
                     blockContent.contentEditable = "true";
-                    console.log("[DEBUG] Re-enabled contentEditable after exiting delete mode.");
+                    logDebug("Re-enabled contentEditable after exiting delete mode.");
                 }
             }
         }
@@ -665,7 +665,7 @@ document.addEventListener("DOMContentLoaded", () => {
             if (sortableInstance) {
                 sortableInstance.destroy();
                 sortableInstance = null;
-                console.log("[DEBUG] Sortable.js instance destroyed for delete mode.");
+                logDebug("Sortable.js instance destroyed for delete mode.");
             }
         } else {
             gridContainer.removeEventListener("click", deleteBlock);
@@ -719,12 +719,12 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 if (targetElement && targetElement !== blockContent) {
-                    console.log("[DEBUG] Deleting internal element:", targetElement);
+                    logDebug("Deleting internal element:", targetElement);
 
                     // Confirmation before deletion
                     const userConfirmed = confirm("Are you sure you want to delete this element?");
                     if (!userConfirmed) {
-                        console.log("[DEBUG] Element deletion canceled by the user.");
+                        logDebug("Element deletion canceled by the user.");
                         return;
                     }
 
@@ -755,26 +755,26 @@ document.addEventListener("DOMContentLoaded", () => {
                     hasPushedLive = false;
                     updateButtonStates();
 
-                    console.log("[DEBUG] unsavedChanges set to true after deleting an element.");
+                    logDebug("unsavedChanges set to true after deleting an element.");
                 }
             }
         } else {
             // Deleting a whole block
             const blockElement = event.target.closest(".grid-item");
             if (blockElement) {
-                console.log(`[DEBUG] Block clicked for deletion: ${blockElement.dataset.blockId}`);
+                logDebug(`Block clicked for deletion: ${blockElement.dataset.blockId}`);
 
                 // Confirmation before deletion
                 const userConfirmed = confirm("Are you sure you want to delete this block?");
                 if (!userConfirmed) {
-                    console.log("[DEBUG] Block deletion canceled by the user.");
+                    logDebug("Block deletion canceled by the user.");
                     return;
                 }
 
                 // Check if the block to be deleted is the currently unlocked block
                 if (currentlyUnlockedBlock === blockElement) {
                     currentlyUnlockedBlock = null;
-                    console.log("[DEBUG] Deleted block was unlocked. Resetting currentlyUnlockedBlock.");
+                    logDebug("Deleted block was unlocked. Resetting currentlyUnlockedBlock.");
                 }
 
                 // Store the original index of the block before deletion
@@ -802,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 hasPushedLive = false;
                 updateButtonStates();
 
-                console.log("[DEBUG] unsavedChanges set to true after deleting a block.");
+                logDebug("unsavedChanges set to true after deleting a block.");
             }
         }
     };
@@ -817,21 +817,21 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Save Layout State to the History Stack**
     const saveLayoutState = () => {
         if (viewMode !== 'draft') return; // Prevent saving state in live mode
-        console.log("[DEBUG] Saving current layout state to history...");
+        logDebug("Saving current layout state to history...");
 
         // Create a deep copy of localLayout including the 'locked' property
         const layoutCopy = JSON.parse(JSON.stringify(localLayout));
         layoutHistory.push(layoutCopy); // Save the copy with 'locked'
 
         redoHistoryStack = []; // Clear redo history on new action
-        console.log("[DEBUG] Layout history updated. Current history length:", layoutHistory.length);
+        logDebug("Layout history updated. Current history length:", layoutHistory.length);
         updateHistoryButtonsState(); // Update undo and redo button states
     };
 
     // **Update In-Memory Layout from the DOM**
     const updateLocalLayoutFromDOM = () => {
         if (viewMode !== 'draft') return; // Prevent updating layout in live mode
-        console.log("[DEBUG] Updating local layout from DOM...");
+        logDebug("Updating local layout from DOM...");
         const blocks = Array.from(gridContainer.querySelectorAll(".grid-item")).filter(block => !block.classList.contains('no-saved-draft'));
         localLayout = blocks.map((block, index) => {
             const computedStyle = window.getComputedStyle(block);
@@ -873,7 +873,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 draggablePositions // Include draggable positions in the layout
             };
         });
-        console.log("[DEBUG] Updated local layout:", JSON.stringify(localLayout, null, 2));
+        logDebug("Updated local layout:", JSON.stringify(localLayout, null, 2));
     };    
 
     // **Undo the Last Action (Add, Delete, Move, Edit)**
@@ -923,7 +923,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 const childParagraph = blockContent.querySelector("p");
                 if (childParagraph) {
                     childParagraph.classList.add("deletable");
-                    console.log("[DEBUG] 'deletable' class added to child paragraph.");
+                    logDebug("'deletable' class added to child paragraph.");
                 }
 
                 // Add click listener for lock toggle
@@ -939,10 +939,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 const blocks = Array.from(gridContainer.children);
                 if (lastDeleted.index >= blocks.length) {
                     gridContainer.appendChild(restoredBlock);
-                    console.log(`[DEBUG] Inserted block at the end (index ${lastDeleted.index}).`);
+                    logDebug(`Inserted block at the end (index ${lastDeleted.index}).`);
                 } else {
                     gridContainer.insertBefore(restoredBlock, blocks[lastDeleted.index]);
-                    console.log(`[DEBUG] Inserted block at index ${lastDeleted.index}.`);
+                    logDebug(`Inserted block at index ${lastDeleted.index}.`);
                 }
 
                 // Update local layout and reinitialize Sortable.js
@@ -959,7 +959,7 @@ document.addEventListener("DOMContentLoaded", () => {
             hasPushedLive = false;
             updateButtonStates();
         } else {
-            console.log("[DEBUG] No more undo steps available.");
+            logDebug("No more undo steps available.");
         }
         updateHistoryButtonsState();
     };
@@ -992,9 +992,9 @@ document.addEventListener("DOMContentLoaded", () => {
                     const blockElement = gridContainer.querySelector(`[data-block-id="${lastRedo.blockId}"]`);
                     if (blockElement) {
                         blockElement.remove();
-                        console.log(`[DEBUG] Removed block with ID ${lastRedo.blockId}.`);
+                        logDebug(`Removed block with ID ${lastRedo.blockId}.`);
                     } else {
-                        console.log(`[DEBUG] No block found with ID ${lastRedo.blockId} to remove.`);
+                        logDebug(`No block found with ID ${lastRedo.blockId} to remove.`);
                     }
     
                     updateLocalLayoutFromDOM();
@@ -1011,7 +1011,7 @@ document.addEventListener("DOMContentLoaded", () => {
             hasPushedLive = false;
             updateButtonStates();
         } else {
-            console.log("[DEBUG] No more redo steps available.");
+            logDebug("No more redo steps available.");
         }
         updateHistoryButtonsState();
     };
@@ -1026,7 +1026,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const saveLayoutToDatabase = async (status) => {
         if (viewMode !== 'draft') return; // Prevent saving in live mode
         if (isSaving) {
-            console.log("[DEBUG] Save operation already in progress. Aborting new save request.");
+            logDebug("Save operation already in progress. Aborting new save request.");
             return;
         }
         isSaving = true; // Set saving flag
@@ -1034,14 +1034,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const pageId = document.querySelector(".side-panel .active")?.dataset.page; // Ensure the page ID is retrieved
         if (!pageId) {
-            console.error("[DEBUG] Page ID is missing. Save aborted.");
+            console.error("Page ID is missing. Save aborted.");
             isSaving = false;
             updateButtonStates(); // Re-enable buttons
             return;
         }
 
         // **Lock all unlocked blocks before saving**
-        console.log("[DEBUG] Locking all unlocked blocks before saving draft.");
+        logDebug("Locking all unlocked blocks before saving draft.");
         const allBlocks = gridContainer.querySelectorAll(".grid-item");
         allBlocks.forEach((blockElement) => {
             const lockOverlay = blockElement.querySelector(".lock-overlay");
@@ -1062,7 +1062,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Construct the payload with `page_id`, `layout`, and `status`
         const payload = { page_id: pageId, layout: layoutToSave, status };
 
-        console.log(`[DEBUG] Saving layout with status "${status}" and payload:`, JSON.stringify(payload, null, 2));
+        logDebug(`Saving layout with status "${status}" and payload:`, JSON.stringify(payload, null, 2));
 
         try {
             const res = await fetch("/api/save-layout", {
@@ -1071,9 +1071,9 @@ document.addEventListener("DOMContentLoaded", () => {
                 body: JSON.stringify(payload), // Send the payload including `page_id` and `status`
             });
 
-            console.log(`[DEBUG] Save response status: ${res.status}`);
+            logDebug(`Save response status: ${res.status}`);
             const data = await res.json();
-            console.log("[DEBUG] Server Response After Save:", JSON.stringify(data, null, 2));
+            logDebug("Server Response After Save:", JSON.stringify(data, null, 2));
 
             if (res.ok) {
                 updateHistoryButtonsState(); // Update undo and redo button states
@@ -1084,14 +1084,14 @@ document.addEventListener("DOMContentLoaded", () => {
                     hasPushedLive = true; // Indicate that live content has been pushed
                 }
 
-                console.log("[DEBUG] Layout saved successfully.");
+                logDebug("Layout saved successfully.");
 
                 // **Check for Empty Layout and Update Content Preview**
                 if (localLayout.length === 0) {
-                    console.log("[DEBUG] Layout is empty. Rendering 'NO DRAFT SAVED' message.");
+                    logDebug("Layout is empty. Rendering 'NO DRAFT SAVED' message.");
                     renderBlocksToDOM([]); // Pass empty layout to trigger the message
                 } else {
-                    console.log("[DEBUG] Layout has blocks. Hiding 'NO DRAFT SAVED' message.");
+                    logDebug("Layout has blocks. Hiding 'NO DRAFT SAVED' message.");
                     const noDraftMessageContainer = document.querySelector(".no-saved-draft-container");
                     if (noDraftMessageContainer) {
                         noDraftMessageContainer.remove(); // Ensure the message is hidden
@@ -1101,14 +1101,14 @@ document.addEventListener("DOMContentLoaded", () => {
                 // **Re-enable Sortable.js if applicable after saving**
                 if (!hasPushedLive && !deleteMode && !isSortLocked && viewMode === 'draft' && currentlyUnlockedBlock === null) {
                     initializeSortable();
-                    console.log("[DEBUG] Sortable.js re-initialized after saving.");
+                    logDebug("Sortable.js re-initialized after saving.");
                 }
             } else {
-                console.error("[DEBUG] Save failed with status:", res.status);
+                console.error("Save failed with status:", res.status);
                 alert("Failed to save the layout. Please try again.");
             }
         } catch (err) {
-            console.error("[DEBUG] Error saving layout:", err);
+            console.error("Error saving layout:", err);
             alert("An error occurred while saving the layout.");
         } finally {
             isSaving = false; // Reset saving flag
@@ -1143,7 +1143,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 <h1 class="no-saved-draft">NO DRAFT SAVED</h1>
             `;
             gridContainer.appendChild(noDraftMessageContainer);
-            console.log("[DEBUG] Rendered 'NO DRAFT SAVED' message.");
+            logDebug("Rendered 'NO DRAFT SAVED' message.");
             return; // Exit the function as there's nothing else to render
         }
 
@@ -1185,7 +1185,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 blockElement.classList.remove('default-border');
                 blockElement.classList.add('unlocked-border');
                 currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
-                console.log("[DEBUG] Block is unlocked on render:", block.block_id);
+                logDebug("Block is unlocked on render:", block.block_id);
 
                 // Re-apply grid overlay if it was active
                 if (block.gridOverlayActive) {
@@ -1207,7 +1207,7 @@ document.addEventListener("DOMContentLoaded", () => {
             const childParagraph = blockContent.querySelector("p");
             if (childParagraph) {
                 childParagraph.classList.add("deletable");
-                console.log("[DEBUG] 'deletable' class added to child paragraph.");
+                logDebug("'deletable' class added to child paragraph.");
             }
 
             gridContainer.appendChild(blockElement);
@@ -1236,7 +1236,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 } else {
                     blockElement.classList.add('delete-border');
                 }
-                console.log("[DEBUG] 'delete-border' class applied to block during rendering.");
+                logDebug("'delete-border' class applied to block during rendering.");
             }
 
         });
@@ -1244,9 +1244,9 @@ document.addEventListener("DOMContentLoaded", () => {
         // **Initialize Sortable.js Only If No Blocks Are Unlocked and Blocks Exist**
         if (!currentlyUnlockedBlock && viewMode === 'draft' && !deleteMode && !isSortLocked && blocks.length > 0) {
             initializeSortable();
-            console.log("[DEBUG] Sortable.js initialized after rendering all blocks as locked.");
+            logDebug("Sortable.js initialized after rendering all blocks as locked.");
         } else {
-            console.log("[DEBUG] Sortable.js not initialized because a block is unlocked, no blocks exist, or other conditions not met.");
+            logDebug("Sortable.js not initialized because a block is unlocked, no blocks exist, or other conditions not met.");
         }
     };
 
@@ -1256,7 +1256,7 @@ document.addEventListener("DOMContentLoaded", () => {
             // **Ensure Only One Message Container Exists**
             const existingNoDraftMessage = gridPreviewContainer.querySelector(".no-saved-draft-container");
             if (existingNoDraftMessage) {
-                console.log("[DEBUG] 'NO DRAFT SAVED' message already exists. Not adding another.");
+                logDebug("'NO DRAFT SAVED' message already exists. Not adding another.");
                 return;
             }
 
@@ -1267,34 +1267,34 @@ document.addEventListener("DOMContentLoaded", () => {
                 <h1 class="no-saved-draft">NO DRAFT SAVED</h1>
             `;
             gridPreviewContainer.appendChild(noDraftMessageContainer);
-            console.log("[DEBUG] Displayed 'NO DRAFT SAVED' message due to fetch error.");
+            logDebug("Displayed 'NO DRAFT SAVED' message due to fetch error.");
         } else {
             // If gridPreviewContainer is null, optionally handle differently
-            console.log("[DEBUG] gridPreviewContainer is null. Cannot display 'NO DRAFT SAVED' message.");
+            logDebug("gridPreviewContainer is null. Cannot display 'NO DRAFT SAVED' message.");
         }
     };
 
     // **Fetch Layout and Initialize Sortable.js**
     const fetchLayout = async (reinitializeSortable = false) => {
         if (!gridContainer) {
-            console.log("[DEBUG] gridContainer is null. No fetch performed.");
+            logDebug("gridContainer is null. No fetch performed.");
             return;
         }
 
         const pageId = document.querySelector(".side-panel .active")?.dataset.page;
         if (!pageId) {
-            console.error("[DEBUG] Page ID is missing. Fetch aborted.");
+            console.error("Page ID is missing. Fetch aborted.");
             return;
         }
-        console.log(`[DEBUG] Fetching layout for page ID: ${pageId} with status: ${viewMode}`);
+        logDebug(`Fetching layout for page ID: ${pageId} with status: ${viewMode}`);
 
         try {
             const res = await fetch(`/api/content/${pageId}?status=${viewMode}`);
-            console.log(`[DEBUG] Fetch response status: ${res.status}`);
+            logDebug(`Fetch response status: ${res.status}`);
 
             if (res.status === 404 && viewMode === 'draft') {
                 // No draft exists
-                console.log("[DEBUG] No draft exists for this page.");
+                logDebug("No draft exists for this page.");
                 displayNoSavedDraftMessage();
                 return;
             }
@@ -1305,7 +1305,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             let blocks = await res.json();
 
-            console.log("[DEBUG] Fetched blocks:", JSON.stringify(blocks, null, 2));
+            logDebug("Fetched blocks:", JSON.stringify(blocks, null, 2));
 
             // Initialize grid overlay properties
             blocks.forEach(block => {
@@ -1323,7 +1323,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             // Initialize Sortable.js only if conditions are met
             if (reinitializeSortable && viewMode === "draft" && !deleteMode && !isSortLocked && currentlyUnlockedBlock === null && blocks.length > 0) {
-                console.log("[DEBUG] Reinitializing Sortable.js after fetching layout...");
+                logDebug("Reinitializing Sortable.js after fetching layout...");
                 initializeSortable();
             }
 
@@ -1335,7 +1335,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 updateButtonStates();
             }
         } catch (err) {
-            console.error("[DEBUG] Error fetching layout:", err);
+            console.error("Error fetching layout:", err);
 
             // **Handle Errors When Fetching Draft (e.g., Draft Doesn't Exist)**
             if (viewMode === "draft") {
@@ -1347,7 +1347,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Render Layout from a Given State**
     const renderLayout = (layout, reinitializeSortable = true) => {
         if (!gridContainer) {
-            console.log("[DEBUG] gridContainer is null. Cannot render layout.");
+            logDebug("gridContainer is null. Cannot render layout.");
             return;
         }
 
@@ -1358,7 +1358,7 @@ document.addEventListener("DOMContentLoaded", () => {
         } else if (sortableInstance) {
             sortableInstance.destroy();
             sortableInstance = null;
-            console.log("[DEBUG] Sortable.js instance destroyed in renderLayout.");
+            logDebug("Sortable.js instance destroyed in renderLayout.");
         }
     };
 
@@ -1371,7 +1371,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Add Block Function**
     const addBlock = () => {
         if (viewMode !== 'draft') return; // Prevent adding blocks in live mode
-        console.log("[DEBUG] Add Block button clicked.");
+        logDebug("Add Block button clicked.");
     
         const blockType = blockTypeControl.value;
     
@@ -1417,14 +1417,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const childParagraph = blockContent.querySelector("p");
         if (childParagraph) {
             childParagraph.classList.add("deletable");
-            console.log("[DEBUG] 'deletable' class added to child paragraph.");
+            logDebug("'deletable' class added to child paragraph.");
         }
 
         // Remove "NO DRAFT SAVED" message if present
         const noDraftMessageContainer = gridContainer.querySelector(".no-saved-draft-container");
         if (noDraftMessageContainer) {
             noDraftMessageContainer.remove();
-            console.log("[DEBUG] 'NO DRAFT SAVED' message removed after adding a block.");
+            logDebug("'NO DRAFT SAVED' message removed after adding a block.");
         }
 
         // Add click listener for lock toggle
@@ -1452,7 +1452,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // **Save the new layout state to history**
         saveLayoutState();
 
-        console.log("[DEBUG] Block added to the layout and DOM updated.");
+        logDebug("Block added to the layout and DOM updated.");
     };
 
     /**
@@ -1513,11 +1513,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 const pageId = document.querySelector(".side-panel .active")?.dataset.page;
                 if (!pageId) {
-                    console.error("[DEBUG] Page ID is missing. Cannot fetch live content.");
+                    console.error("Page ID is missing. Cannot fetch live content.");
                     return;
                 }
 
-                console.log(`[DEBUG] Switching to live view for page ID: ${pageId}`);
+                logDebug(`Switching to live view for page ID: ${pageId}`);
 
                 try {
                     // Fetch live content blocks
@@ -1527,10 +1527,10 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
 
                     const liveBlocks = await res.json();
-                    console.log("[DEBUG] Fetched live blocks:", liveBlocks);
+                    logDebug("Fetched live blocks:", liveBlocks);
 
                     if (liveBlocks.length === 0) {
-                        console.log("[DEBUG] No live content available to display.");
+                        logDebug("No live content available to display.");
 
                         // **Render "NO CONTENT AVAILABLE" Message for Live View**
                         gridContainer.innerHTML = `
@@ -1553,14 +1553,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
                     // Render live blocks to the DOM
                     renderLayout(liveBlocks, false); // No reinitialize sortable in live mode
-                    console.log("[DEBUG] Live content rendered successfully.");
+                    logDebug("Live content rendered successfully.");
                     toggleButtons(false); // Disable buttons in live mode
                     togglePadlocksAndBorders(false); // Disable padlocks and hover effects
 
                     // Reset currentlyUnlockedBlock in live view
                     currentlyUnlockedBlock = null;
                 } catch (error) {
-                    console.error("[DEBUG] Error fetching live content:", error);
+                    console.error("Error fetching live content:", error);
                     alert("Failed to switch to live view.");
                 }
             } else {
@@ -1584,11 +1584,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                console.log("[DEBUG] Switching back to draft view.");
+                logDebug("Switching back to draft view.");
 
                 // Use the memory-saved `localLayout` instead of fetching from the server
                 if (localLayout.length === 0) {
-                    console.log("[DEBUG] No blocks in localLayout. Rendering 'NO DRAFT SAVED' message.");
+                    logDebug("No blocks in localLayout. Rendering 'NO DRAFT SAVED' message.");
                     gridContainer.innerHTML = `
                         <div class="no-saved-draft-container">
                             <h1 class="no-saved-draft">NO DRAFT SAVED</h1>
@@ -1605,7 +1605,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 // **Save the restored layout to history**
                 saveLayoutState();
 
-                console.log("[DEBUG] Restored draft layout from memory.");
+                logDebug("Restored draft layout from memory.");
                 toggleButtons(true); // Enable buttons in draft mode
                 togglePadlocksAndBorders(true); // Enable padlocks and hover effects
             }
@@ -1627,7 +1627,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const clearContent = () => {
         if (viewMode !== 'draft') return; // Only allow clearing in draft mode
 
-        console.log("[DEBUG] Clear Content button clicked.");
+        logDebug("Clear Content button clicked.");
         if (localLayout.length === 0) {
             alert("No content to clear.");
             return;
@@ -1647,7 +1647,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Update button states
         updateButtonStates();
 
-        console.log("[DEBUG] All content cleared from the preview.");
+        logDebug("All content cleared from the preview.");
     };
 
     /**
@@ -1662,7 +1662,7 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             const userConfirmed = confirm("Are you sure you want to clear all content?");
             if (!userConfirmed) {
-                console.log("[DEBUG] Clear Content action canceled by the user.");
+                logDebug("Clear Content action canceled by the user.");
                 return;
             }
             clearContent(); // Call the clearContent function
@@ -1676,7 +1676,7 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock(); // Acquire the mutex
         try {
             if (isAddingBlock) {
-                console.log("[DEBUG] Add Block action is already in progress. Ignoring additional click.");
+                logDebug("Add Block action is already in progress. Ignoring additional click.");
                 return; // Prevent race condition
             }
             if (!selectedBlockType) {
@@ -1685,13 +1685,13 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             isAddingBlock = true; // Set the flag
-            console.log("[DEBUG] Add Block button clicked.");
+            logDebug("Add Block button clicked.");
 
             // Add the block to the DOM (no server interaction)
             try {
                 addBlock(); // No need to make addBlock async
             } catch (error) {
-                console.error("[DEBUG] Error in addBlock:", error);
+                console.error("Error in addBlock:", error);
             }
         } finally {
             isAddingBlock = false; // Reset the flag after operation completes
@@ -1705,10 +1705,10 @@ document.addEventListener("DOMContentLoaded", () => {
         try {
             if (viewMode !== 'draft') return; // Prevent saving in live mode
             if (isSaving) {
-                console.log("[DEBUG] Save operation already in progress. Please wait.");
+                logDebug("Save operation already in progress. Please wait.");
                 return; // Prevent multiple saves
             }
-            console.log("[DEBUG] Save Draft button clicked.");
+            logDebug("Save Draft button clicked.");
             await saveLayoutToDatabase("draft");
         } finally {
             mutex.unlock(); // Release the mutex
@@ -1725,18 +1725,18 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
             if (isSaving) {
-                console.log("[DEBUG] Save operation in progress. Please wait.");
+                logDebug("Save operation in progress. Please wait.");
                 return; // Prevent multiple pushes
             }
 
             // Show a confirmation popup
             const userConfirmed = confirm("Warning: Once this content is pushed live, it cannot be undone. Do you wish to proceed?");
             if (!userConfirmed) {
-                console.log("[DEBUG] Push Live action canceled by the user.");
+                logDebug("Push Live action canceled by the user.");
                 return; // Exit if the user cancels the action
             }
 
-            console.log("[DEBUG] Push Live button clicked.");
+            logDebug("Push Live button clicked.");
 
             // Save the layout as "live"
             await saveLayoutToDatabase("live"); // 'hasPushedLive' is set inside saveLayoutToDatabase
@@ -1746,7 +1746,7 @@ document.addEventListener("DOMContentLoaded", () => {
             layoutHistory = [JSON.parse(JSON.stringify(localLayout))]; // Reset history to empty layout
             redoHistoryStack = []; // Clear redo history
             renderLayout(localLayout); // Render the cleared layout, triggering the "NO DRAFT SAVED" message
-            console.log("[DEBUG] Rendered 'NO DRAFT SAVED' message after pushing live.");
+            logDebug("Rendered 'NO DRAFT SAVED' message after pushing live.");
         } finally {
             mutex.unlock(); // Release the mutex
         }
@@ -1757,19 +1757,19 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock(); // Acquire the mutex
         try {
             if (isUndoing) {
-                console.log("[DEBUG] Undo action is already in progress. Ignoring additional click.");
+                logDebug("Undo action is already in progress. Ignoring additional click.");
                 return; // Prevent race condition
             }
             if (isSaving) {
-                console.log("[DEBUG] Save operation in progress. Preventing undo.");
+                logDebug("Save operation in progress. Preventing undo.");
                 return; // Optionally prevent undo during saving
             }
-            console.log("[DEBUG] Undo button clicked.");
+            logDebug("Undo button clicked.");
             isUndoing = true; // Set the flag
             try {
                 undoLayoutChange();
             } catch (error) {
-                console.error("[DEBUG] Error during undo:", error);
+                console.error("Error during undo:", error);
             }
         } finally {
             isUndoing = false; // Reset the flag
@@ -1782,19 +1782,19 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock(); // Acquire the mutex
         try {
             if (isRedoing) {
-                console.log("[DEBUG] Redo action is already in progress. Ignoring additional click.");
+                logDebug("Redo action is already in progress. Ignoring additional click.");
                 return; // Prevent race condition
             }
             if (isSaving) {
-                console.log("[DEBUG] Save operation in progress. Preventing redo.");
+                logDebug("Save operation in progress. Preventing redo.");
                 return; // Optionally prevent redo during saving
             }
-            console.log("[DEBUG] Redo button clicked.");
+            logDebug("Redo button clicked.");
             isRedoing = true; // Set the flag
             try {
                 redoLayoutChange();
             } catch (error) {
-                console.error("[DEBUG] Error during redo:", error);
+                console.error("Error during redo:", error);
             }
         } finally {
             isRedoing = false; // Reset the flag
@@ -1812,19 +1812,19 @@ document.addEventListener("DOMContentLoaded", () => {
         await mutex.lock(); // Acquire the mutex
         try {
             if (isTogglingDeleteMode) {
-                console.log("[DEBUG] Delete Mode toggle is already in progress. Ignoring additional click.");
+                logDebug("Delete Mode toggle is already in progress. Ignoring additional click.");
                 return; // Prevent race condition
             }
             if (isSaving) {
-                console.log("[DEBUG] Save operation in progress. Preventing toggling delete mode.");
+                logDebug("Save operation in progress. Preventing toggling delete mode.");
                 return; // Optionally prevent toggling delete mode during saving
             }
-            console.log("[DEBUG] Delete Mode button clicked.");
+            logDebug("Delete Mode button clicked.");
             isTogglingDeleteMode = true; // Set the flag
             try {
                 toggleDeleteMode();
             } catch (error) {
-                console.error("[DEBUG] Error toggling delete mode:", error);
+                console.error("Error toggling delete mode:", error);
             }
         } finally {
             isTogglingDeleteMode = false; // Reset the flag
@@ -1847,11 +1847,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
             const pageId = document.querySelector(".side-panel .active")?.dataset.page;
             if (!pageId) {
-                console.error("[DEBUG] Page ID is missing. Cannot copy live content.");
+                console.error("Page ID is missing. Cannot copy live content.");
                 return;
             }
 
-            console.log(`[DEBUG] Copying live content for page ID: ${pageId}`);
+            logDebug(`Copying live content for page ID: ${pageId}`);
 
             try {
                 // Fetch live content blocks
@@ -1861,7 +1861,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
 
                 const liveBlocks = await res.json();
-                console.log("[DEBUG] Fetched live blocks:", liveBlocks);
+                logDebug("Fetched live blocks:", liveBlocks);
 
                 if (liveBlocks.length === 0) {
                     alert("No live content to copy.");
@@ -1876,7 +1876,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (draftExists || hasUnsavedChanges) {
                     const userConfirmed = confirm("Warning: This action will overwrite any unsaved changes in your draft. Do you wish to proceed?");
                     if (!userConfirmed) {
-                        console.log("[DEBUG] Copy Live action canceled by the user.");
+                        logDebug("Copy Live action canceled by the user.");
                         return; // Exit if the user cancels
                     }
                 }
@@ -1907,10 +1907,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 hasPushedLive = false; // Reset push state
                 updateButtonStates(); // Reflect changes in UI
 
-                console.log("[DEBUG] Live content copied to draft and rendered locally. Changes are unsaved.");
+                logDebug("Live content copied to draft and rendered locally. Changes are unsaved.");
                 alert("Live content has been copied to draft. Remember to save changes.");
             } catch (error) {
-                console.error("[DEBUG] Error copying live content:", error);
+                console.error("Error copying live content:", error);
                 alert("An error occurred while copying live content.");
             }
         } finally {
@@ -1962,11 +1962,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Dropdown Functionality**
     if (!customDropdownToggle || !customDropdownMenu) {
-        console.error("[DEBUG] Custom dropdown elements are missing.");
+        console.error("Custom dropdown elements are missing.");
     } else {
         // Ensure textContent is correct and update the innerHTML
         const dropdownText = customDropdownToggle.textContent.trim() || "Select an option"; // Fallback if textContent is empty
-        console.log("[DEBUG] customDropdownToggle textContent:", dropdownText);
+        logDebug("customDropdownToggle textContent:", dropdownText);
 
         customDropdownToggle.innerHTML = `${dropdownText} <span class="block-dropdown-arrow">&#x25BC;</span>`;
 
@@ -2060,11 +2060,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Initialize viewMode and gridContainer**
     if (!gridPreviewContainer) {
-        console.log("[DEBUG] No 'contentPreview' found. Displaying 'NO DRAFT SAVED'.");
+        logDebug("No 'contentPreview' found. Displaying 'NO DRAFT SAVED'.");
         displayNoSavedDraftMessage();
         gridContainer = null;
     } else {
-        console.log("[DEBUG] 'contentPreview' found. Initializing in 'draft' mode.");
+        logDebug("'contentPreview' found. Initializing in 'draft' mode.");
         viewMode = 'draft';
         gridContainer = gridPreviewContainer;
     }
@@ -2088,17 +2088,17 @@ document.addEventListener("DOMContentLoaded", () => {
         if (toolbarHeightDifference > 0) {
             // Toolbar expanded, scroll down by the height difference
             gridContainer.scrollTop += toolbarHeightDifference; // Positive scroll adjustment
-            console.log(`[DEBUG] Scrolled down by ${toolbarHeightDifference}px to adjust for toolbar expansion.`);
+            logDebug(`Scrolled down by ${toolbarHeightDifference}px to adjust for toolbar expansion.`);
         } else if (toolbarHeightDifference < 0) {
             // Toolbar collapsed, scroll up by the height difference
             gridContainer.scrollTop += toolbarHeightDifference; // Negative difference to scroll up
-            console.log(`[DEBUG] Scrolled up by ${-toolbarHeightDifference}px to adjust for toolbar collapse.`);
+            logDebug(`Scrolled up by ${-toolbarHeightDifference}px to adjust for toolbar collapse.`);
         }
 
         // Update the previous toolbar height for future calculations
         previousToolbarHeight = toolbarHeight;
 
-        console.log(`[DEBUG] Toolbar Height: ${toolbarHeight}px | Bottom Padding: ${dynamicPadding}px`);
+        logDebug(`Toolbar Height: ${toolbarHeight}px | Bottom Padding: ${dynamicPadding}px`);
     };
 
     // **Initial Padding Update**
@@ -2106,7 +2106,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // **Observe Toolbar for Changes**
     const toolbarObserver = new MutationObserver(() => {
-        console.log("[DEBUG] Toolbar mutation observed. Updating padding.");
+        logDebug("Toolbar mutation observed. Updating padding.");
         updateContentPreviewPadding();
     });
     toolbarObserver.observe(secondToolbarRow, { attributes: true, childList: true, subtree: false });
@@ -2139,13 +2139,13 @@ document.addEventListener("DOMContentLoaded", () => {
             button.disabled = deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft';
         });
     
-        console.log(`[DEBUG] Second row buttons are now ${deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft' ? 'disabled' : 'enabled'}.`);
+        logDebug(`Second row buttons are now ${deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft' ? 'disabled' : 'enabled'}.`);
     };    
 
     // **Toolbar Tab Functionality**
     const createToolbarTab = () => {
         if (toolbarTab) {
-            console.warn("[DEBUG] Toolbar tab already exists. Skipping creation.");
+            console.warn("Toolbar tab already exists. Skipping creation.");
             return; // Avoid re-creating the toolbar tab
         }
 
@@ -2165,7 +2165,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Add click event to toggle the toolbar expansion
         toolbarTab.addEventListener('click', () => {
             if (!toolbarTab.enabled) {
-                console.log("[DEBUG] Toolbar tab click ignored because it is disabled.");
+                logDebug("Toolbar tab click ignored because it is disabled.");
                 return; // Prevent interaction when disabled
             }
             const isExpanded = secondToolbarRow.style.display !== 'none';
@@ -2180,7 +2180,7 @@ document.addEventListener("DOMContentLoaded", () => {
         secondToolbarRow.style.display = 'none'; // Hide second row initially
         createToolbarTab(); // Create and attach the tab
     } else {
-        console.error("[DEBUG] Toolbar or second toolbar row is missing.");
+        console.error("Toolbar or second toolbar row is missing.");
     }
 
     /**
@@ -2215,7 +2215,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Listen for 'blockLockChanged' Events**
     window.addEventListener('blockLockChanged', (e) => {
         const { blockId, isLocked } = e.detail;
-        console.log(`[DEBUG] 'blockLockChanged' event received for block ID: ${blockId}, Locked: ${isLocked}`);
+        logDebug(`'blockLockChanged' event received for block ID: ${blockId}, Locked: ${isLocked}`);
 
         const block = document.querySelector(`.grid-item[data-block-id="${blockId}"]`);
 
@@ -2225,7 +2225,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 if (block.classList.contains('grid-overlay-active')) {
                     block.classList.remove('grid-overlay-active', ...gridSizeClasses);
                     gridOverlayActive = false;
-                    console.log("[DEBUG] Grid overlay removed from locked block.");
+                    logDebug("Grid overlay removed from locked block.");
                 }
             }
         }
@@ -2251,13 +2251,13 @@ document.addEventListener("DOMContentLoaded", () => {
                     const blockElement = event.target.closest('.grid-item');
                     const lockOverlay = blockElement?.querySelector('.lock-overlay');
                     if (lockOverlay?.dataset.locked === "true") {
-                        console.log("[DEBUG] Dragging prevented: Block is locked.");
+                        logDebug("Dragging prevented: Block is locked.");
                         event.preventDefault(); // Prevent dragging
                         return;
                     }
         
                     event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                    console.log("[DEBUG] Dragging started on:", event.target);
+                    logDebug("Dragging started on:", event.target);
                 },
                 move(event) {
                     // Allow movement only if the parent block is unlocked
@@ -2287,11 +2287,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     target.setAttribute('data-x', newX);
                     target.setAttribute('data-y', newY);
         
-                    console.log(`[DEBUG] Moving element to x: ${newX}, y: ${newY}`);
+                    logDebug(`Moving element to x: ${newX}, y: ${newY}`);
                 },
                 end(event) {
                     event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                    console.log('[DEBUG] Drag ended for element:', event.target);
+                    logDebug('Drag ended for element:', event.target);
         
                     // Update layout state to capture the final position
                     updateLocalLayoutFromDOM();
@@ -2317,7 +2317,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     } else {
         // For live view or other modes, draggable elements are not initialized
-        console.log('[DEBUG] Skipping draggable initialization for non-draft mode.');
+        logDebug('Skipping draggable initialization for non-draft mode.');
     }
 
     // **Ensure draggable elements are initialized whenever new elements are added dynamically**
@@ -2342,13 +2342,13 @@ document.addEventListener("DOMContentLoaded", () => {
                                     const blockElement = event.target.closest('.grid-item');
                                     const lockOverlay = blockElement?.querySelector('.lock-overlay');
                                     if (lockOverlay?.dataset.locked === "true") {
-                                        console.log("[DEBUG] Dragging prevented: Block is locked.");
+                                        logDebug("Dragging prevented: Block is locked.");
                                         event.preventDefault(); // Prevent dragging
                                         return;
                                     }
     
                                     event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                                    console.log("[DEBUG] Dragging started on:", event.target);
+                                    logDebug("Dragging started on:", event.target);
                                 },
                                 move(event) {
                                     // Allow movement only if the parent block is unlocked
@@ -2378,11 +2378,11 @@ document.addEventListener("DOMContentLoaded", () => {
                                     target.setAttribute('data-x', newX);
                                     target.setAttribute('data-y', newY);
     
-                                    console.log(`[DEBUG] Moving element to x: ${newX}, y: ${newY}`);
+                                    logDebug(`Moving element to x: ${newX}, y: ${newY}`);
                                 },
                                 end(event) {
                                     event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                                    console.log('[DEBUG] Drag ended for element:', event.target);
+                                    logDebug('Drag ended for element:', event.target);
                                 }
                             }
                         });
@@ -2411,7 +2411,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Listen for 'gridOverlayChanged' Events**
     window.addEventListener('gridOverlayChanged', (e) => {
         const { blockId, gridOverlayActive, gridOverlaySizeIndex } = e.detail;
-        console.log(`[DEBUG] 'gridOverlayChanged' event received for block ID: ${blockId}, Active: ${gridOverlayActive}, Size Index: ${gridOverlaySizeIndex}`);
+        logDebug(`'gridOverlayChanged' event received for block ID: ${blockId}, Active: ${gridOverlayActive}, Size Index: ${gridOverlaySizeIndex}`);
 
         const blockData = localLayout.find(block => block.block_id === blockId);
         if (blockData) {

@@ -1,13 +1,13 @@
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("[DEBUG] homeContent.js loaded and DOMContentLoaded triggered.");
+    logDebug("homeContent.js loaded and DOMContentLoaded triggered.");
 
     const gridContainer = document.getElementById("contentDisplay");
 
     if (!gridContainer) {
-        console.error("[DEBUG] Grid container not found. Exiting.");
+        console.error("Grid container not found. Exiting.");
         return;
     }
-    console.log("[DEBUG] Grid container found.");
+    logDebug("Grid container found.");
 
     // Function to group small and medium blocks
     const groupBlocks = (blocks) => {
@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     type: "group-wrapper",
                     blocks: [currentBlock, nextBlock],
                 });
-                console.log(`[DEBUG] Grouped blocks ${currentBlock.block_id} and ${nextBlock.block_id} into a group.`);
+                logDebug(`Grouped blocks ${currentBlock.block_id} and ${nextBlock.block_id} into a group.`);
                 i += 2; // Skip the next block as it's already grouped
             } else {
                 // Push the current block as is
@@ -67,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Append the group-wrapper to the grid container
                 gridContainer.appendChild(groupElement);
-                console.log("[DEBUG] Appended a grouped block to the grid.");
+                logDebug("Appended a grouped block to the grid.");
             } else {
                 // Handle full-width blocks (e.g., banners)
                 const blockElement = document.createElement("div");
@@ -84,25 +84,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
                 // Append the block to the grid container
                 gridContainer.appendChild(blockElement);
-                console.log("[DEBUG] Appended an individual block to the grid.");
+                logDebug("Appended an individual block to the grid.");
             }
         });
 
-        console.log("[DEBUG] Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
+        logDebug("Finished rendering blocks. Grid container state:", gridContainer.innerHTML);
     };
 
     // Fetch layout for the home page
     const fetchLayout = () => {
         const pageId = "home"; // Hardcoded for the home page
-        console.log(`[DEBUG] Fetching layout for page ID: ${pageId}`);
+        logDebug(`Fetching layout for page ID: ${pageId}`);
 
         fetch(`/api/content/${pageId}`)
             .then((res) => {
-                console.log(`[DEBUG] Fetch response status: ${res.status}`);
+                logDebug(`Fetch response status: ${res.status}`);
                 return res.json();
             })
             .then((blocks) => {
-                console.log("[DEBUG] Fetched blocks:", JSON.stringify(blocks, null, 2));
+                logDebug("Fetched blocks:", JSON.stringify(blocks, null, 2));
 
                 // Group small and medium blocks
                 const processedBlocks = groupBlocks(blocks);

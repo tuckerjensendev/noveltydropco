@@ -1,5 +1,23 @@
 // main.js
 
+// Debug utility
+let isDebugMode = false;
+
+const logDebug = (message, ...optionalParams) => {
+    if (isDebugMode) {
+        console.log(`[DEBUG] ${message}`, ...optionalParams);
+    }
+};
+
+// Toggle debug mode dynamically with Ctrl+D
+document.addEventListener("keydown", (event) => {
+    if (event.ctrlKey && event.key === "d") {
+        isDebugMode = !isDebugMode;
+        console.log(`[DEBUG] Debug mode is now ${isDebugMode ? "enabled" : "disabled"}.`);
+    }
+});
+
+
 let isDropdownOpen = false;
 let isRegisterFormOpen = false;
 
@@ -280,7 +298,7 @@ function logTimeoutToServer() {
   const ip = document.body.getAttribute('data-ip');
 
   const data = { userId, role, ip };
-  console.log('Logging session timeout with data:', data); // Debugging Line
+  logDebug('Logging session timeout with data:', data); // Debugging Line
 
   fetch('/admin/log-session-timeout', {
     method: 'POST',
@@ -293,7 +311,7 @@ function logTimeoutToServer() {
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-      console.log('Session timeout logged successfully.');
+      logDebug('Session timeout logged successfully.');
     })
     .catch(error => console.error('Error logging session timeout:', error));
 }

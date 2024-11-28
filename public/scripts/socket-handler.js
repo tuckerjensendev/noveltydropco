@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
     // Handle successful connection
     socket.on('connect', () => {
-      console.log('Connected to server via Socket.IO');
+      logDebug('Connected to server via Socket.IO');
     });
   
     // Handle server shutdown notification
@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
   
     // Optional: Handle reconnection attempts and failures
     socket.on('reconnect_attempt', () => {
-      console.log('Attempting to reconnect to the server...');
+      logDebug('Attempting to reconnect to the server...');
     });
   
     socket.on('reconnect_failed', () => {
