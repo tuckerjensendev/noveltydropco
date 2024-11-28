@@ -1,5 +1,5 @@
 // routes/auth.js
-
+const { getShutdownState } = require('../src/private/shutdownState');
 const express = require('express');
 const bcrypt = require('bcrypt');
 const passport = require('passport');
@@ -9,7 +9,7 @@ const router = express.Router();
 const { body, validationResult } = require('express-validator');
 const csurf = require('csurf');
 const csrfProtection = csurf({ cookie: true });
-const rateLimit = require('express-rate-limit'); // Imported express-rate-limit
+const rateLimit = require('express-rate-limit');
 
 // Middleware to restrict superadmin-only routes
 function requireSuperAdmin(req, res, next) {
@@ -222,34 +222,41 @@ passport.use(
 );
 
 // Logout Route with CSRF and Complete Session Destruction
-router.post('/logout', csrfProtection, (req, res) => {
-  req.logout((err) => {
-    if (err) {
-      console.error('Logout error:', err);
-      return res.status(500).send('Logout error');
+router.post('/logout', (req, res, next) => {
+    // Bypass CSRF protection during shutdown
+    if (!getShutdownState()) {
+        return csrfProtection(req, res, next); // Enforce CSRF normally
     }
+    console.log('Bypassing CSRF protection during shutdown');
+    next();
+}, (req, res) => {
+    req.logout((err) => {
+        if (err) {
+            console.error('Logout error:', err);
+            return res.status(500).send('Logout error');
+        }
 
-    req.session.destroy((sessionErr) => {
-      if (sessionErr) {
-        console.error('Session destruction error:', sessionErr);
-        return res.status(500).send('Session destruction error');
-      }
+        req.session.destroy((sessionErr) => {
+            if (sessionErr) {
+                console.error('Session destruction error:', sessionErr);
+                return res.status(500).send('Session destruction error');
+            }
 
-      // Clear the session cookie
-      res.clearCookie('connect.sid', {
-        path: '/',
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'strict',
-      });
+            res.clearCookie('connect.sid', {
+                path: '/',
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'strict',
+            });
 
-      // Introduce a slight delay (2 seconds) before redirecting to ensure all processes complete
-      setTimeout(() => {
-        res.redirect('/');
-      }, 2000); // 2000 milliseconds = 2 seconds
+            setTimeout(() => {
+                res.redirect('/');
+            }, 2000); // Small delay for consistency
+        });
     });
-  });
 });
+
+
 
 passport.serializeUser((user, done) => done(null, user.id));
 

@@ -21,6 +21,8 @@ const db = require('./db');
 const RedisStore = require('connect-redis')(session);
 const redis = require('redis');
 const socketIo = require('socket.io'); // Import Socket.IO
+const { setShutdownState, getShutdownState } = require('./src/private/shutdownState');
+
 
 // Create Redis client
 const redisClient = redis.createClient({
@@ -72,10 +74,8 @@ app.set('view engine', 'ejs');
 app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
-// Initialize connect-flash
-app.use(flash());
-
 // Configure Session to Use Redis Store
+// Session and flash middleware
 app.use(
   session({
     store: new RedisStore({ client: redisClient }),
@@ -89,6 +89,17 @@ app.use(
     },
   })
 );
+
+app.use(flash());
+
+// Handle missing sessions
+app.use((req, res, next) => {
+  if (!req.session) {
+    console.error('Session unavailable.');
+    return next(new Error('Session unavailable.'));
+  }
+  next();
+});
 
 app.use(passport.initialize());
 app.use(passport.session());
@@ -128,11 +139,19 @@ app.use((req, res, next) => {
 
 const csrfProtection = csurf({ cookie: true });
 app.use((req, res, next) => {
+  // Bypass CSRF for `/logout` during shutdown
+  if (getShutdownState() && req.path === '/logout') {
+    return next();
+  }
+
+  // Skip CSRF for API routes
   if (req.path.startsWith('/api/')) {
     return next();
   }
+
   csrfProtection(req, res, next);
 });
+
 
 app.use(attachPermissions);
 
@@ -147,22 +166,24 @@ app.use((req, res, next) => {
 // Define Staff Roles
 const staffRoles = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
 
-// Middleware to set local variables for views
+// Middleware to parse requests and set locals
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Middleware to set locals
 app.use((req, res, next) => {
-  res.locals.user = req.user;
+  res.locals.user = req.user || null;
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
   res.locals.isProduction = isProduction;
   res.locals.showStaffHeader = req.user && staffRoles.includes(req.user.role);
   res.locals.flashMessage = req.flash('flashMessage');
   res.locals.flashType = req.flash('flashType');
-
+  
   res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
   res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
-
+  
   res.locals.headExtra = '';
   res.locals.bodyExtra = '';
-
-  // Initialize scripts array
   res.locals.scripts = res.locals.scripts || [];
 
   next();
@@ -321,7 +342,7 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Initialize Socket.IO
+// **Socket.IO Initialization**
 const server = https.createServer(httpsOptions, app);
 const io = socketIo(server, {
   cors: {
@@ -330,41 +351,76 @@ const io = socketIo(server, {
   }
 });
 
-// Handle Socket.IO connections
+// **Handle Socket.IO Connections**
 io.on('connection', (socket) => {
   console.log(`Client connected: ${socket.id}`);
+
+  // Notify new connections during shutdown
+  if (getShutdownState()) {
+    const elapsedTime = Date.now() - shutdownStartTime;
+    const remainingTime = Math.max(30000 - elapsedTime, 0);
+
+    if (remainingTime > 0) {
+      socket.emit('serverShutdown', {
+        message: 'Warning: The server will shut down shortly.',
+        remainingTime,
+      });
+    }
+  }
 
   socket.on('disconnect', (reason) => {
     console.log(`Client disconnected: ${socket.id} | Reason: ${reason}`);
   });
 });
 
-// Graceful Shutdown Handler
+// **Graceful Shutdown Handler**
+// **Graceful Shutdown Handler**
 const gracefulShutdown = () => {
   console.log('Initiating graceful shutdown...');
+  setShutdownState(true); // Set shutdown state
+  shutdownStartTime = Date.now(); // Record the shutdown start time
 
   // Notify all connected clients about the shutdown
   io.emit('serverShutdown', {
-    message: 'Server is shutting down. You will be logged out.',
+    message: 'Warning: The server will shut down shortly.',
+    remainingTime: 30000, // 30 seconds in milliseconds
   });
 
-  // Close Socket.IO connections
-  io.close(() => {
-    console.log('Socket.IO connections closed.');
-  });
-
-  // Close the HTTPS server
-  server.close(() => {
-    console.log('HTTPS server closed.');
-    process.exit(0);
-  });
-
-  // Force shutdown after 10 seconds
+  // Wait for 30 seconds before closing the server
   setTimeout(() => {
-    console.error('Forced shutdown.');
-    process.exit(1);
-  }, 10000);
+    console.log('Closing server after 30-second grace period...');
+    io.close(() => console.log('Socket.IO connections closed.'));
+    server.close(() => {
+      console.log('HTTPS server closed.');
+      process.exit(0);
+    });
+
+    // Force shutdown after an additional 10 seconds
+    setTimeout(() => {
+      console.error('Forced shutdown.');
+      process.exit(1);
+    }, 10000);
+  }, 30000);
 };
+
+// **Heartbeat to Clients**
+let heartbeatInterval = null; // Variable to store the interval
+const HEARTBEAT_DURATION = 30000; // 60 seconds in milliseconds
+
+heartbeatInterval = setInterval(() => {
+  if (!getShutdownState()) {
+    console.log('Sending heartbeat: Server is alive');
+    io.emit('heartbeat', { message: 'Server is alive' });
+  }
+}, 5000);
+
+// Stop heartbeat after 60 seconds
+setTimeout(() => {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    console.log('Heartbeat stopped after 30 seconds');
+  }
+}, HEARTBEAT_DURATION);
 
 // Listen for termination signals
 process.on('SIGTERM', gracefulShutdown);
@@ -373,4 +429,33 @@ process.on('SIGINT', gracefulShutdown);
 // Start the server
 server.listen(PORT, '0.0.0.0', () => {
   console.log(`HTTPS server running on https://0.0.0.0:${PORT}`);
+  if (!getShutdownState()) {
+    console.log('Sending initial heartbeat: Server is alive');
+    io.emit('heartbeat', { message: 'Server is alive' }); // Immediate notification on server start
+  }
 });
+
+// **404 and Error Handlers**
+app.use((req, res) => {
+  res.status(404).render('404', { title: '404 - Page Not Found' });
+});
+
+app.use((err, req, res, next) => {
+  if (err.status === 400) {
+    req.flash('flashMessage', err.message);
+    req.flash('flashType', 'error');
+    return res.redirect('back');
+  }
+  console.error("[DEBUG] Unhandled error:", err);
+  res.status(500).render('500', { title: '500 - Server Error' });
+});
+
+app.use((err, req, res, next) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.status(err.status || 500);
+  res.render('500', {
+    isProduction,
+    error: isProduction ? null : err,
+  });
+});
+
