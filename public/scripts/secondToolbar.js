@@ -1,7 +1,7 @@
 // secondToolbar.js
 
 document.addEventListener("DOMContentLoaded", () => {
-    logDebug("secondaryToolbar.js loaded and DOMContentLoaded triggered.");
+    logDebug("secondToolbar.js loaded and DOMContentLoaded triggered.");
 
     /**
      * *******************************
@@ -11,10 +11,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const secondToolbarRow = document.querySelector('.toolbar-row.second-row');
 
     // **Button References**
-    const toggleGridOverlayButton = document.getElementById("toggleGridOverlayButton");
+    const gridOverlayDropdown = document.getElementById("gridOverlayDropdown");
+    const GridOverlayButton = document.getElementById("GridOverlayButton");
+    const clearGridOverlayButton = document.getElementById("clearGridOverlayButton");
+    const addTextDropdown = document.getElementById("addTextDropdown"); // Dropdown menu
+    const addTextButton = document.getElementById("addTextButton"); // Add Text button
     const addImageButton = document.getElementById("addImageButton");
     const imageLinkButton = document.getElementById("imageLinkButton");
-    const addTextButton = document.getElementById("addTextButton");
     const textLinkButton = document.getElementById("textLinkButton");
     const resizeImageButton = document.getElementById("resizeImageButton");
     const cropImageButton = document.getElementById("cropImageButton");
@@ -28,12 +31,10 @@ document.addEventListener("DOMContentLoaded", () => {
     const animationEffectsButton = document.getElementById("animationEffectsButton");
     const alignmentToolsButton = document.getElementById("alignmentToolsButton");
     const fontStylingButton = document.getElementById("fontStylingButton");
-    const addTextDropdown = document.getElementById("addTextDropdown"); // Dropdown menu
-    const addTextDropdownButton = document.getElementById("addTextButton"); // Add Text button
 
     // **List of Buttons for Iteration**
     const secondRowButtons = [
-        toggleGridOverlayButton,
+        GridOverlayButton,
         addImageButton,
         imageLinkButton,
         addTextButton,
@@ -59,11 +60,8 @@ document.addEventListener("DOMContentLoaded", () => {
         blockTypeDropdown: document.getElementById('blockTypeControl'),
         addBlockButton: document.getElementById('addBlockButton'),
         deleteModeButton: document.getElementById('deleteModeButton'), // Delete Toggle Button
-        pushLiveButton : document.getElementById("pushLiveButton")
+        pushLiveButton: document.getElementById("pushLiveButton")
     };
-
-    // List of grid size classes
-    const gridSizeClasses = ['grid-overlay-small', 'grid-overlay-medium', 'grid-overlay-large'];
 
     /**
      * *******************************
@@ -72,14 +70,15 @@ document.addEventListener("DOMContentLoaded", () => {
      */
     // Validate the presence of the second toolbar row
     if (!secondToolbarRow) {
-        console.error("Second toolbar row not found. secondaryToolbar.js aborted.");
+        console.error("Second toolbar row not found. secondToolbar.js aborted.");
         return;
     }
     logDebug("Second toolbar row found.");
 
+    // Validate the presence of all second row buttons
     const missingButtons = secondRowButtons.filter(button => !button);
     if (missingButtons.length > 0) {
-        console.error(`Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondaryToolbar.js aborted.`);
+        console.error(`Missing buttons in second toolbar row: ${missingButtons.map(btn => btn.id).join(', ')}. secondToolbar.js aborted.`);
         return;
     }
     logDebug("All second row toolbar buttons are present.");
@@ -105,6 +104,11 @@ document.addEventListener("DOMContentLoaded", () => {
     let deleteMode = false; // Track delete mode state
     let isAnyBlockUnlocked = false; // Track if any block is unlocked
 
+    // Initialize global state variables for grid and snapping
+    window.gridUnitWidth = 0;
+    window.gridUnitHeight = 0;
+    window.isSnapEnabled = false;
+
     /**
      * *******************************
      * **Utility Functions**
@@ -116,8 +120,6 @@ document.addEventListener("DOMContentLoaded", () => {
      * This function dynamically enables or disables buttons in the second toolbar row
      * based on the presence of an unlocked block and delete mode state.
      */
-    // secondaryToolbar.js
-
     const updateButtonStates = () => {
         const shouldDisableSecondRow = deleteMode && isAnyBlockUnlocked;
 
@@ -143,81 +145,87 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     };
 
-
     /**
      * *******************************
      * **Event Listeners**
      * *******************************
      */
 
-    /**
-     * **Add Text Button Dropdown Functionality**
-     */
-    // Ensure the dropdown menu is hidden initially
+    // **Add Text Dropdown Functionality**
     addTextDropdown.style.display = "none";
 
-    // Toggle dropdown visibility when the Add Text button is clicked
-    addTextDropdownButton.addEventListener("click", (e) => {
+    // **Single Event Listener for Add Text Button**
+    addTextButton.addEventListener("click", async (e) => {
         e.stopPropagation(); // Prevent click from propagating
-        const isVisible = addTextDropdown.style.display === "block";
-        addTextDropdown.style.display = isVisible ? "none" : "block";
-        addTextDropdownButton.setAttribute("aria-expanded", !isVisible);
+        await mutex.lock();
+        try {
+            logDebug("Add Text button clicked.");
+
+            // Toggle dropdown visibility
+            const isVisible = addTextDropdown.style.display === "block";
+            addTextDropdown.style.display = isVisible ? "none" : "block";
+            addTextButton.setAttribute("aria-expanded", !isVisible);
+        } catch (error) {
+            console.error("Error in Add Text button:", error);
+        } finally {
+            mutex.unlock();
+        }
     });
 
-    // Handle selection of dropdown items
+    // Handle selection of dropdown items for Add Text
     addTextDropdown.querySelectorAll(".dropdown-item").forEach(item => {
         item.addEventListener("click", async (e) => {
             e.stopPropagation(); // Prevent click from propagating
             const selectedValue = item.getAttribute("data-value"); // e.g., "p", "h1", "h2"
-    
+
             if (!selectedValue) {
                 console.warn("No data-value attribute found on selected dropdown item.");
                 return;
             }
-    
+
             logDebug(`Selected text type: ${selectedValue}`);
-    
+
             // Insert the selected element into the currently unlocked block
             const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
             if (!unlockedBlock) {
                 alert("No unlocked block found to add text.");
                 return;
             }
-    
+
             const blockContent = unlockedBlock.querySelector('.block-content');
             if (!blockContent) {
                 console.error("block-content div not found in the unlocked block.");
                 return;
             }
-    
+
             // Create the new element
             const newElement = document.createElement(selectedValue);
             newElement.textContent = "New Text"; // Placeholder text; can be edited later
             newElement.classList.add("deletable", "editable-text"); // Add deletable and styling classes
-    
+
             // Set contentEditable to true before appending
             newElement.contentEditable = "true";
-    
+
             // Create a draggable container for the new element
             const draggableContainer = document.createElement('div');
-            draggableContainer.classList.add('draggable-element');
+            draggableContainer.classList.add('draggable-element', 'block-label-draggable'); // Same initial positioning style as block label
             draggableContainer.style.position = 'absolute'; // Position absolutely within the block
-            draggableContainer.style.top = '0px'; // Initial position
-            draggableContainer.style.left = '0px'; // Initial position
-    
-            // **Add Initial Position Attributes and Styles**
+            draggableContainer.style.top = '50%'; // Align vertically centered
+            draggableContainer.style.left = '50%'; // Align horizontally centered
+            draggableContainer.style.transform = 'translate(-50%, -50%) translate(0px, 0px)'; // Initial centering and drag-ready
+
+            // **Add Initial Position Attributes**
             draggableContainer.setAttribute('data-x', '0');
             draggableContainer.setAttribute('data-y', '0');
-            draggableContainer.style.transform = 'translate(0px, 0px)';
-    
+
             draggableContainer.appendChild(newElement);
-    
+
             // Append the draggable container to the block-content
             blockContent.appendChild(draggableContainer);
-    
+
             // Automatically focus the new element for immediate editing
             newElement.focus();
-    
+
             // Dispatch a custom event to notify contentWorkshop.js about the change
             const textAddedEvent = new CustomEvent('textAdded', {
                 detail: {
@@ -226,77 +234,257 @@ document.addEventListener("DOMContentLoaded", () => {
                 }
             });
             window.dispatchEvent(textAddedEvent);
-    
+
             // Close the dropdown
             addTextDropdown.style.display = "none";
-            addTextDropdownButton.setAttribute("aria-expanded", "false");
-    
+            addTextButton.setAttribute("aria-expanded", "false");
+
             logDebug(`Inserted new <${selectedValue}> element into the unlocked block.`);
         });
     });
-    
 
-    // Close the dropdown when clicking outside
+    // Close the Add Text dropdown when clicking outside
     document.addEventListener("click", () => {
         addTextDropdown.style.display = "none";
-        addTextDropdownButton.setAttribute("aria-expanded", "false");
+        addTextButton.setAttribute("aria-expanded", "false");
     });
 
     /**
-     * **Toggle Grid Overlay Button**
+     * **Toggle Grid Overlay Functionality with Snap to Grid**
      */
-    toggleGridOverlayButton.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            logDebug("Toggle Grid Overlay button clicked.");
 
-            // Find the currently unlocked block
-            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
-            if (!unlockedBlock) {
-                console.warn("No unlocked block found. Grid Overlay toggle aborted.");
-                alert("No unlocked block found to toggle the grid overlay.");
+    // Ensure the grid overlay dropdown menu is hidden initially
+    gridOverlayDropdown.style.display = "none";
+
+    // Toggle dropdown visibility when the Grid Overlay button is clicked
+    GridOverlayButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        mutex.lock().then(() => {
+            try {
+                const isVisible = gridOverlayDropdown.style.display === "block";
+                gridOverlayDropdown.style.display = isVisible ? "none" : "block";
+                GridOverlayButton.setAttribute("aria-expanded", !isVisible);
+            } catch (error) {
+                console.error("Error toggling Grid Overlay dropdown:", error);
+            } finally {
+                mutex.unlock();
+            }
+        });
+    });
+
+    // Close the grid overlay dropdown when clicking outside
+    document.addEventListener("click", () => {
+        gridOverlayDropdown.style.display = "none";
+        GridOverlayButton.setAttribute("aria-expanded", "false");
+    });
+
+    // Handle grid size selection
+    gridOverlayDropdown.querySelectorAll(".dropdown-item").forEach((item) => {
+        item.addEventListener("click", (e) => {
+            e.stopPropagation();
+
+            // Handle Snap to Grid toggle separately
+            if (item.id === "snapToGridButton") {
+                toggleSnapToGrid(item);
                 return;
             }
 
-            // Sync gridOverlayActive state with the DOM
-            gridOverlayActive = unlockedBlock.classList.contains('grid-overlay-active');
-
-            if (!gridOverlayActive) {
-                // Activate grid overlay and start with the first custom size
-                gridOverlaySizeIndex = 0; // Reset to the first grid size
-                unlockedBlock.classList.add('grid-overlay-active', gridSizeClasses[gridOverlaySizeIndex]);
-                gridOverlayActive = true;
-                logDebug(`Grid overlay added to the unlocked block with size: ${gridSizeClasses[gridOverlaySizeIndex]}`);
-            } else {
-                // Cycle grid size or turn off if at the last size
-                unlockedBlock.classList.remove(...gridSizeClasses);
-
-                gridOverlaySizeIndex = (gridOverlaySizeIndex + 1) % (gridSizeClasses.length + 1); // +1 to include "off" state
-
-                if (gridOverlaySizeIndex === gridSizeClasses.length) {
-                    // Turn off the grid overlay
-                    unlockedBlock.classList.remove('grid-overlay-active');
-                    gridOverlayActive = false;
-                    logDebug("Grid overlay turned off.");
-                } else {
-                    // Apply the next grid size
-                    unlockedBlock.classList.add(gridSizeClasses[gridOverlaySizeIndex]);
-                    logDebug(`Grid overlay size updated to: ${gridSizeClasses[gridOverlaySizeIndex]}`);
-                }
+            // Handle Clear Grid overlay
+            if (item.id === "clearGridOverlayButton") {
+                clearGridOverlay();
+                return;
             }
+
+            // Handle grid size selection
+            const gridSize = item.getAttribute("data-grid-size");
+            if (!gridSize) {
+                console.warn("No data-grid-size attribute found on selected dropdown item.");
+                return;
+            }
+
+            logDebug(`Selected grid size: ${gridSize}`);
+
+            // Find the currently unlocked block
+            const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
+            if (!unlockedBlock) {
+                alert("No unlocked block found to apply grid overlay.");
+                return;
+            }
+
+            // Get the block's computed styles
+            const blockStyles = window.getComputedStyle(unlockedBlock);
+            const blockWidth = parseFloat(blockStyles.width);
+            const blockHeight = parseFloat(blockStyles.height);
+
+            // Determine the number of grid units based on grid size
+            let columns;
+            if (gridSize === "1") {
+                columns = 10; // Grid 1: 10 columns
+            } else if (gridSize === "2") {
+                columns = 5;  // Grid 2: 5 columns
+            } else {
+                console.warn(`Unsupported grid size: ${gridSize}`);
+                return;
+            }
+
+            // Calculate grid unit width based on columns
+            const gridUnitWidth = Math.floor(blockWidth / columns);
+            window.gridUnitWidth = gridUnitWidth; // Update global state
+
+            // Calculate the number of rows to fit the block height exactly
+            const rows = Math.floor(blockHeight / gridUnitWidth);
+
+            // Calculate grid unit height based on rows to ensure no partial cells
+            const gridUnitHeight = blockHeight / rows;
+            window.gridUnitHeight = gridUnitHeight; // Update global state
+
+            // Clear any existing grid overlay styles
+            unlockedBlock.style.backgroundImage = "none";
+            unlockedBlock.style.backgroundSize = "none";
+            unlockedBlock.style.backgroundRepeat = "none";
+            unlockedBlock.style.backgroundPosition = "none";
+
+            // Apply the new grid overlay using background images (Style-Based)
+            unlockedBlock.style.backgroundImage = `
+                linear-gradient(to right, rgba(0, 0, 0, 0.5) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
+            `;
+            unlockedBlock.style.backgroundSize = `${gridUnitWidth}px ${gridUnitHeight}px`;
+            unlockedBlock.style.backgroundRepeat = "repeat";
+            unlockedBlock.style.backgroundPosition = "0 0"; // Corrected closing quote
+
+            logDebug(
+                `Grid overlay applied dynamically: size ${gridSize}, unit width: ${gridUnitWidth}px, unit height: ${gridUnitHeight}px, rows: ${rows}.`
+            );
+
+            // Update snapping grid in Interact.js if snapping is enabled
+            if (window.isSnapEnabled) {
+                updateInteractSnap();
+            }
+
+            // Close the dropdown after selection
+            gridOverlayDropdown.style.display = "none";
+            GridOverlayButton.setAttribute("aria-expanded", "false");
+        });
+    });
+
+    /**
+     * **Clear Grid Overlay Functionality**
+     */
+    const clearGridOverlay = () => {
+        const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
+        if (!unlockedBlock) {
+            alert("No unlocked block found to clear grid overlay.");
+            return;
+        }
+
+        // Clear grid overlay styles
+        unlockedBlock.style.backgroundImage = "none";
+        unlockedBlock.style.backgroundSize = "none";
+        unlockedBlock.style.backgroundRepeat = "none";
+        unlockedBlock.style.backgroundPosition = "none";
+
+        // Reset global grid unit sizes
+        window.gridUnitWidth = 0;
+        window.gridUnitHeight = 0;
+
+        logDebug("Grid overlay cleared.");
+
+        // Update snapping grid in Interact.js if snapping is enabled
+        if (window.isSnapEnabled) {
+            updateInteractSnap();
+        }
+
+        // Close the dropdown after clearing
+        gridOverlayDropdown.style.display = "none";
+        GridOverlayButton.setAttribute("aria-expanded", "false");
+    };
+
+    /**
+     * **Toggle Snap to Grid Functionality**
+     */
+    const toggleSnapToGrid = (button) => {
+        window.isSnapEnabled = !window.isSnapEnabled;
+
+        // Update button appearance to reflect active state
+        if (window.isSnapEnabled) {
+            button.classList.add("active");
+            button.textContent = "Snap: ON";
+        } else {
+            button.classList.remove("active");
+            button.textContent = "Snap: OFF";
+        }
+
+        logDebug(`Snap to Grid is now ${window.isSnapEnabled ? "enabled" : "disabled"}.`);
+
+        // Update snapping grid in Interact.js
+        updateInteractSnap();
+    };
+
+    /**
+     * **Update Interact.js Snap Settings**
+     * This function re-initializes draggable elements to apply the new snapping settings.
+     */
+    const updateInteractSnap = () => {
+        if (typeof window.initializeInternalDraggable === "function") {
+            // Re-initialize draggable elements to update snapping
+            window.initializeInternalDraggable();
+        }
+    };
+
+    /**
+     * **Handle Clear Grid Overlay Button**
+     * Clears the grid overlay when the clearGridOverlayButton is clicked.
+     */
+    clearGridOverlayButton.addEventListener("click", async (e) => {
+        e.stopPropagation();
+        await mutex.lock();
+        try {
+            clearGridOverlay();
         } catch (error) {
-            console.error("Error in Toggle Grid Overlay button:", error);
+            console.error("Error in Clear Grid Overlay button:", error);
         } finally {
             mutex.unlock();
         }
     });
 
     /**
-     * **Other Toolbar Buttons Event Listeners**
-     * (Add Image, Image Link, etc.)
-     * Ensure these do not interfere with the Add Text functionality
+     * **Handle Lock Element Button**
      */
+    lockElementButton.addEventListener("click", async () => {
+        await mutex.lock();
+        try {
+            logDebug("Lock Element button clicked.");
+            // This should toggle the lock state of the currently unlocked block
+            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
+            if (unlockedBlock) {
+                // Assuming toggleBlockLock is defined globally or accessible
+                // If not, implement the locking logic here
+                toggleBlockLock(unlockedBlock);
 
+                // **Additional Step: Clear Grid Overlay Upon Locking**
+                unlockedBlock.style.backgroundImage = "none";
+                unlockedBlock.style.backgroundSize = "none";
+                unlockedBlock.style.backgroundRepeat = "none";
+                unlockedBlock.style.backgroundPosition = "none";
+
+                logDebug("Locking the currently unlocked block and removing grid overlays.");
+            } else {
+                alert("No unlocked block found to lock.");
+            }
+        } catch (error) {
+            console.error("Error in Lock Element button:", error);
+        } finally {
+            mutex.unlock();
+        }
+    });
+
+    /**
+     * **Other Toolbar Button Event Listeners**
+     * These listeners are placeholders for additional functionalities.
+     * Ensure that these functions do not interfere with grid overlay logic.
+     */
+    
     // Example for Add Image Button
     addImageButton.addEventListener("click", async () => {
         await mutex.lock();
@@ -310,9 +498,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Image Link Button**
-     */
+    // Image Link Button
     imageLinkButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -325,24 +511,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Add Text Button**
-     */
-    addTextButton.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            logDebug("Add Text button clicked.");
-            // This button now only toggles the dropdown, actual functionality is handled by the dropdown items
-        } catch (error) {
-            console.error("Error in Add Text button:", error);
-        } finally {
-            mutex.unlock();
-        }
-    });
-
-    /**
-     * **Text Link Button**
-     */
+    // Text Link Button
     textLinkButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -355,9 +524,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Resize Image Button**
-     */
+    // Resize Image Button
     resizeImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -370,9 +537,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Crop Image Button**
-     */
+    // Crop Image Button
     cropImageButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -385,9 +550,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Add Gallery Button**
-     */
+    // Add Gallery Button
     addGalleryButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -400,9 +563,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Add Sponsored Ad Button**
-     */
+    // Add Sponsored Ad Button
     addSponsoredAdButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -415,9 +576,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Color Picker Button**
-     */
+    // Color Picker Button
     colorPickerButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -430,9 +589,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Layer Control Button**
-     */
+    // Layer Control Button
     layerControlButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -445,9 +602,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Duplicate Content Button**
-     */
+    // Duplicate Content Button
     duplicateContentButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -460,31 +615,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Lock Element Button**
-     */
-    lockElementButton.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            logDebug("Lock Element button clicked.");
-            // This should toggle the lock state of the currently unlocked block
-            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
-            if (unlockedBlock) {
-                // Assuming there's a function to toggle lock, e.g., toggleBlockLock
-                toggleBlockLock(unlockedBlock);
-            } else {
-                alert("No unlocked block found to lock.");
-            }
-        } catch (error) {
-            console.error("Error in Lock Element button:", error);
-        } finally {
-            mutex.unlock();
-        }
-    });
-
-    /**
-     * **Embed HTML Button**
-     */
+    // Embed HTML Button
     embedHTMLButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -497,9 +628,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Animation Effects Button**
-     */
+    // Animation Effects Button
     animationEffectsButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -512,9 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Alignment Tools Button**
-     */
+    // Alignment Tools Button
     alignmentToolsButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -527,9 +654,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    /**
-     * **Font Styling Button**
-     */
+    // Font Styling Button
     fontStylingButton.addEventListener("click", async () => {
         await mutex.lock();
         try {
@@ -543,7 +668,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     /**
-     * **Event Listener for 'deleteModeChanged' and 'blockLockChanged'**
+     * **Handle Custom Events for Delete Mode and Block Lock Changes**
      * Listens for custom events dispatched from contentWorkshop.js
      * and updates the button states dynamically.
      */

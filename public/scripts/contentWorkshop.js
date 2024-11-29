@@ -49,6 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
      * *******************************
      */
     let sortableInstance;
+    let snapToGridActive = false;
     let localLayout = []; // In-memory layout for unsaved updates
     let layoutHistory = []; // Stack for undo functionality for non-deletion actions
     let redoHistoryStack = []; // Stack for redo functionality for non-deletion actions
@@ -65,7 +66,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let viewMode = 'draft'; // Always start in 'draft' mode
     let gridContainer = gridPreviewContainer; // Assign gridContainer to 'contentPreview'
     let unsavedChanges = false; // Track unsaved changes
-    let deletionsDuringDeleteMode = false; // Track deletions during delete mode
     let isSaving = false; // Flag to prevent multiple concurrent saves
     let hasPushedLive = false; // Track if Push Live has been clicked
 
@@ -300,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
             blockElement.classList.remove('default-border');
             blockElement.classList.add('unlocked-border'); // Add unlocked border
-            currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
+            currentlyUnlockedBlock = blockElement; // Track currently unlocked block
             logDebug("Block unlocked.");
     
             // Disable Sortable.js when a block is unlocked
@@ -312,10 +312,10 @@ document.addEventListener("DOMContentLoaded", () => {
     
             // Open the secondary toolbar
             if (secondToolbarRow) {
-                secondToolbarRow.style.display = "flex"; // Show the secondary toolbar
+                secondToolbarRow.style.display = "flex"; // Show secondary toolbar
                 if (toolbarTab) {
-                    toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update the toolbar tab arrow
-                    toolbarTab.classList.add('expanded'); // Add expanded styling
+                    toolbarTab.innerHTML = '<span>&#x25BC;</span>'; // Update toolbar tab arrow
+                    toolbarTab.classList.add('expanded'); // Add styling
                 }
                 logDebug("Secondary toolbar opened due to block unlocking.");
             }
@@ -449,11 +449,11 @@ document.addEventListener("DOMContentLoaded", () => {
     
         // Variables for scrolling logic
         let scrollInterval; // Timer for continuous scrolling
-        const edgeThreshold = 190; // Increased distance from edges to trigger scroll
-        const upperEdgeThreshold = 190; // Increased distance from bottom edge to trigger scroll
-        const scrollSpeed = 10; // Increased speed of scrolling in px per tick
-        let isScrolling = false; // Flag to track active scrolling
-        let lastClientY = 0; // Store the last Y position
+        const edgeThreshold = 190;
+        const upperEdgeThreshold = 190;
+        const scrollSpeed = 10;
+        let isScrolling = false;
+        let lastClientY = 0;
     
         // Start scrolling if near the edges
         const startScrolling = (clientY) => {
@@ -539,7 +539,6 @@ document.addEventListener("DOMContentLoaded", () => {
         logDebug("Sortable.js initialized successfully.");
     };
     
-
     /**
      * *******************************
      * **Delete Mode Functionality**
@@ -688,7 +687,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         /**
          * **Update Undo and Redo Buttons**
-         * Assume that updateHistoryButtonsState() is responsible for this.
+         * UpdateHistoryButtonsState() are responsible for this.
          * It should be called within secondaryToolbar.js based on the application's state.
          */
         updateHistoryButtonsState();
@@ -806,7 +805,6 @@ document.addEventListener("DOMContentLoaded", () => {
             }
         }
     };
-
 
     /**
      * *******************************
@@ -1149,7 +1147,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         blocks.forEach((block) => {
             const blockElement = document.createElement("div");
-            blockElement.className = `grid-item ${block.type} default-border`; // Include default-border
+            blockElement.className = `grid-item ${block.type} default-border`;
             blockElement.dataset.blockId = block.block_id;
             blockElement.dataset.row = block.row;
             blockElement.dataset.col = block.col;
@@ -1881,12 +1879,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     }
                 }
 
-                // Initialize grid overlay properties
-                liveBlocks.forEach(block => {
-                    block.gridOverlayActive = false;
-                    block.gridOverlaySizeIndex = -1;
-                    block.locked = true; // Ensure blocks are locked by default
-                });
+                // // Initialize grid overlay properties
+                // liveBlocks.forEach(block => {
+                //     block.gridOverlayActive = false;
+                //     block.gridOverlaySizeIndex = -1;
+                //     block.locked = true; // Ensure blocks are locked by default
+                // });
 
                 // **Assign unique block IDs to live blocks if necessary**
                 liveBlocks.forEach(block => {
@@ -2232,77 +2230,112 @@ document.addEventListener("DOMContentLoaded", () => {
         updateSecondRowButtonStates();
     });
 
-    /**
-     * Initialize Interact.js for draggable elements within block-content
-     */
-    const initializeInternalDraggable = () => {
-        interact('.draggable-element').draggable({
-            inertia: true,
-            modifiers: [
-                interact.modifiers.restrictRect({
-                    restriction: 'parent',
-                    endOnly: true
-                })
-            ],
-            autoScroll: true,
-            listeners: {
-                start(event) {
-                    // Check if the parent block is locked
-                    const blockElement = event.target.closest('.grid-item');
-                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                    if (lockOverlay?.dataset.locked === "true") {
-                        logDebug("Dragging prevented: Block is locked.");
-                        event.preventDefault(); // Prevent dragging
-                        return;
-                    }
-        
-                    event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                    logDebug("Dragging started on:", event.target);
-                },
-                move(event) {
-                    // Allow movement only if the parent block is unlocked
-                    const blockElement = event.target.closest('.grid-item');
-                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                    if (lockOverlay?.dataset.locked === "true") {
-                        return; // Prevent dragging when locked
-                    }
-        
-                    const target = event.target;
-        
-                    // Keep the dragged position in the data-x/data-y attributes
-                    const dataX = parseFloat(target.getAttribute('data-x')) || 0;
-                    const dataY = parseFloat(target.getAttribute('data-y')) || 0;
-        
-                    // Calculate the new position
-                    const deltaX = event.dx;
-                    const deltaY = event.dy;
-        
-                    const newX = dataX + deltaX;
-                    const newY = dataY + deltaY;
-        
-                    // Translate the element
-                    target.style.transform = `translate(${newX}px, ${newY}px)`;
-        
-                    // Update the position attributes
-                    target.setAttribute('data-x', newX);
-                    target.setAttribute('data-y', newY);
-        
-                    logDebug(`Moving element to x: ${newX}, y: ${newY}`);
-                },
-                end(event) {
-                    event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                    logDebug('Drag ended for element:', event.target);
-        
-                    // Update layout state to capture the final position
-                    updateLocalLayoutFromDOM();
-                    saveLayoutState(); // Save the updated layout to the history stack
-                    unsavedChanges = true; // Mark changes as unsaved
-                    hasPushedLive = false; // Reset live state
-                    updateButtonStates(); // Update button states
+/**
+ * Initialize Interact.js for draggable elements within block-content
+ */
+const initializeInternalDraggable = () => {
+    // First, unset any existing draggable instances to prevent duplicates
+    interact('.draggable-element').unset();
+
+    // Define modifiers array with restrictRect always applied
+    let modifiers = [
+        interact.modifiers.restrictRect({
+            restriction: 'parent',
+            endOnly: true,
+        }),
+    ];
+
+    // Conditionally add the snap modifier if snapping is active and grid units are defined
+    if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
+        modifiers.push(
+            interact.modifiers.snap({
+                targets: [
+                    interact.snappers.grid({ x: window.gridUnitWidth, y: window.gridUnitHeight })
+                ],
+                range: window.gridUnitWidth * 0.2, // 20% of grid unit size
+                relativePoints: [{ x: 0, y: 0 }],
+                endOnly: false // Enable snapping during movement
+            })
+        );
+    }
+
+    // Initialize draggable elements with the defined modifiers
+    interact('.draggable-element').draggable({
+        inertia: true,
+        modifiers: modifiers,
+        autoScroll: true,
+        listeners: {
+            start(event) {
+                const blockElement = event.target.closest('.grid-item');
+                const lockOverlay = blockElement?.querySelector('.lock-overlay');
+                if (lockOverlay?.dataset.locked === "true") {
+                    logDebug("Dragging prevented: Block is locked.");
+                    event.preventDefault();
+                    return;
                 }
-            }
-        });        
-    };
+
+                event.target.classList.add('active-dragging'); // Optional styling
+                logDebug("Dragging started on:", event.target);
+            },
+            move(event) {
+                const blockElement = event.target.closest('.grid-item');
+                const lockOverlay = blockElement?.querySelector('.lock-overlay');
+                if (lockOverlay?.dataset.locked === "true") return;
+
+                const target = event.target;
+
+                // Current position
+                let dataX = parseFloat(target.getAttribute('data-x')) || 0;
+                let dataY = parseFloat(target.getAttribute('data-y')) || 0;
+
+                if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
+                    // Update position with snapping
+                    dataX = Math.round((dataX + event.dx) / window.gridUnitWidth) * window.gridUnitWidth;
+                    dataY = Math.round((dataY + event.dy) / window.gridUnitHeight) * window.gridUnitHeight;
+                } else {
+                    // Free dragging: Update the position with the delta
+                    dataX += event.dx;
+                    dataY += event.dy;
+                }
+
+                // Apply transformations
+                // Use the same transformation logic as your first code for consistency
+                target.style.transform = `translate(-50%, -50%) translate(${dataX}px, ${dataY}px)`;
+                target.setAttribute('data-x', dataX);
+                target.setAttribute('data-y', dataY);
+
+                if (snapToGridActive) {
+                    logDebug(`Dragging: Snapped position (${dataX}, ${dataY}).`);
+                } else {
+                    logDebug(`Dragging: New position (${dataX}, ${dataY}).`);
+                }
+            },
+            end(event) {
+                event.target.classList.remove('active-dragging');
+                logDebug("Drag ended for element:", event.target);
+
+                // Update layout state
+                updateLocalLayoutFromDOM();
+                saveLayoutState();
+                unsavedChanges = true;
+                hasPushedLive = false;
+                updateButtonStates();
+            },
+        },
+    });
+};
+
+
+    // Snap Button Logic
+    snapToGridButton.addEventListener("click", (e) => {
+        e.stopPropagation();
+        snapToGridActive = !snapToGridActive; // Toggle snapping state
+        snapToGridButton.classList.toggle("active", snapToGridActive); // Update button appearance
+        logDebug(`Snap to Grid is now ${snapToGridActive ? "enabled" : "disabled"}.`);
+
+        // Re-initialize draggable elements to apply or remove snap modifier
+        initializeInternalDraggable();
+    });
 
     // **Call the initialization function after rendering blocks**
     window.addEventListener('blockLockChanged', (e) => {
@@ -2319,88 +2352,6 @@ document.addEventListener("DOMContentLoaded", () => {
         // For live view or other modes, draggable elements are not initialized
         logDebug('Skipping draggable initialization for non-draft mode.');
     }
-
-    // **Ensure draggable elements are initialized whenever new elements are added dynamically**
-    // Use MutationObserver to watch for new draggable elements
-    const draggableObserver = new MutationObserver((mutationsList) => {
-        for (let mutation of mutationsList) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(node => {
-                    if (node.classList && node.classList.contains('draggable-element') && !node.hasAttribute('data-interact-initialized')) {
-                        interact(node).draggable({
-                            inertia: true,
-                            modifiers: [
-                                interact.modifiers.restrictRect({
-                                    restriction: 'parent',
-                                    endOnly: true
-                                })
-                            ],
-                            autoScroll: true,
-                            listeners: {
-                                start(event) {
-                                    // Check if the parent block is locked
-                                    const blockElement = event.target.closest('.grid-item');
-                                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                                    if (lockOverlay?.dataset.locked === "true") {
-                                        logDebug("Dragging prevented: Block is locked.");
-                                        event.preventDefault(); // Prevent dragging
-                                        return;
-                                    }
-    
-                                    event.target.classList.add('active-dragging'); // Optional: Add class for styling
-                                    logDebug("Dragging started on:", event.target);
-                                },
-                                move(event) {
-                                    // Allow movement only if the parent block is unlocked
-                                    const blockElement = event.target.closest('.grid-item');
-                                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                                    if (lockOverlay?.dataset.locked === "true") {
-                                        return; // Prevent dragging when locked
-                                    }
-    
-                                    const target = event.target;
-    
-                                    // Keep the dragged position in the data-x/data-y attributes
-                                    const dataX = parseFloat(target.getAttribute('data-x')) || 0;
-                                    const dataY = parseFloat(target.getAttribute('data-y')) || 0;
-    
-                                    // Calculate the new position
-                                    const deltaX = event.dx;
-                                    const deltaY = event.dy;
-    
-                                    const newX = dataX + deltaX;
-                                    const newY = dataY + deltaY;
-    
-                                    // Translate the element
-                                    target.style.transform = `translate(${newX}px, ${newY}px)`;
-    
-                                    // Update the position attributes
-                                    target.setAttribute('data-x', newX);
-                                    target.setAttribute('data-y', newY);
-    
-                                    logDebug(`Moving element to x: ${newX}, y: ${newY}`);
-                                },
-                                end(event) {
-                                    event.target.classList.remove('active-dragging'); // Remove the class after dragging
-                                    logDebug('Drag ended for element:', event.target);
-                                }
-                            }
-                        });
-    
-                        // Mark as initialized to prevent re-initialization
-                        node.setAttribute('data-interact-initialized', 'true');
-                    }
-                });
-            }
-        }
-    });
-    
-    // Start observing the block-content containers for new draggable elements
-    const blockContents = document.querySelectorAll('.block-content');
-    blockContents.forEach(blockContent => {
-        draggableObserver.observe(blockContent, { childList: true, subtree: true });
-    });
-    
 
     /**
      * *******************************

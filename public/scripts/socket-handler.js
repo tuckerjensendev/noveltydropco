@@ -1,3 +1,5 @@
+// public/scripts/socket-handler.js
+
 document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
 

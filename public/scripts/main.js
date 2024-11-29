@@ -1,7 +1,7 @@
 // main.js
 
 // Debug utility
-let isDebugMode = false;
+let isDebugMode = true;
 
 const logDebug = (message, ...optionalParams) => {
     if (isDebugMode) {

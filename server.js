@@ -23,7 +23,6 @@ const redis = require('redis');
 const socketIo = require('socket.io'); // Import Socket.IO
 const { setShutdownState, getShutdownState } = require('./src/private/shutdownState');
 
-
 // Create Redis client
 const redisClient = redis.createClient({
   legacyMode: true,
@@ -60,6 +59,10 @@ const httpsOptions = {
 const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(express.static(path.join(__dirname, isProduction ? 'dist' : 'public')));
+
+// **Remove these lines to eliminate duplicate body parsers**
+// app.use(express.json());
+// app.use(express.urlencoded({ extended: true }));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -152,7 +155,6 @@ app.use((req, res, next) => {
   csrfProtection(req, res, next);
 });
 
-
 app.use(attachPermissions);
 
 // Redirect HTTP to HTTPS
@@ -166,11 +168,7 @@ app.use((req, res, next) => {
 // Define Staff Roles
 const staffRoles = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
 
-// Middleware to parse requests and set locals
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-// Middleware to set locals
+// **Ensure that res.locals middleware is after staffRoles is defined and no duplicates are present**
 app.use((req, res, next) => {
   res.locals.user = req.user || null;
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
@@ -185,6 +183,9 @@ app.use((req, res, next) => {
   res.locals.headExtra = '';
   res.locals.bodyExtra = '';
   res.locals.scripts = res.locals.scripts || [];
+
+  // Debugging statement
+  console.log(`scriptNonce for ${req.path}: ${res.locals.scriptNonce}`);
 
   next();
 });
@@ -374,7 +375,6 @@ io.on('connection', (socket) => {
 });
 
 // **Graceful Shutdown Handler**
-// **Graceful Shutdown Handler**
 const gracefulShutdown = () => {
   console.log('Initiating graceful shutdown...');
   setShutdownState(true); // Set shutdown state
@@ -405,7 +405,7 @@ const gracefulShutdown = () => {
 
 // **Heartbeat to Clients**
 let heartbeatInterval = null; // Variable to store the interval
-const HEARTBEAT_DURATION = 30000; // 60 seconds in milliseconds
+const HEARTBEAT_DURATION = 60000; // 60 seconds in milliseconds
 
 heartbeatInterval = setInterval(() => {
   if (!getShutdownState()) {
@@ -418,7 +418,7 @@ heartbeatInterval = setInterval(() => {
 setTimeout(() => {
   if (heartbeatInterval) {
     clearInterval(heartbeatInterval);
-    console.log('Heartbeat stopped after 30 seconds');
+    console.log('Heartbeat stopped after 60 seconds');
   }
 }, HEARTBEAT_DURATION);
 
@@ -434,28 +434,3 @@ server.listen(PORT, '0.0.0.0', () => {
     io.emit('heartbeat', { message: 'Server is alive' }); // Immediate notification on server start
   }
 });
-
-// **404 and Error Handlers**
-app.use((req, res) => {
-  res.status(404).render('404', { title: '404 - Page Not Found' });
-});
-
-app.use((err, req, res, next) => {
-  if (err.status === 400) {
-    req.flash('flashMessage', err.message);
-    req.flash('flashType', 'error');
-    return res.redirect('back');
-  }
-  console.error("[DEBUG] Unhandled error:", err);
-  res.status(500).render('500', { title: '500 - Server Error' });
-});
-
-app.use((err, req, res, next) => {
-  const isProduction = process.env.NODE_ENV === 'production';
-  res.status(err.status || 500);
-  res.render('500', {
-    isProduction,
-    error: isProduction ? null : err,
-  });
-});
-
