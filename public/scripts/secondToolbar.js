@@ -254,12 +254,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     });
 
-    // Close the Add Text dropdown when clicking outside
-    document.addEventListener("click", () => {
-        addTextDropdown.style.display = "none";
-        addTextButton.setAttribute("aria-expanded", "false");
-    });
-
 
 
     //**************************
@@ -280,26 +274,23 @@ document.addEventListener("DOMContentLoaded", () => {
 
     initializeSnapToGridButton(); // Call the initialization function on load
 
+    // Track dropdown visibility state
+    let isDropdownOpen = false;
+
     // Toggle dropdown visibility when the Grid Overlay button is clicked
     GridOverlayButton.addEventListener("click", (e) => {
         e.stopPropagation();
         mutex.lock().then(() => {
             try {
-                const isVisible = gridOverlayDropdown.style.display === "block";
-                gridOverlayDropdown.style.display = isVisible ? "none" : "block";
-                GridOverlayButton.setAttribute("aria-expanded", !isVisible);
+                isDropdownOpen = !isDropdownOpen; // Toggle visibility state
+                gridOverlayDropdown.style.display = isDropdownOpen ? "block" : "none";
+                GridOverlayButton.setAttribute("aria-expanded", isDropdownOpen);
             } catch (error) {
                 console.error("Error toggling Grid Overlay dropdown:", error);
             } finally {
                 mutex.unlock();
             }
         });
-    });
-
-    // Close the grid overlay dropdown when clicking outside
-    document.addEventListener("click", () => {
-        gridOverlayDropdown.style.display = "none";
-        GridOverlayButton.setAttribute("aria-expanded", "false");
     });
 
     // Handle grid size
@@ -319,11 +310,10 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            gridOverlayDropdown.style.display = "none";
-            GridOverlayButton.setAttribute("aria-expanded", "false");
+            // Do not close the dropdown after item selection
+            logDebug(`Dropdown item clicked: ${item.textContent}`);
         });
     });
-
 
     /* Grid Overlay Functionality */
     const toggleGridOverlay = (button) => {
@@ -439,7 +429,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
         logDebug(`Snap to Grid is now ${window.isSnapEnabled ? "enabled" : "disabled"}.`);
     };
-
 
     //**************************
     // Other Toolbar Button Event Listeners**
