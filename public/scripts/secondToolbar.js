@@ -13,10 +13,12 @@ document.addEventListener("DOMContentLoaded", () => {
     // **Button References**
     const gridOverlayDropdown = document.getElementById("gridOverlayDropdown");
     const GridOverlayButton = document.getElementById("GridOverlayButton");
-    const clearGridOverlayButton = document.getElementById("clearGridOverlayButton");
-    const addTextDropdown = document.getElementById("addTextDropdown"); // Dropdown menu
-    const addTextButton = document.getElementById("addTextButton"); // Add Text button
+    const snapToGridButton = document.getElementById("snapToGridButton");
+    const addTextDropdown = document.getElementById("addTextDropdown");
+    const addTextButton = document.getElementById("addTextButton"); 
     const addImageButton = document.getElementById("addImageButton");
+    const addImageModal = document.getElementById("addImageModal");
+    const closeModalButton = document.querySelector(".close-modal");
     const imageLinkButton = document.getElementById("imageLinkButton");
     const textLinkButton = document.getElementById("textLinkButton");
     const resizeImageButton = document.getElementById("resizeImageButton");
@@ -145,11 +147,15 @@ document.addEventListener("DOMContentLoaded", () => {
         );
     };
 
-    /**
-     * *******************************
-     * **Event Listeners**
-     * *******************************
-     */
+    //**************************************************************
+    //**************************************************************
+    //         <****SECOND ROW TOOLBAR EVENT LISTENERS****>
+    //**************************************************************
+
+
+    //**************************
+    // ADD TEXT BUTTON FUNCTIONS FOR DROPDOWN MENU, TEXT OPTIONS, STYLE AND INITIAL PLACEMENT
+    //**************************
 
     // **Add Text Dropdown Functionality**
     addTextDropdown.style.display = "none";
@@ -173,7 +179,7 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     // Handle selection of dropdown items for Add Text
-    addTextDropdown.querySelectorAll(".dropdown-item").forEach(item => {
+    addTextDropdown.querySelectorAll(".dropdown-item").forEach((item) => {
         item.addEventListener("click", async (e) => {
             e.stopPropagation(); // Prevent click from propagating
             const selectedValue = item.getAttribute("data-value"); // e.g., "p", "h1", "h2"
@@ -186,13 +192,13 @@ document.addEventListener("DOMContentLoaded", () => {
             logDebug(`Selected text type: ${selectedValue}`);
 
             // Insert the selected element into the currently unlocked block
-            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
+            const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
             if (!unlockedBlock) {
                 alert("No unlocked block found to add text.");
                 return;
             }
 
-            const blockContent = unlockedBlock.querySelector('.block-content');
+            const blockContent = unlockedBlock.querySelector(".block-content");
             if (!blockContent) {
                 console.error("block-content div not found in the unlocked block.");
                 return;
@@ -207,14 +213,19 @@ document.addEventListener("DOMContentLoaded", () => {
             newElement.contentEditable = "true";
 
             // Create a draggable container for the new element
-            const draggableContainer = document.createElement('div');
-            draggableContainer.classList.add('draggable-element', 'block-label-draggable'); // Same initial positioning style as block label
-            draggableContainer.style.position = 'absolute'; // Position absolutely within the block
-            draggableContainer.style.top = '50%'; // Align vertically centered
-            draggableContainer.style.left = '50%'; // Align horizontally centered
-            draggableContainer.style.transform = 'translate(-50%, -50%) translate(0px, 0px)'; // Initial centering and drag-ready
+            const draggableContainer = document.createElement("div");
+            draggableContainer.classList.add(
+                "draggable-element",
+                "block-label-draggable"
+            ); // Same initial positioning style as block label
 
-            // **Add Initial Position Attributes**
+            // Position the draggable container absolutely within the block
+            draggableContainer.style.position = "absolute";
+            draggableContainer.style.top = "50%"; // Vertically centered
+            draggableContainer.style.left = "50%"; // Horizontally centered
+            draggableContainer.style.transform = `translate(-50%, -50%)`; // Perfect centering
+
+            // **Set Initial Position Attributes for Compatibility with move()**
             draggableContainer.setAttribute('data-x', '0');
             draggableContainer.setAttribute('data-y', '0');
 
@@ -227,11 +238,11 @@ document.addEventListener("DOMContentLoaded", () => {
             newElement.focus();
 
             // Dispatch a custom event to notify contentWorkshop.js about the change
-            const textAddedEvent = new CustomEvent('textAdded', {
+            const textAddedEvent = new CustomEvent("textAdded", {
                 detail: {
                     blockId: unlockedBlock.dataset.blockId || null,
-                    element: newElement.outerHTML
-                }
+                    element: newElement.outerHTML,
+                },
             });
             window.dispatchEvent(textAddedEvent);
 
@@ -249,12 +260,25 @@ document.addEventListener("DOMContentLoaded", () => {
         addTextButton.setAttribute("aria-expanded", "false");
     });
 
-    /**
-     * **Toggle Grid Overlay Functionality with Snap to Grid**
-     */
 
-    // Ensure the grid overlay dropdown menu is hidden initially
-    gridOverlayDropdown.style.display = "none";
+
+    //**************************
+    // GRID OVERLAY FUNCTIONS FOR DROPDOWN MENU, GRID SIZE AND DYNAMIC PLACEMENT IN BLOCK
+    //**************************
+
+    // **Initialize Snap to Grid Button as Disabled by Default**
+    const initializeSnapToGridButton = () => {
+        if (snapToGridButton) {
+            snapToGridButton.disabled = true;
+            snapToGridButton.classList.add("disabled"); // Optional: Add a disabled class for styling
+            snapToGridButton.setAttribute("aria-disabled", "true");
+            logDebug("Snap to Grid button initialized as disabled.");
+        } else {
+            console.error("Snap to Grid button not found. Ensure it exists in the DOM.");
+        }
+    };
+
+    initializeSnapToGridButton(); // Call the initialization function on load
 
     // Toggle dropdown visibility when the Grid Overlay button is clicked
     GridOverlayButton.addEventListener("click", (e) => {
@@ -278,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
         GridOverlayButton.setAttribute("aria-expanded", "false");
     });
 
-    // Handle grid size selection
+    // Handle grid size
     gridOverlayDropdown.querySelectorAll(".dropdown-item").forEach((item) => {
         item.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -289,121 +313,119 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
-            // Handle Clear Grid overlay
-            if (item.id === "clearGridOverlayButton") {
-                clearGridOverlay();
+            // Handle Grid: OFF/ON toggle
+            if (item.getAttribute("data-grid-size") === "1") {
+                toggleGridOverlay(item);
                 return;
             }
 
-            // Handle grid size selection
-            const gridSize = item.getAttribute("data-grid-size");
-            if (!gridSize) {
-                console.warn("No data-grid-size attribute found on selected dropdown item.");
-                return;
-            }
-
-            logDebug(`Selected grid size: ${gridSize}`);
-
-            // Find the currently unlocked block
-            const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
-            if (!unlockedBlock) {
-                alert("No unlocked block found to apply grid overlay.");
-                return;
-            }
-
-            // Get the block's computed styles
-            const blockStyles = window.getComputedStyle(unlockedBlock);
-            const blockWidth = parseFloat(blockStyles.width);
-            const blockHeight = parseFloat(blockStyles.height);
-
-            // Determine the number of grid units based on grid size
-            let columns;
-            if (gridSize === "1") {
-                columns = 10; // Grid 1: 10 columns
-            } else if (gridSize === "2") {
-                columns = 5;  // Grid 2: 5 columns
-            } else {
-                console.warn(`Unsupported grid size: ${gridSize}`);
-                return;
-            }
-
-            // Calculate grid unit width based on columns
-            const gridUnitWidth = Math.floor(blockWidth / columns);
-            window.gridUnitWidth = gridUnitWidth; // Update global state
-
-            // Calculate the number of rows to fit the block height exactly
-            const rows = Math.floor(blockHeight / gridUnitWidth);
-
-            // Calculate grid unit height based on rows to ensure no partial cells
-            const gridUnitHeight = blockHeight / rows;
-            window.gridUnitHeight = gridUnitHeight; // Update global state
-
-            // Clear any existing grid overlay styles
-            unlockedBlock.style.backgroundImage = "none";
-            unlockedBlock.style.backgroundSize = "none";
-            unlockedBlock.style.backgroundRepeat = "none";
-            unlockedBlock.style.backgroundPosition = "none";
-
-            // Apply the new grid overlay using background images (Style-Based)
-            unlockedBlock.style.backgroundImage = `
-                linear-gradient(to right, rgba(0, 0, 0, 0.5) 1px, transparent 1px),
-                linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 1px, transparent 1px)
-            `;
-            unlockedBlock.style.backgroundSize = `${gridUnitWidth}px ${gridUnitHeight}px`;
-            unlockedBlock.style.backgroundRepeat = "repeat";
-            unlockedBlock.style.backgroundPosition = "0 0"; // Corrected closing quote
-
-            logDebug(
-                `Grid overlay applied dynamically: size ${gridSize}, unit width: ${gridUnitWidth}px, unit height: ${gridUnitHeight}px, rows: ${rows}.`
-            );
-
-            // Update snapping grid in Interact.js if snapping is enabled
-            if (window.isSnapEnabled) {
-                updateInteractSnap();
-            }
-
-            // Close the dropdown after selection
             gridOverlayDropdown.style.display = "none";
             GridOverlayButton.setAttribute("aria-expanded", "false");
         });
     });
 
-    /**
-     * **Clear Grid Overlay Functionality**
-     */
-    const clearGridOverlay = () => {
-        const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
-        if (!unlockedBlock) {
-            alert("No unlocked block found to clear grid overlay.");
+
+    /* Grid Overlay Functionality */
+    const toggleGridOverlay = (button) => {
+        window.gridOverlayActive = !window.gridOverlayActive;
+
+        // Update button appearance and text
+        if (window.gridOverlayActive) {
+            button.classList.add("active");
+            button.textContent = "Grid: ON";
+
+            // Enable the Snap to Grid button
+            if (snapToGridButton) {
+                snapToGridButton.disabled = false;
+                snapToGridButton.classList.remove("disabled"); // Remove disabled styling
+                snapToGridButton.setAttribute("aria-disabled", "false");
+                logDebug("Snap to Grid button enabled.");
+            }
+
+            // Apply grid overlay to the currently unlocked block
+            const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
+            if (!unlockedBlock) {
+                alert("No unlocked block found to toggle grid overlay.");
+                return;
+            }
+
+            const blockStyles = window.getComputedStyle(unlockedBlock);
+            const blockWidth = parseFloat(blockStyles.width);
+            const blockHeight = parseFloat(blockStyles.height);
+
+            const columns = 10; // Default column count for Grid
+            const gridUnitWidth = Math.floor(blockWidth / columns);
+            const rows = Math.floor(blockHeight / gridUnitWidth);
+            const gridUnitHeight = blockHeight / rows;
+
+            // Calculate half grid units
+            const halfGridUnitWidth = gridUnitWidth / 2;
+            const halfGridUnitHeight = gridUnitHeight / 2;
+
+            // Update global state
+            window.gridUnitWidth = gridUnitWidth;
+            window.gridUnitHeight = gridUnitHeight;
+
+            // Apply grid overlay styles with both full and half grid lines
+            unlockedBlock.style.backgroundImage = 
+                'linear-gradient(to right, rgba(0, 0, 0, 0.5) 1px, transparent 1px),' + // Full vertical lines
+                'linear-gradient(to right, rgba(0, 0, 0, 0.3) 0.5px, transparent 0.5px),' + // Half vertical lines
+                'linear-gradient(to bottom, rgba(0, 0, 0, 0.5) 1px, transparent 1px),' + // Full horizontal lines
+                'linear-gradient(to bottom, rgba(0, 0, 0, 0.3) 0.5px, transparent 0.5px)'; // Half horizontal lines
+
+            unlockedBlock.style.backgroundSize = 
+                `${gridUnitWidth}px ${gridUnitHeight}px,` + // Full vertical
+                `${halfGridUnitWidth}px ${halfGridUnitHeight}px,` + // Half vertical
+                `${gridUnitWidth}px ${gridUnitHeight}px,` + // Full horizontal
+                `${halfGridUnitWidth}px ${halfGridUnitHeight}px`; // Half horizontal
+
+            unlockedBlock.style.backgroundRepeat = "repeat, repeat, repeat, repeat";
+            unlockedBlock.style.backgroundPosition = "0 0, 0 0, 0 0, 0 0";
+
+            logDebug(
+                `Grid overlay turned ON: unit width: ${gridUnitWidth}px, unit height: ${gridUnitHeight}px, ` +
+                `half unit width: ${halfGridUnitWidth}px, half unit height: ${halfGridUnitHeight}px.`
+            );
+        } else {
+            button.classList.remove("active");
+            button.textContent = "Grid: OFF";
+
+            // Disable the Snap to Grid button and turn it off if it's active
+            if (snapToGridButton) {
+                if (window.isSnapEnabled) {
+                    toggleSnapToGrid(snapToGridButton); // Turn off Snap
+                }
+                snapToGridButton.disabled = true;
+                snapToGridButton.classList.add("disabled"); // Add disabled styling
+                snapToGridButton.setAttribute("aria-disabled", "true");
+                logDebug("Snap to Grid button disabled and turned off.");
+            }
+
+            // Remove grid overlay
+            const unlockedBlock = document.querySelector(".grid-item.unlocked-border");
+            if (unlockedBlock) {
+                unlockedBlock.style.backgroundImage = "none";
+                unlockedBlock.style.backgroundSize = "none";
+                unlockedBlock.style.backgroundRepeat = "none";
+                unlockedBlock.style.backgroundPosition = "none";
+
+                // Reset global grid unit sizes
+                window.gridUnitWidth = 0;
+                window.gridUnitHeight = 0;
+
+                logDebug("Grid overlay turned OFF.");
+            }
+        }
+    };
+
+    /* Toggle Snap to Grid Button */
+    const toggleSnapToGrid = (button) => {
+        // Only allow toggling if the button is enabled
+        if (button.disabled) {
+            logDebug("Attempted to toggle Snap to Grid while button is disabled.");
             return;
         }
 
-        // Clear grid overlay styles
-        unlockedBlock.style.backgroundImage = "none";
-        unlockedBlock.style.backgroundSize = "none";
-        unlockedBlock.style.backgroundRepeat = "none";
-        unlockedBlock.style.backgroundPosition = "none";
-
-        // Reset global grid unit sizes
-        window.gridUnitWidth = 0;
-        window.gridUnitHeight = 0;
-
-        logDebug("Grid overlay cleared.");
-
-        // Update snapping grid in Interact.js if snapping is enabled
-        if (window.isSnapEnabled) {
-            updateInteractSnap();
-        }
-
-        // Close the dropdown after clearing
-        gridOverlayDropdown.style.display = "none";
-        GridOverlayButton.setAttribute("aria-expanded", "false");
-    };
-
-    /**
-     * **Toggle Snap to Grid Functionality**
-     */
-    const toggleSnapToGrid = (button) => {
         window.isSnapEnabled = !window.isSnapEnabled;
 
         // Update button appearance to reflect active state
@@ -416,87 +438,42 @@ document.addEventListener("DOMContentLoaded", () => {
         }
 
         logDebug(`Snap to Grid is now ${window.isSnapEnabled ? "enabled" : "disabled"}.`);
-
-        // Update snapping grid in Interact.js
-        updateInteractSnap();
     };
 
-    /**
-     * **Update Interact.js Snap Settings**
-     * This function re-initializes draggable elements to apply the new snapping settings.
-     */
-    const updateInteractSnap = () => {
-        if (typeof window.initializeInternalDraggable === "function") {
-            // Re-initialize draggable elements to update snapping
-            window.initializeInternalDraggable();
-        }
-    };
 
-    /**
-     * **Handle Clear Grid Overlay Button**
-     * Clears the grid overlay when the clearGridOverlayButton is clicked.
-     */
-    clearGridOverlayButton.addEventListener("click", async (e) => {
-        e.stopPropagation();
-        await mutex.lock();
-        try {
-            clearGridOverlay();
-        } catch (error) {
-            console.error("Error in Clear Grid Overlay button:", error);
-        } finally {
-            mutex.unlock();
+    //**************************
+    // Other Toolbar Button Event Listeners**
+    // These listeners are placeholders for additional functionalities.
+    // Ensure that these functions do not interfere with grid overlay logic.
+    //**************************
+
+
+    if (!addImageButton || !addImageModal || !closeModalButton) {
+        console.error("Modal or button elements not found.");
+        return;
+    }
+
+    // Open modal
+    addImageButton.addEventListener("click", () => {
+        console.log("Opening modal...");
+        addImageModal.classList.remove("hidden"); // Show modal
+    });
+
+    // Close modal
+    closeModalButton.addEventListener("click", () => {
+        console.log("Closing modal...");
+        addImageModal.classList.add("hidden"); // Hide modal
+    });
+
+    // Close modal when clicking outside modal content
+    addImageModal.addEventListener("click", (event) => {
+        if (event.target === addImageModal) {
+            console.log("Closing modal by clicking outside...");
+            addImageModal.classList.add("hidden");
         }
     });
 
-    /**
-     * **Handle Lock Element Button**
-     */
-    lockElementButton.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            logDebug("Lock Element button clicked.");
-            // This should toggle the lock state of the currently unlocked block
-            const unlockedBlock = document.querySelector('.grid-item.unlocked-border');
-            if (unlockedBlock) {
-                // Assuming toggleBlockLock is defined globally or accessible
-                // If not, implement the locking logic here
-                toggleBlockLock(unlockedBlock);
 
-                // **Additional Step: Clear Grid Overlay Upon Locking**
-                unlockedBlock.style.backgroundImage = "none";
-                unlockedBlock.style.backgroundSize = "none";
-                unlockedBlock.style.backgroundRepeat = "none";
-                unlockedBlock.style.backgroundPosition = "none";
-
-                logDebug("Locking the currently unlocked block and removing grid overlays.");
-            } else {
-                alert("No unlocked block found to lock.");
-            }
-        } catch (error) {
-            console.error("Error in Lock Element button:", error);
-        } finally {
-            mutex.unlock();
-        }
-    });
-
-    /**
-     * **Other Toolbar Button Event Listeners**
-     * These listeners are placeholders for additional functionalities.
-     * Ensure that these functions do not interfere with grid overlay logic.
-     */
-    
-    // Example for Add Image Button
-    addImageButton.addEventListener("click", async () => {
-        await mutex.lock();
-        try {
-            logDebug("Add Image button clicked.");
-            // TODO: Implement add image functionality
-        } catch (error) {
-            console.error("Error in Add Image button:", error);
-        } finally {
-            mutex.unlock();
-        }
-    });
 
     // Image Link Button
     imageLinkButton.addEventListener("click", async () => {

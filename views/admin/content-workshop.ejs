@@ -88,9 +88,7 @@
                 <div class="dropdown horizontal-dropdown">
                     <button id="GridOverlayButton" class="dropdown-toggle">Grid Overlay</button>
                     <div id="gridOverlayDropdown" class="dropdown-menu">
-                        <button class="dropdown-item" data-grid-size="1">Grid 1</button>
-                        <button class="dropdown-item" data-grid-size="2">Grid 2</button>
-                        <button class="dropdown-item" id="clearGridOverlayButton">X</button>
+                        <button class="dropdown-item" data-grid-size="1">Grid: OFF</button>
                         <button id="snapToGridButton" class="dropdown-item">Snap: OFF</button>
                     </div>
                 </div>                
@@ -117,9 +115,35 @@
                 <button id="alignmentToolsButton" class="toolbar-button" title="Alignment Tools">Alignment Tools</button>
                 <button id="fontStylingButton" class="toolbar-button" title="Font Styling">Font Styling</button>
             </div>
-        </div>
+        </div>       
 
         <!-- Content Preview Section -->
         <div id="contentPreview" class="grid-container"></div>
+
+        <!-- Add Image Modal -->
+        <div id="addImageModal" class="modal hidden">
+            <div class="modal-content">
+              <button class="close-modal">&times;</button>
+              <div class="modal-body">
+                <div class="left-panel">
+                  <!-- Options like collage style or API image retrieval go here -->
+                  <p>Left Panel Placeholder</p>
+                </div>
+                <div class="preview-pane">
+                  <!-- Preview of selected images -->
+                  <p>Preview Pane Placeholder</p>
+                </div>
+                <div class="category-row">
+                  <!-- Category input and list -->
+                  <p>Category Row Placeholder</p>
+                </div>
+                <div class="image-wheel">
+                  <!-- Images row with arrows -->
+                  <p>Image Wheel Placeholder</p>
+                </div>
+                <button id="addImageToBlock" class="action-button">Add to Block</button>
+              </div>
+            </div>
+          </div> 
     </section>
 </div>

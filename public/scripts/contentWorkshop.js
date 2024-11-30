@@ -29,9 +29,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const customDropdownToggle = document.getElementById("customBlockTypeDropdown");
     const customDropdownMenu = document.querySelector(".dropdown-menu");
 
-    // **Grid size classes for grid overlay**
-    const gridSizeClasses = ['grid-overlay-small', 'grid-overlay-medium', 'grid-overlay-large'];
-
     /**
      * *******************************
      * **Validation of Critical DOM Elements**
@@ -336,13 +333,6 @@ document.addEventListener("DOMContentLoaded", () => {
             contentEditableElements.forEach((element) => {
                 element.contentEditable = "false";
             });
-    
-            // Remove grid overlay if active
-            if (blockElement.classList.contains('grid-overlay-active')) {
-                blockElement.classList.remove('grid-overlay-active', ...gridSizeClasses);
-                gridOverlayActive = false; // Reset the global grid overlay state
-                logDebug("Grid overlay removed due to block being locked.");
-            }
     
             // Reset currentlyUnlockedBlock if this block was previously unlocked
             if (currentlyUnlockedBlock === blockElement) {
@@ -838,14 +828,6 @@ document.addEventListener("DOMContentLoaded", () => {
     
             const gridOverlayActive = block.classList.contains('grid-overlay-active');
             let gridOverlaySizeIndex = -1;
-            if (gridOverlayActive) {
-                for (let i = 0; i < gridSizeClasses.length; i++) {
-                    if (block.classList.contains(gridSizeClasses[i])) {
-                        gridOverlaySizeIndex = i;
-                        break;
-                    }
-                }
-            }
     
             // Capture draggable positions
             const draggableElements = Array.from(block.querySelectorAll('.draggable-element'));
@@ -1184,14 +1166,6 @@ document.addEventListener("DOMContentLoaded", () => {
                 blockElement.classList.add('unlocked-border');
                 currentlyUnlockedBlock = blockElement; // Track the currently unlocked block
                 logDebug("Block is unlocked on render:", block.block_id);
-
-                // Re-apply grid overlay if it was active
-                if (block.gridOverlayActive) {
-                    blockElement.classList.add('grid-overlay-active');
-                    if (block.gridOverlaySizeIndex >= 0 && block.gridOverlaySizeIndex < gridSizeClasses.length) {
-                        blockElement.classList.add(gridSizeClasses[block.gridOverlaySizeIndex]);
-                    }
-                }
             }
 
             // **Add 'deletable' class to internal elements**
@@ -2133,12 +2107,27 @@ document.addEventListener("DOMContentLoaded", () => {
         const secondRowButtons = document.querySelectorAll('.toolbar-row.second-row button');
     
         secondRowButtons.forEach((button) => {
-            // Disable buttons if delete mode is on, or no block is unlocked, or not in draft mode
-            button.disabled = deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft';
+            // Disable all buttons except Snap to Grid based on general conditions
+            if (button.id !== 'snapToGridButton') {
+                button.disabled = deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft';
+            }
         });
     
-        logDebug(`Second row buttons are now ${deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft' ? 'disabled' : 'enabled'}.`);
-    };    
+        // Handle Snap to Grid button separately
+        const snapToGridButton = document.getElementById('snapToGridButton');
+        if (snapToGridButton) {
+            // Disable Snap to Grid button unless grid overlay is active
+            const gridOverlayActive = window.gridOverlayActive || false; // Replace with your actual grid overlay state variable
+            snapToGridButton.disabled = !gridOverlayActive;
+        }
+    
+        logDebug(`Second row buttons are now ${
+            deleteMode || !currentlyUnlockedBlock || viewMode !== 'draft' ? 'disabled' : 'enabled'
+        } (Snap to Grid is ${
+            snapToGridButton && !snapToGridButton.disabled ? 'enabled' : 'disabled'
+        }).`);
+    };
+       
 
     // **Toolbar Tab Functionality**
     const createToolbarTab = () => {
@@ -2202,129 +2191,119 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Initialize clearContentButton state
     clearContentButton.disabled = localLayout.length === 0 || isSaving || viewMode === 'live' || currentlyUnlockedBlock !== null;
- 
 
+    
     /**
-     * *******************************
-     * **Custom Event Listener for Lock State Changes**
-     * *******************************
+     * Initialize Interact.js for draggable elements within block-content
      */
+    const initializeInternalDraggable = () => {
+        // First, unset any existing draggable instances to prevent duplicates
+        interact('.draggable-element').unset();
 
-    // **Listen for 'blockLockChanged' Events**
-    window.addEventListener('blockLockChanged', (e) => {
-        const { blockId, isLocked } = e.detail;
-        logDebug(`'blockLockChanged' event received for block ID: ${blockId}, Locked: ${isLocked}`);
+        // Define modifiers array
+        let modifiers = [
+            interact.modifiers.restrictRect({
+                restriction: 'parent',
+                endOnly: true,
+            }),
+        ];
 
-        const block = document.querySelector(`.grid-item[data-block-id="${blockId}"]`);
-
-        if (block) {
-            // Handle lock and overlay states
-            if (isLocked) {
-                if (block.classList.contains('grid-overlay-active')) {
-                    block.classList.remove('grid-overlay-active', ...gridSizeClasses);
-                    gridOverlayActive = false;
-                    logDebug("Grid overlay removed from locked block.");
-                }
-            }
+        // Conditionally add the snap modifier if snapping is active and grid units are defined
+        if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
+            modifiers.push(
+                interact.modifiers.snap({
+                    targets: [
+                        // Snap to the regular grid (full grid units)
+                        interact.snappers.grid({ x: window.gridUnitWidth, y: window.gridUnitHeight }),
+                        // Snap to the half grid units (center lines)
+                        interact.snappers.grid({ x: window.gridUnitWidth / 2, y: window.gridUnitHeight / 2 }),
+                    ],
+                    range: window.gridUnitWidth * 0.6, // 60% of grid unit size
+                    relativePoints: [{ x: 0.5, y: 0.5 }], // Snap based on the center of the element
+                    endOnly: false, // Enable snapping during movement
+                    inertia: {
+                        resistance: 15, // Increased resistance for smoother deceleration
+                        endSpeed: 50, // Minimum speed before stopping
+                        allowResume: true, // Allow resuming drag if clicked during inertia
+                    },
+                })
+            );
         }
-        updateSecondRowButtonStates();
-    });
 
-/**
- * Initialize Interact.js for draggable elements within block-content
- */
-const initializeInternalDraggable = () => {
-    // First, unset any existing draggable instances to prevent duplicates
-    interact('.draggable-element').unset();
+        // Initialize draggable elements with the defined modifiers
+        interact('.draggable-element').draggable({
+            inertia: true,
+            modifiers: modifiers,
+            autoScroll: true,
+            listeners: {
+                start(event) {
+                    const blockElement = event.target.closest('.grid-item');
+                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
+                    if (lockOverlay?.dataset.locked === "true") {
+                        logDebug("Dragging prevented: Block is locked.");
+                        event.preventDefault();
+                        return;
+                    }
 
-    // Define modifiers array with restrictRect always applied
-    let modifiers = [
-        interact.modifiers.restrictRect({
-            restriction: 'parent',
-            endOnly: true,
-        }),
-    ];
+                    event.target.classList.add('active-dragging'); // Optional styling
+                    logDebug("Dragging started on:", event.target);
+                },
+                move(event) {
+                    const blockElement = event.target.closest('.grid-item');
+                    const lockOverlay = blockElement?.querySelector('.lock-overlay');
+                    if (lockOverlay?.dataset.locked === "true") return;
 
-    // Conditionally add the snap modifier if snapping is active and grid units are defined
-    if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
-        modifiers.push(
-            interact.modifiers.snap({
-                targets: [
-                    interact.snappers.grid({ x: window.gridUnitWidth, y: window.gridUnitHeight })
-                ],
-                range: window.gridUnitWidth * 0.2, // 20% of grid unit size
-                relativePoints: [{ x: 0, y: 0 }],
-                endOnly: false // Enable snapping during movement
-            })
-        );
-    }
+                    const target = event.target;
 
-    // Initialize draggable elements with the defined modifiers
-    interact('.draggable-element').draggable({
-        inertia: true,
-        modifiers: modifiers,
-        autoScroll: true,
-        listeners: {
-            start(event) {
-                const blockElement = event.target.closest('.grid-item');
-                const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                if (lockOverlay?.dataset.locked === "true") {
-                    logDebug("Dragging prevented: Block is locked.");
-                    event.preventDefault();
-                    return;
-                }
+                    // Current position
+                    let dataX = parseFloat(target.getAttribute('data-x')) || 0;
+                    let dataY = parseFloat(target.getAttribute('data-y')) || 0;
 
-                event.target.classList.add('active-dragging'); // Optional styling
-                logDebug("Dragging started on:", event.target);
+                    if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
+                        // Calculate snapping steps for full grid and half grid
+                        const halfGridX = window.gridUnitWidth / 2;
+                        const halfGridY = window.gridUnitHeight / 2;
+
+                        // Update position with snapping to full and half grid
+                        dataX = Math.round((dataX + event.dx) / halfGridX) * halfGridX;
+                        dataY = Math.round((dataY + event.dy) / halfGridY) * halfGridY;
+
+                        logDebug(`Dragging: Snapped position (${dataX}, ${dataY}).`);
+                    } else {
+                        // Free dragging without snapping: update position freely
+                        dataX += event.dx;
+                        dataY += event.dy;
+
+                        logDebug(`Dragging: Free position (${dataX}, ${dataY}).`);
+                    }
+
+                    // Apply transformations based on snapping state
+                    if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
+                        // Snapping enabled: align based on snapped position
+                        target.style.transform = `translate(${dataX}px, ${dataY}px)`;
+                    } else {
+                        // Snapping disabled: center the element under the cursor
+                        target.style.transform = `translate(-50%, -50%) translate(${dataX}px, ${dataY}px)`;
+                    }
+
+                    // Update data attributes
+                    target.setAttribute('data-x', dataX);
+                    target.setAttribute('data-y', dataY);
+                },
+                end(event) {
+                    event.target.classList.remove('active-dragging');
+                    logDebug("Drag ended for element:", event.target);
+
+                    // Update layout state
+                    updateLocalLayoutFromDOM();
+                    saveLayoutState();
+                    unsavedChanges = true;
+                    hasPushedLive = false;
+                    updateButtonStates();
+                },
             },
-            move(event) {
-                const blockElement = event.target.closest('.grid-item');
-                const lockOverlay = blockElement?.querySelector('.lock-overlay');
-                if (lockOverlay?.dataset.locked === "true") return;
-
-                const target = event.target;
-
-                // Current position
-                let dataX = parseFloat(target.getAttribute('data-x')) || 0;
-                let dataY = parseFloat(target.getAttribute('data-y')) || 0;
-
-                if (snapToGridActive && window.gridUnitWidth && window.gridUnitHeight) {
-                    // Update position with snapping
-                    dataX = Math.round((dataX + event.dx) / window.gridUnitWidth) * window.gridUnitWidth;
-                    dataY = Math.round((dataY + event.dy) / window.gridUnitHeight) * window.gridUnitHeight;
-                } else {
-                    // Free dragging: Update the position with the delta
-                    dataX += event.dx;
-                    dataY += event.dy;
-                }
-
-                // Apply transformations
-                // Use the same transformation logic as your first code for consistency
-                target.style.transform = `translate(-50%, -50%) translate(${dataX}px, ${dataY}px)`;
-                target.setAttribute('data-x', dataX);
-                target.setAttribute('data-y', dataY);
-
-                if (snapToGridActive) {
-                    logDebug(`Dragging: Snapped position (${dataX}, ${dataY}).`);
-                } else {
-                    logDebug(`Dragging: New position (${dataX}, ${dataY}).`);
-                }
-            },
-            end(event) {
-                event.target.classList.remove('active-dragging');
-                logDebug("Drag ended for element:", event.target);
-
-                // Update layout state
-                updateLocalLayoutFromDOM();
-                saveLayoutState();
-                unsavedChanges = true;
-                hasPushedLive = false;
-                updateButtonStates();
-            },
-        },
-    });
-};
-
+        });
+    };
 
     // Snap Button Logic
     snapToGridButton.addEventListener("click", (e) => {

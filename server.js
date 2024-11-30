@@ -60,10 +60,7 @@ const PORT = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 app.use(express.static(path.join(__dirname, isProduction ? 'dist' : 'public')));
 
-// **Remove these lines to eliminate duplicate body parsers**
-// app.use(express.json());
-// app.use(express.urlencoded({ extended: true }));
-
+// **Body Parsers and Cookie Parser**
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
@@ -78,7 +75,6 @@ app.use(expressLayouts);
 app.set('layout', 'layouts/main');
 
 // Configure Session to Use Redis Store
-// Session and flash middleware
 app.use(
   session({
     store: new RedisStore({ client: redisClient }),
@@ -93,6 +89,7 @@ app.use(
   })
 );
 
+// **Flash Middleware**
 app.use(flash());
 
 // Handle missing sessions
@@ -168,7 +165,7 @@ app.use((req, res, next) => {
 // Define Staff Roles
 const staffRoles = ['staff1', 'staff2', 'manager1', 'manager2', 'superadmin'];
 
-// **Ensure that res.locals middleware is after staffRoles is defined and no duplicates are present**
+// **res.locals Middleware (After Session and Flash)**
 app.use((req, res, next) => {
   res.locals.user = req.user || null;
   res.locals.csrfToken = req.csrfToken ? req.csrfToken() : null;
@@ -177,6 +174,7 @@ app.use((req, res, next) => {
   res.locals.flashMessage = req.flash('flashMessage');
   res.locals.flashType = req.flash('flashType');
   
+  // Generate nonces for CSP
   res.locals.styleNonce = crypto.randomBytes(16).toString('base64');
   res.locals.scriptNonce = crypto.randomBytes(16).toString('base64');
   
@@ -246,7 +244,9 @@ app.use(contentRoutes);
 
 // **New /api/blocks Routes**
 
-// GET /api/blocks?type=blockType - Fetch blocks by type
+/**
+ * GET /api/blocks?type=blockType - Fetch blocks by type
+ */
 app.get('/api/blocks', async (req, res) => {
   const { type } = req.query;
   if (!type) {
@@ -276,7 +276,9 @@ app.get('/api/blocks', async (req, res) => {
   }
 });
 
-// POST /api/blocks - Add a new block
+/**
+ * POST /api/blocks - Add a new block
+ */
 app.post('/api/blocks', async (req, res) => {
   const { type, content } = req.body;
 
